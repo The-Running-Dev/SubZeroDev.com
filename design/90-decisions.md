@@ -7,6 +7,110 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 
 ---
 
+### 2026-08-05 — `checkLinks` uses `node:http`/`node:https`, not `fetch`
+Context: `/reconcile`. S3 chose the raw request modules over `fetch` and recorded the reason only in a
+comment at the top of `check-links.ts`. The reason is load-bearing: `fetch` with
+`redirect: "manual"` yields an opaque, statusless response, so a 301 cannot be told from a 200 by
+status code — and S3.4 requires observing the 3xx as a 3xx without following it anywhere.
+Chosen: Keep `node:http`/`node:https`, and record it here so a rewrite has to argue with a decision
+rather than delete a comment along with the code it explains. The whole 2xx/3xx branch and S3.4 rest
+on the raw status being visible.
+Rejected: `fetch` with `redirect: "follow"` — it makes the status readable again by resolving the
+redirect, and it was the option that would have kept the dependency-free modern API; rejected because
+following the redirect changes what the gate asserts, from *this address answers* to *something
+answers eventually*, which is a different check that S3.4 was not written for. `fetch` with
+`redirect: "manual"` — the opaque response cannot be distinguished from success. Leaving the reason in
+the comment only — the comment lives inside the function most likely to be replaced wholesale.
+Reversibility: cheap — one module, one test file
+
+### 2026-08-05 — The link check does not run on fork pull requests
+Context: `/reconcile`. S3's networked job reads hostnames from `src/content/projects.ts` and requests
+each one from a GitHub-hosted runner. On a `pull_request` event from a fork, those hostnames are the
+pull request author's to choose — an SSRF-shaped abuse vector. Review on PR #10 caught it and the
+follow-up commit added the `if:` guard; no decision was recorded, so the rationale existed only in a
+YAML comment and a commit message.
+Chosen: Skip `link-check` when the event is a `pull_request` whose head repository is not this one.
+It still runs on push and on same-repo pull requests, which is where the deployment gate actually
+sits. Recorded with it: the accepted cost is that `V4` does not run for a fork's pull request, so a
+fork contribution's link correctness is proved only once it is merged and pushed.
+Rejected: Running it on every pull request — the state before review, and it hands an arbitrary
+requester a runner that will fetch a host they named. Requiring an environment approval for the job on
+fork PRs — it keeps the coverage and costs a human decision on every external contribution, for a
+repository that has none. Dropping the job's `pull_request` trigger entirely — it would also stop
+gating same-repo branches, which is every branch that exists.
+Reversibility: cheap — one workflow condition
+Accepted cost: a fork pull request is never link-checked; `AGENTS.md` warns that a check which never
+runs can block a pull request permanently, and this one is deliberately not required
+
+### 2026-08-05 — Inventory copy attested: Ogre's Kitchen answered, every year is 2026
+Context: `/reconcile` found two claims in the tree that the design had reserved to the owner.
+`10-design.md`'s *Open question 3* said Ogre's Kitchen needed a `line` and a `stage` that a model must
+not author, and S2 committed both. Separately, `projects.ts` defines one `FOUNDED = 2026` constant and
+assigns it to all fourteen projects, so `sinceYear` — the displayed "since" year — has exactly one
+possible answer and its derivation is currently nominal.
+Chosen, on the owner's confirmation: both stand. The Ogre's Kitchen copy is owner-supplied, so *Open
+question 3* is marked answered in the `OQ1` style and retained so its citations resolve. Every
+project's recorded year is 2026 and is a fact, not a placeholder, so no code changes and the release
+attestation has one less thing to reconcile.
+Rejected: Treating the Ogre's Kitchen entry as an S2 defect and reverting it — the correct response if
+a model had authored it, and the reason the question was asked before the edit was made. Replacing
+`FOUNDED` with per-project literals to make the derivation non-trivial — it is the same fourteen
+values written fourteen times, and the design's requirement is that the year be *derived* rather than
+typed into copy, which it is.
+Reversibility: cheap for the design edit; the years are content and change with the inventory
+
+### 2026-08-05 — `checkLinks` returns no per-target result on failure, and does not follow redirects
+Context: `/reconcile`. Two limits of the link gate were real in the code and absent from the contract.
+First: `Result`'s error branch carries errors only, so a run with any failing target returns no
+`LinkCheckResult` at all — `status` and `attempts` are unreadable exactly where they diagnose
+something. S3.5 and S3.6 name `attempts` for a failing target and are met against the stub's own
+request and connection counts instead. Second: a 3xx is a pass and the redirect is never followed, so
+a subdomain redirecting to a parked page or a registrar hold satisfies `V4`.
+Chosen: State both in `20-contract.md` and change no code. The failing target's attempt count and
+observed status travel in that target's `VerificationError.detail` and `observed`. `30-slices.md`
+gains a note that S3.5 and S3.6 are checkable only from the stub's end.
+Rejected: A both-branches return type carrying results alongside errors — it makes the two acceptance
+criteria directly assertable, which is the more rigorous option and the one that removes the proxy;
+rejected because `Result` is the single error shape every module in this contract returns, and a
+bespoke type for one function's diagnostics is paid for at every call site that has to unwrap
+something different. Widening `Result` itself to carry partial values — the same cost, spread across
+every module rather than one. Following redirects and checking the final status — it would make the
+gate detect a redirected-away site, and it costs a hop budget, loop handling, and a changed meaning
+for S3.4, for a failure the release attestation already covers.
+Reversibility: cheap — two contract paragraphs and one slice note
+
+### 2026-08-05 — `C14`'s importer set names the call-site role, not Adapter specifically
+Context: `/reconcile`. `C14` closed the set of `projects` importers to "Adapter … and Verification's
+inventory assertion", and Adapter is blocked behind `U1` indefinitely. The implemented set is two test
+files, and `tests/content/inventory.test.ts` described itself as "C14's designated call site" while
+being neither Adapter nor Verification. The invariant as written was satisfied by neither of its named
+importers.
+Chosen: `C14` becomes "the `validateInventory` call site — Adapter once it exists, and until then the
+committed-inventory assertion — and Verification's assertions over the inventory". The comment in
+`inventory.test.ts` is corrected to say it stands in for the call site rather than being it. The
+enforcing check is unchanged; when Adapter lands, its expected-importer list gains one entry.
+Rejected: Moving `tests/content/inventory.test.ts` under `tests/verification/` so it is a Verification
+assertion by location as well as by role — tidier, and it would have made the code compliant with the
+sentence as written; rejected because the file asserts S2.1–S2.7, which are content criteria, and
+relocating a test to satisfy an invariant's phrasing puts it where nobody looks for it. Leaving `C14`
+alone and treating the interim importer as an unwritten exception — the exact shape of gap this
+reconciliation exists to close.
+Reversibility: cheap — one invariant row and one comment
+
+### 2026-08-05 — "Nothing imports Verification" means no repository module, not no file
+Context: `/reconcile`. `20-contract.md` and `10-design.md` both stated the rule absolutely, while
+three test files import `src/verification` — they must, to test it. The enforcing check silently
+narrowed itself to `src` and justified the narrowing in a code comment, so the invariant that shipped
+was not the invariant written down.
+Chosen: Both documents state the rule as "no repository module imports Verification; its own tests
+necessarily do", and name `src` as the enforcement boundary. The check is unchanged and its
+justifying comment shrinks to a pointer, because the rule now says what the code does.
+Rejected: Keeping the absolute wording and adding a named list of excepted test files — more rigorous,
+and it makes each exception visible; rejected because the list grows with every test file and its only
+function would be to re-permit what the rule should never have forbidden. Changing the code to satisfy
+the sentence — there is no way to test a module nothing may import.
+Reversibility: cheap — two sentences and a comment
+
 ### 2026-08-05 — `.claude/session-costs.tsv` is untracked
 Context: PR #8 (S2) and PR #9 (the reconcile pass) both touched this file — the `SessionEnd`
 hook appends a row per session — and merging #9 into #8's branch produced a real conflict: both

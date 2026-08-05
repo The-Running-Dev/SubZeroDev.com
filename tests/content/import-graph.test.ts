@@ -123,11 +123,8 @@ describe("S2.8/S3.7 — nothing imports `projects` except validateInventory's ca
 });
 
 describe("S3.7 — nothing imports Verification", () => {
-  // Scoped to `src`: tests are legitimate consumers of Verification's public
-  // surface, the same way `tests/content/inventory.test.ts` is C14's named
-  // exception for `projects`. What this invariant forbids is a production
-  // module — Content, Composition, Presentation, Adapter, Artifact — reading
-  // Verification, not a test exercising it.
+  // Scoped to `src`, which is the boundary the contract states: no repository
+  // module imports Verification, and its own tests necessarily do.
   const srcDir = resolve(repoRoot, "src");
 
   it("no source file outside src/verification imports it", () => {

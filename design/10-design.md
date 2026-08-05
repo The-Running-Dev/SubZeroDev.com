@@ -256,8 +256,9 @@ import nothing and are imported by nothing.
 **Verification** — owns every assertion: content invariants, derived-value correctness, markup and
 stylesheet agreement, accessibility, built-output shape, browser request capture, link resolution,
 the in-CI image gate, byte identity between the two targets, release attestation and deployment
-read-back. It may read any other module and the built output;
-**nothing imports Verification.** Offline checks run against the output *after* Artifact has finished
+read-back. It may read any other module and the built output; **no repository module imports
+Verification** — its own tests necessarily do, which is the one reading of that rule an
+implementation can satisfy. Offline checks run against the output *after* Artifact has finished
 with it. Networked checks run as a separate CI stage after the build and do not feed content back
 into it. The truth attestation is a required human CI gate bound to the full commit id; it records
 approver, commit and timestamp and cannot be reused by another commit. Exposes nothing.
@@ -484,7 +485,11 @@ image. The next attempt re-pushes; nothing is repaired by hand.
 up.
 
 **Detected by:** a link check over every `Home.Own` URL and every resolved `Home.Within` path. In CI
-it runs after the network-free build and gates deployment, not artifact construction. After deploy
+it runs after the network-free build and gates deployment, not artifact construction. It proves the
+address still answers and no more: a redirect is a pass and is not followed, and the check does not
+run on a fork pull request, where the hostnames it would reach are the pull request's to choose. The
+first limit is written in [`20-contract.md`](20-contract.md) § *Error semantics*; the second is
+workflow configuration and is recorded in [`90-decisions.md`](90-decisions.md). After deploy
 nothing notices, which is the honest limit of the chosen static release boundary. A scheduled check
 is deliberately left to *Open questions* rather than assumed.
 
@@ -750,8 +755,10 @@ and renumbering would rot those citations silently. An answered question keeps i
    while the package's own `30-slices.md` records UI2 as in progress with `0.1.0` as the published
    handoff. One of those is stale. Reporting rather than reconciling, per `AGENTS.md` — neither
    repository is this one.
-3. **What is Ogre's Kitchen?** It has no repository and no subdomain. It needs a `line` and a `stage`,
-   and both are brand material I must not author.
+3. ~~**What is Ogre's Kitchen?**~~ **Answered 2026-08-05: the owner supplied the copy, and S2
+   committed it.** It carries `stage: "Curiosity"`, a `line` and a `question`, and `home` is `none` —
+   it has no repository and no subdomain, which is the entry's whole content. Retained so the
+   citations to it resolve.
 4. **Which repositories are public?** If the page links to source, a link to a private repository is
    a 404 for every visitor but you. I have not checked visibility.
 5. **Does *Effortless Action* go on the page, and in which draft?** `Idea.md` lines 540–604 hold three

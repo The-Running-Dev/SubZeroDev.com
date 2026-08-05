@@ -513,6 +513,19 @@ Concrete policy values:
 `readBuildMarker` reads the format Artifact owns, through Artifact's exported constants. It never
 restates the pattern.
 
+**`checkLinks` returns no per-target result on failure.** `Result`'s error branch carries errors
+only, so a run with any failing target yields no `LinkCheckResult` at all — including for the targets
+that passed. Each failing target's attempt count and observed status therefore travel in that
+target's `VerificationError.detail` and `observed`, which is the only place they are readable. This
+is accepted rather than designed around: `Result` is the one error shape every module returns, and a
+bespoke both-branches type for one function's diagnostics would be paid for at every other call site.
+The cost lands on the acceptance criteria that name `attempts` for a failing target, which are
+checkable only against the stub that answered — see [`30-slices.md`](30-slices.md) § S3.
+
+`checkLinks` does not follow redirects. A 3xx is a pass, per the `LinkNotOk` row below, so a target
+that has begun redirecting to a parked page, a registrar hold or a login wall satisfies `V4`. The
+gate proves an address still answers, not that what answers is still the project.
+
 Every `assert*` function reports **all** faults it finds in one `Result`, not the first. A style
 disagreement with four unmatched classes returns four errors.
 
@@ -524,7 +537,9 @@ error chrome, which is a different page from the one that was built and verified
 exists to catch is a transform applied on one publication path and not the other, and a transform that
 preserves the parse tree still changes what a crawler receives.
 
-Nothing imports Verification.
+**No repository module imports Verification.** Its own tests necessarily do — a module nothing may
+import is a module nothing can test — so the boundary is enforced over `src`, not over the whole
+tree.
 
 ---
 
@@ -649,7 +664,7 @@ export type VerificationError = {
 | Code | Raised when | Retryable | Caller does |
 |---|---|---|---|
 | `LinkUnreachable` | Every attempt for one target failed before a response | Yes, within `linkCheckRetry`; exhaustion is terminal | Fail the gate, deploy nothing |
-| `LinkNotOk` | A target responded outside 2xx/3xx | No | Fail the gate, deploy nothing |
+| `LinkNotOk` | A target responded outside 2xx/3xx. A 3xx is a pass and the redirect is never followed, so a redirected-away target is not detected here | No | Fail the gate, deploy nothing |
 | `MarkerAbsent` | An emitted or served document carries no build marker | No | Fail the build or the read-back |
 | `MarkerDuplicate` | A document carries more than one build marker | No | Fail the build. Artifact's single-injection guarantee is broken |
 | `MarkerMismatch` | The served marker is a valid `CommitId` other than the expected one | Yes, within `deploymentPollRetry` — a cache or an in-flight publish | Keep polling; on exhaustion report `PollExhausted`. From `assertImageIdentity`, not retryable — the image is already built |
@@ -707,7 +722,7 @@ where a separate module checks it, that is said in the row.
 | **C11** | `ecosystemTree` has one group per `Stage` in `stageOrder` order; within a group projects ascend by `id`; every project appears exactly once across all groups | Content |
 | **C12** | `countByStage` has one entry per `Stage` in `stageOrder` order, and its counts sum to `projectTotal` | Content |
 | **C13** | `resolvedHomes` yields one entry per `own` and `within` home and none for `none` | Content |
-| **C14** | Nothing imports `projects` except Adapter, which passes it to `validateInventory`, and Verification's inventory assertion. No derivation function, no Composition entry and no Artifact step reads it | Content |
+| **C14** | Nothing imports `projects` except the `validateInventory` call site — Adapter once it exists, and until then the committed-inventory assertion — and Verification's assertions over the inventory. No derivation function, no Composition entry and no Artifact step reads it | Content |
 | **C15** | `parseCommitId` is the only implementation of the `CommitId` pattern in the repository | Content |
 | **P1** | Nothing in Presentation references a linked font, an external stylesheet, a gradient or an illustration asset | Presentation |
 | **P2** | The rendered page is legible in greyscale | Presentation |

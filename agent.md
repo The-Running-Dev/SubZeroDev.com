@@ -88,6 +88,17 @@ and preferences belong in `AGENTS.md`.
   holding credentials it never uses.
 - **Verify a regression test by reverting the fix.** A test that passes either way guards
   nothing.
+- **An import-boundary check built on named clauses reports a clean graph while three other
+  forms reach the same symbol.** A check enforcing "only these files may import `projects`"
+  shipped green while `import * as ns`, `export * from` and `await import()` each reached it
+  unflagged. Two were found by review, the third only while verifying that report. **Cost: an
+  invariant believed enforced for one import form and unenforced for three, merged.** Decide
+  reachability, not naming, and fail closed on a clause shape the check does not recognise.
+- **A networked CI job triggered by `pull_request` reaches hosts the pull request controls.**
+  A link-check job read hostnames from a source file and requested each from a hosted runner,
+  on forks included. **Cost: caught in review and fixed in a follow-up commit on the same
+  branch.** Any job that turns repository content into outbound requests needs its fork-PR
+  behaviour decided when it is written.
 - **A fix that only changed the odds is not a fix.** An intermittent failure went away when
   test parallelism was disabled — three consecutive clean runs — and came back on the fourth.
   The real cause was connection pooling handing out a stale schema snapshot, found by a tight
