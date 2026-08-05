@@ -202,11 +202,17 @@ build ──┬──► image-gate ──┐
 
 | Job | Discharges | Runs on | Blocked by |
 |---|---|---|---|
-| `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `V1`, `V2`, `V3`, `V13`, `X4` | push + all PRs | `U1`, `U7` |
+| `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `V1`, `V2`, `V3`\*, `V13`, `X4` | push + all PRs | `U1`, `U7` |
 | `image-gate` — build, run and gate the image before any push | `V10`, `V11`, `V12` (container half) | push + all PRs | `U1`, `U7` |
 | `link-check` — **already implemented** | `V4` | push + same-repo PRs | — |
 | `attestation` — human gate bound to the commit | `V5` | master push | `U3` |
-| `publish` — branch-head check, deploy and push, read-back | `V6`–`V9`, `V12` (Pages half), `V14` | master push | `U1`, `U3`, `U7` |
+| `publish` — branch-head check, deploy and push, read-back | `V6`\*–`V9`, `V12` (Pages half), `V14` | master push | `U1`, `U3`, `U7` |
+
+\* `V3` and `V6` have **no callable Verification surface today** — no `assert*` function discharges
+either, per [`90-decisions.md`](90-decisions.md) § *Open*. The table names the job each will run in
+once that surface exists; neither is runnable as this table stands, and a slice built from this table
+before `/contract` closes the gap would either skip the check silently or invent a signature `/slices`
+is not permitted to invent.
 
 Three constraints follow from the design rather than from preference. A slice that re-decides any of
 them fails silently:

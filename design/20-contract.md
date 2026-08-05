@@ -740,7 +740,7 @@ where a separate module checks it, that is said in the row.
 | **R1** | Every emitted document carries exactly one build marker, and it carries the commit being built | Artifact |
 | **R2** | `missRootEntry` and `missEmittedEntry` are byte-identical in the finished tree | Artifact |
 | **R3** | Artifact compiles nothing, bundles nothing and resolves no module; the only change it makes to a document is the marker | Artifact |
-| **R4** | The emitted server configuration resolves every unknown path to `missRootEntry` with status 404, adds no response header beyond those the protocol and the file's content type require, and executes nothing per request | Artifact |
+| **R4** | The emitted server configuration resolves every unknown path to `missRootEntry` with status 404; sets no cookie, no cache-control directive chosen by application logic, and no tracking or rewrite header; and executes nothing per request. A response header that is an unconfigured byproduct of serving a static file over HTTP — a content-type, a content-length, a last-modified time, an entity tag, the server's own identifying header — is not a violation | Artifact |
 | **R5** | `missEmittedEntry` is the package's emitted entry for Adapter's `missPath` — checked against the emitted tree, never assumed | Artifact |
 | **V1** | No document reaches publication unless it carries the exact commit's marker | Verification |
 | **V2** | Loading a route document triggers zero requests other than the navigation document itself | Verification |
@@ -893,8 +893,11 @@ moment Artifact had to emit a configuration file, because the file's format belo
 
 `try_files $uri $uri/ =404` with `error_page 404 /404.html` expresses the requirement. Settling this
 also reworded `R4`: "adds no header of its own" was unsatisfiable, since HTTP requires headers and
-every server sends an identifier, and it now reads "adds no response header beyond those the protocol
-and the file's content type require".
+every server sends an identifier. A later pass (PR #12 review) found the rewording itself untestable —
+"the protocol and the file's content type require" named no boundary a verifier could check — and
+sharpened it to name the forbidden category directly: no cookie, no application-chosen cache-control
+directive, no tracking or rewrite header, with the unconfigured byproducts of serving a static file
+carved out by name rather than by an open-ended "require".
 
 **Still to write:** the emitted configuration's shape, `finalizeArtifact`'s third duty, and the
 `ArtifactReport` field that names the emitted config. `V12` verifies the behaviour whatever the file
