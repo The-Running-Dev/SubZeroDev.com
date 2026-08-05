@@ -41,7 +41,9 @@ function requestOnce(url: string, timeoutMs: number): Promise<number | null> {
 
     const requester = target.protocol === "https:" ? httpsRequest : httpRequest;
     const req = requester(target, { method: "GET", timeout: timeoutMs }, (res) => {
-      res.resume();
+      // Only the status code is needed; destroying rather than draining stops
+      // a large or continuously streaming body from prolonging this request.
+      res.destroy();
       settle(res.statusCode ?? null);
     });
     req.on("timeout", () => {
