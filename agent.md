@@ -23,6 +23,12 @@ and preferences belong in `AGENTS.md`.
   pass over a spec set found twelve inconsistencies, including a functional bug where a
   derived-path list omitted a field, making one section's behaviour impossible under
   another's rules.
+- **A note recording a divergence is closed by the edit it names, in the same commit.** A contract
+  entry flagged that a design clause contradicted it and handed the fix to the next reconciliation.
+  The clause was fixed; the note was not, so it went on asserting a conflict that no longer existed.
+  The next pass paid a full re-read of the design's module boundaries plus git archaeology to
+  establish that. A note about another file is a claim nothing re-checks — it survives its own
+  resolution unless the edit and the note land together.
 - **Search the concept, not the phrasing you just edited.** Striking a requirement from
   seven places, a grep for the exact removed phrase returned clean — it could not match the
   same requirement worded differently, and six stale statements survived a check reported as
