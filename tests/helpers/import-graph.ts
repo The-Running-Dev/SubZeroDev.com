@@ -97,6 +97,34 @@ function resolveModuleFile(fromFile: string, specifier: string): string {
   return target.endsWith(".ts") ? target : `${target}.ts`;
 }
 
+// A violation is a file outside `targetDir` whose relative import resolves
+// inside it — the inverse of `importViolations`, which checks that a module
+// stays inside its own boundary rather than that nothing reaches in. Used for
+// "nothing imports Verification" (contract's Verification § public
+// signatures), where the boundary is enforced on importers, not the module
+// itself.
+export function importsIntoDir(
+  targetDir: string,
+  entries: readonly SourceEntry[],
+): ImportViolation[] {
+  const targetAbs = resolve(targetDir);
+  const isInsideTarget = (file: string): boolean =>
+    !relative(targetAbs, resolve(file)).startsWith("..");
+
+  const violations: ImportViolation[] = [];
+  for (const { file, source } of entries) {
+    if (isInsideTarget(file)) continue;
+    for (const specifier of importSpecifiers(source)) {
+      if (!specifier.startsWith(".")) continue;
+      const resolved = resolve(dirname(file), specifier);
+      if (isInsideTarget(resolved)) {
+        violations.push({ file, specifier });
+      }
+    }
+  }
+  return violations;
+}
+
 // The original (pre-alias) names bound by a named clause, e.g. `{ projects }`
 // or `{ projects as p }` both yield "projects".
 function namedBindingNames(clause: ts.NamedImports | ts.NamedExports): string[] {

@@ -64,3 +64,8 @@ export type BuildContext = {
   readonly commit: CommitId;
   readonly utcYear: Year;
 };
+
+export type ResolvedHome = {
+  readonly projectId: ProjectId;
+  readonly url: AbsoluteUrl;
+};
