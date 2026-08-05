@@ -7,6 +7,93 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 
 ---
 
+### 2026-08-05 — `Result` and `Branded` live in Content; `Shared` is a grouping, not a module
+Context: `/reconcile`. The contract groups both under a `### Shared` heading that names none of the six
+modules the document declares, so neither had a module home. S1 put them in `src/content/types.ts` and
+re-exported them, which makes Content's implemented public surface carry two exports the contract's
+Content section does not list — and makes "Artifact imports `CommitId` and `parseCommitId` from Content
+and nothing else" false the day Artifact is written, since `finalizeArtifact` and `injectBuildMarker`
+both return a `Result`. The same applies to every `assert*` in Verification.
+Chosen: Content owns both. `Shared` stays a reading aid in the contract with a line saying so. The
+import sentences widen: Artifact imports `CommitId`, `parseCommitId` and `Result`; `10-design.md`'s
+"Depends on **Content** for the commit-id type only" and the dependency-direction block change to
+match. `C1` needs no exception, because a module that owns these types imports nothing to obtain them.
+`A3` is deliberately **not** widened — Adapter destructures a returned `Result` and needs no import of
+the type name.
+Rejected: A seventh `Shared` module — the tidier boundary, and it would keep Content's surface to
+Content concepts; rejected because it buys a boundary around two type aliases that carry no behaviour
+and that nothing can misuse, at the cost of a carve-out in `C1`, and `AGENTS.md` holds that a rule with
+one carve-out is a rule the next author finds a second one in. Reading "and nothing else" as governing
+only value imports, since both types are erased at compile time — cheapest, and rejected because the
+exemption would be unwritten and unbounded, silently licensing any type-shaped import from Content into
+Artifact, which is the door `C14` and `A3` were narrowed to close.
+Reversibility: cheap — three sentences, and S1 is small enough that extracting a real `Shared` module
+later costs a file move
+
+### 2026-08-05 — `HomeWithinOriginEscape` covers root-relativity, not only origin change
+Context: `/reconcile` found the one genuine code-versus-contract divergence in S1. `validate.ts`
+rejects a `home.path` that does not begin with `/`, reporting `HomeWithinOriginEscape`. A path of
+`lucifer` resolves *within* the parent origin, so it satisfies `C7` and that error row as written and
+the code rejects it anyway. The three-clause definition was present in the `RootRelativePath` type row
+all along; the error row and the invariant had each kept only one clause.
+Chosen: The documents move. The error row becomes "`home.path` is not root-relative, or resolving it
+against the parent origin changes the origin"; `C7` regains the two structural clauses. The code keeps
+its behaviour, and its `detail` string is corrected — it had asserted that a path "does not resolve
+within the parent origin" about paths that do resolve within it.
+Rejected: A separate `HomeWithinPathNotRootRelative` code, following the `UnknownPathNotHandled` split
+recorded below — the more rigorous option, and rejected because that split separated faults with
+different causes and different fixes, whereas these two share both, and it would make S1.3's committed
+"twelve remaining `ContentErrorCode` values" a stale count in a merged acceptance criterion. Narrowing
+the code to match `C7` exactly — it makes the documents agree by making the code wrong: `home.path:
+"lucifer"` would validate and resolve against an undefined base.
+Reversibility: cheap — one table row, one invariant clause and one string
+
+### 2026-08-05 — S1's tooling: vitest, the TypeScript compiler API, and strict flags as enforcement
+Context: `/reconcile`. S1 added `vitest`, `typescript` and `@types/node` with no decision-log entry,
+which `AGENTS.md`'s dependency hard rule requires. Two distinct choices were buried in that: the test
+runner, and the mechanism enforcing `C1` — `tests/helpers/import-graph.ts` walks the TypeScript AST, so
+`typescript` is a test-time library and not only the compiler. Neither the design nor the contract names
+a runner, and every acceptance criterion in all three slices is expressed as a test one runs.
+Chosen: Keep both, and record them. vitest is the runner; the TypeScript compiler API is the
+enforcement mechanism for `C1` and, per S1.10, S2.8 and S3.7, for `C14` and Verification's boundary
+too. Recorded with it: vitest brings **vite** into the dependency tree as test infrastructure — the
+design's "this repository owns no build system" is about the site build and is not breached, and this
+entry exists so nobody rediscovers the lockfile entry as a design breach. Also recorded: `tsconfig`'s
+strict flags are contract enforcement, not style. `exactOptionalPropertyTypes` is the sole mechanism
+behind the contract's "absent, never `undefined`-valued", so
+`tests/types/optional-properties.type-check.ts` now asserts it — verified by setting the flag to
+`false` and confirming three `TS2578` failures, one per optional field, then restoring it.
+Rejected: `node:test` — it would keep vite and vitest out of the tree entirely, which reads better
+against a design that owns no build system, and it was the serious alternative; rejected because it
+means rewriting three merged, green test files for tooling that works, and its thinner assertion
+ergonomics would be felt most by the fixture-heavy S1.3 table. An eslint `no-restricted-imports` rule
+or dependency-cruiser for the import boundary — either is the conventional choice; rejected because the
+AST walk needs no additional dependency beyond the compiler already present, and the "has teeth" cases
+in `import-graph.test.ts` show a text-based rule would have flagged specifiers inside comments and
+strings. Three separate entries instead of one — more precise per-item reversibility; rejected as a
+long log for one slice's scaffolding. Enforcing the optional-property rule inside `validateInventory` —
+runtime defence against a fault that cannot reach runtime, since these values come only from
+hand-authored source the compiler sees.
+Reversibility: cheap for the runner; expensive for the AST mechanism, which three acceptance criteria
+ride on
+
+### 2026-08-05 — `30-slices.md`'s staleness is annotated in place, not re-sliced
+Context: `/reconcile`. The revision that moved rendering into this repository left `30-slices.md`
+committed against the superseded contract. It cited "the four requirements" of `U1` where there are now
+three, two of them required; its opening paragraph named the root `404.html`, the build marker and
+Composition's route entries as unwritten when the contract writes all three; and its *Blocked* list
+still blocks the marker format on `U1`. `parseCommitId` and `C15` belong to no slice at all.
+Chosen: Correct the factual claims — the count, and the opening paragraph — and add one note under
+*Blocked* naming what the contract has since released. Stating what the contract now covers is
+reconciliation; deciding what slice that becomes is not, and this pass does not make it.
+Rejected: Fixing the stale count only — the conservative reading of `/reconcile`'s remit, and rejected
+because the *Blocked* list is the more consequential half: a miscounted package ask misleads nobody,
+while a list that hides contract-ready work stops a session picking it up. Leaving the document
+untouched with this report as the record — rejected because `AGENTS.md` names prose in a conversation
+as where work goes to be forgotten. Re-slicing the released work here — not this command's, and
+`AGENTS.md` reserves to the owner the decision of when a phase repeats.
+Reversibility: cheap — one paragraph, one count and one note
+
 ### 2026-08-05 — Adapter is the `validateInventory` call site and owns the build's non-zero exit
 Context: Answers the `U8` the entry two below left open. The package CLI loads Adapter, Adapter needs
 an `Inventory`, and only Adapter or Composition can supply one — a module above Adapter has no channel

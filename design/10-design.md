@@ -220,8 +220,12 @@ discovers, because it has to be handed to the package as a string.
 requires. It exposes nothing else. It is the only module that turns data and tokens into markup.
 
 **Adapter** — owns the route declarations, their static head metadata, and the single origin constant
-those URLs are built from. Depends on **Composition** and the **external package**. It obtains
-everything renderable from Composition and reads nothing from Content or Presentation directly, so
+those URLs are built from. Depends on **Composition**, the **external package**, and **Content** for
+four named things only: `projects`, `validateInventory`, `BuildContext` and `parseCommitId`. It is the
+module the package CLI loads, so it is the one place in the import graph where the build reads its
+entry conditions and the last point at which it can still refuse to produce anything — it validates
+the inventory exactly once and, on failure, reports every error and exits non-zero, rendering nothing.
+Everything **renderable** still comes from Composition, and it reads nothing from Presentation, so
 there is exactly one path from data to markup. Exposes the adapter configuration the package's CLI
 consumes.
 
@@ -239,8 +243,8 @@ where a host convention expects it, the second tells a host with no such convent
 across modules they would drift, and the failure is silent — a container that answers every unknown
 path with 200 looks fine until a crawler indexes it.
 
-Depends on **Content** for the commit-id type only, and on the emitted output. It takes the commit
-value from the build environment. **This is not a build system.** It compiles nothing, bundles
+Depends on **Content** for `CommitId`, `parseCommitId` and the shared `Result` type, and on the
+emitted output. It takes the commit value from the build environment. **This is not a build system.** It compiles nothing, bundles
 nothing and resolves no module; it copies one file, rewrites a string in the others, and emits a
 static configuration. Owning it here removes two of the four things that would otherwise block this
 repository on another repository's release.
@@ -280,8 +284,8 @@ import.
 
 ```
 Composition ──► Content, Presentation
-Adapter ──────► Composition, External package
-Artifact ─────► Content (commit-id type), emitted tree
+Adapter ──────► Composition, External package, Content (validation entry conditions)
+Artifact ─────► Content (CommitId, parseCommitId, Result), emitted tree
 Verification ─► any module, emitted tree, running image
 
 Package CLI ──loads──► Adapter ──emits──► tree ──► Artifact ──► publishable tree

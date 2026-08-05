@@ -37,6 +37,12 @@ export type Result<T, E> =
 `Result` carries a non-empty error list. No function in this contract throws, and no error is a
 string.
 
+**`Shared` is a grouping, not a seventh module.** Both types live in **Content** and are exported from
+it, which is why `C1` needs no exception: a module that owns them imports nothing to obtain them.
+Every module returning a `Result` therefore imports it from Content, and the import lists below name
+it where that applies. A separate module was rejected — it would buy a boundary around two type
+aliases that carry no behaviour, at the cost of a carve-out in `C1`.
+
 ### Content
 
 ```ts
@@ -430,7 +436,8 @@ Emitting the container's server configuration is Artifact's third duty and is **
 file's format is the server's, and which server serves the tree is undetermined. `ArtifactReport`
 gains a field for it when that closes. See [`U7`](#u7--which-server-serves-the-container-tree).
 
-Artifact imports `CommitId` and `parseCommitId` from Content and nothing else from this repository.
+Artifact imports `CommitId`, `parseCommitId` and `Result` from Content, and nothing else from this
+repository.
 
 ### Verification
 
@@ -565,7 +572,7 @@ first only.
 | `HomeOwnUrlInvalid` | `home.url` fails the `AbsoluteUrl` constraint | set | `"home.url"` |
 | `HomeWithinParentMissing` | `home.parent` is not an `id` in the inventory | set | `"home.parent"` |
 | `HomeWithinParentNotOwn` | `home.parent` exists but its own `home.kind` is not `"own"` | set | `"home.parent"` |
-| `HomeWithinOriginEscape` | Resolving `home.path` against the parent origin changes the origin | set | `"home.path"` |
+| `HomeWithinOriginEscape` | `home.path` is not root-relative, or resolving it against the parent origin changes the origin | set | `"home.path"` |
 | `EscapedFromTargetMissing` | `escapedFrom` names no project in the inventory | set | `"escapedFrom"` |
 | `EscapedFromSelfReference` | `escapedFrom === id` | set | `"escapedFrom"` |
 | `EscapedFromCycle` | The `escapedFrom` edge set contains a cycle | each project on the cycle | `"escapedFrom"` |
@@ -693,7 +700,7 @@ where a separate module checks it, that is said in the row.
 | **C4** | Every `ProjectId` matches the pattern and length above | Content |
 | **C5** | Every `year` is a four-digit integer no greater than `BuildContext.utcYear` | Content |
 | **C6** | Every `home.parent` names an existing project whose own `home.kind` is `"own"` | Content |
-| **C7** | For every `within` home, `new URL(path, parentOrigin).origin === parentOrigin` | Content |
+| **C7** | For every `within` home, `path` begins with `/`, does not begin with `//`, and `new URL(path, parentOrigin).origin === parentOrigin` | Content |
 | **C8** | Every `escapedFrom` names an existing project, never itself, and the edge set is acyclic — the relation is a forest | Content |
 | **C9** | `stageOrder` contains each `Stage` exactly once, in lifecycle order | Content |
 | **C10** | `sinceYear(inventory)` equals the minimum `year` in the inventory | Content |
