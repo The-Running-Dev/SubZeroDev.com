@@ -8,6 +8,6 @@ export const stageOrder: readonly Stage[] = [
   "Prototype",
   "Architecture",
   "Infrastructure",
-  "Reusable",
   "Escaped",
+  "Reusable",
 ];
