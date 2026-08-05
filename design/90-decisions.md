@@ -7,6 +7,24 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 
 ---
 
+### 2026-08-05 — `.claude/session-costs.tsv` is untracked
+Context: PR #8 (S2) and PR #9 (the reconcile pass) both touched this file — the `SessionEnd`
+hook appends a row per session — and merging #9 into #8's branch produced a real conflict: both
+sides had appended disjoint rows since the file's initial commit. Resolved as the union, sorted
+by `started`, 7 + 8 overlapping down to 12 rows, none lost. The next two parallel branches would
+hit the identical conflict, for the identical reason, forever — the file is local telemetry, not
+project content, and nothing reads it back through git.
+Chosen: Remove it from tracking (`git rm --cached`) and add `.claude/session-costs.tsv` to
+`.gitignore`. The `SessionEnd` hook keeps writing to the same path; only git stops
+version-controlling it, and each contributor's local history stays intact.
+Rejected: Leaving it tracked and resolving the conflict each time it recurs — cheap once,
+compounding every time two branches run a session and merge; the mechanical-conflict cost this
+document exists to name. Making the hook append to a per-branch or per-date file instead — solves
+the merge conflict but turns one small history into a directory of fragments for a metric nobody
+diffs. Deleting the file outright — discards the nine rows already recorded for no reason; the
+data is fine, only its presence in git history was the problem.
+Reversibility: cheap — re-tracking is one `git add -f` and a `.gitignore` line removed
+
 ### 2026-08-05 — `Result` and `Branded` live in Content; `Shared` is a grouping, not a module
 Context: `/reconcile`. The contract groups both under a `### Shared` heading that names none of the six
 modules the document declares, so neither had a module home. S1 put them in `src/content/types.ts` and
