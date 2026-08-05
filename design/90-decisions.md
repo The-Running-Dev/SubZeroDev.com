@@ -5,6 +5,132 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
+- **Verify whether a document with no declared icon triggers a `/favicon.ico` request, before the `V2`
+  slice.** `V2` permits zero load-triggered requests other than the navigation document. Browsers
+  auto-request `/favicon.ico` when no icon is declared, which would breach it; a declared data-URI
+  icon suppresses the request, and `A2` forbids a linked one. That reasoning is what made the icon
+  non-optional in the `U2` ruling below, and it is **unverified** — it also depends on the still-open
+  `file://`-versus-static-server choice for the `V2` driver, since a `file://` load may not issue the
+  request at all. If it turns out no request is made, the icon becomes a brand choice rather than a
+  `V2` requirement, and the ruling stands on its own but for a different reason.
+- **Candidate invariant: no mono-styled text originates outside a Content derivation.** The `U2`
+  ruling reserves the mono stack for year, stage, project id and `escapedFrom` edges — which is
+  exactly the set `X1` already requires to come from a Content derivation rather than a typed
+  literal. That makes the typeface a visible assertion, and the pairing is checkable against
+  `ComposedRoute`. Whether it becomes an invariant is `/contract`'s call, not this session's.
+- **Write the `U2` ruling into `20-contract.md`.** The decisions below are made and recorded; the
+  contract's § *Presentation*, its `U2` block, Adapter's `themeColor` and `icons` rows, and `U9`'s
+  `P2` entry all still describe the surface as unwritten. That is `/contract`'s work.
+
+---
+
+### 2026-08-06 — `P2` is a contrast check plus a hue-independence rule, and `rule` is exempt by name
+Context: Answering `U2` required saying what "the rendered page is legible in greyscale" is measured
+as, which [`U9`](20-contract.md#u9--accessibility-has-no-verification-surface) names as blocked on the
+token set. Computing it first showed the invariant's name is misleading: WCAG's relative-luminance
+formula is already hue-independent, so desaturating the palette barely moves a contrast ratio. A
+contrast-only check would be a contrast invariant wearing a greyscale name.
+Chosen: Two parts. (1) Every resolved foreground/background pair meets WCAG AA — 4.5:1 for body text,
+3:1 at `--step-2` and above. (2) No meaning is carried by hue alone, which obliges the `link` primitive
+to declare a `text-decoration` or a font-weight distinct from body. Part 2 is what makes the invariant
+say greyscale. Measurement is what justified it: the chosen `--link` #6E92C8 against `--fg` #E8E8E9 is
+**2.60:1**, so in greyscale a link is not separable from body text at all, and the underline is the
+only thing carrying link affordance. `--rule` #252527 sits at **1.25:1** against `--bg` and is
+**exempt**, named explicitly in the checker rather than skipped by omission — record separation is
+carried by `--space-1`, so a divider reinforces and never signals, and WCAG's 3:1 applies to non-text
+content required to understand the page.
+Rejected: WCAG AAA (7:1 body, 4.5:1 large) with the same two-part shape — measured against this
+palette, `--fg` clears it at 15.65:1 but `--fg-muted` (5.71:1) and `--link` (6.03:1) both miss, so
+adopting it would force `--fg-muted` toward `--fg` and take the meta row's visual recession with it;
+rejected as trading typographic hierarchy for a standards tier. Contrast-only at AA — simplest and
+fully automatable with no judgement calls; rejected because the one real greyscale failure this
+palette can produce is the 2.60:1 link, and contrast-only is precisely the check that misses it.
+Brightening `--rule` to roughly #4A4A4E to clear 3:1 with no exemptions — rejected because visible
+rules at that contrast pull the page toward a ruled table and away from the whitespace-carried
+minimalism the primitive set was chosen for. Dropping the `rule` primitive so the question disappears
+— rejected because it reopens the closed six-primitive set and long record lists lose their one
+visual anchor.
+Reversibility: cheap for the threshold and the exemption — both are the checker's constants and this
+entry. Expensive for part 2, which the `link` primitive's rules now depend on.
+
+### 2026-08-06 — `U2` answered: Presentation's token set, primitives and stylesheet assembly
+Context: `U2` was the last unwritten interface on the render path. Composition depends on
+Presentation and Adapter on Composition, so nothing that emits a document could be sliced until it
+was authored, and the contract held it as brand material needing the owner rather than a model.
+`Idea.md` fixes the direction — minimal, dark, typography-first, large whitespace, no gradient, no
+illustration, no webfont — and `00-brief.md` settles that the apex has *no* genre, being "the parent
+voice unstyled". Neither names a token, a scale step or a primitive.
+Chosen: Authored whole, values and structure together, so each was chosen against the others.
+
+- **Typefaces.** System sans for prose; system mono reserved for data — year, stage, project id and
+  `escapedFrom` edges. Prose is never mono.
+- **Type scale.** Ratio 1.25, five steps and no more: `0.8 / 1 / 1.25 / 1.563 / 1.953rem`.
+- **Spacing.** The same 1.25 ratio, with a spacing token advancing *two* steps of it — so the
+  effective ratio is 1.25² = 1.5625, and the design has exactly one ratio. Five steps:
+  `0.75 / 1.17 / 1.83 / 2.86 / 4.47rem`.
+- **Palette.** Four neutrals and one accent: `--bg` #0F0F10, `--fg` #E8E8E9, `--fg-muted` #8C8C8F,
+  `--rule` #252527, `--link` #6E92C8. The six lifecycle stages carry **no** colour; the label is the
+  signal.
+- **Primitives.** A closed set of six — `page`, `stack`, `entry`, `meta`, `rule`, `link` — each a
+  class name exported as a typed constant paired with the CSS rules it requires. Composition
+  references primitives by name and cannot invent a class. Adding a seventh is a contract amendment.
+- **Stylesheet assembly.** Each primitive carries its own CSS text; a route's `stylesheet` is the
+  token block plus the rules of exactly the primitives that route referenced. `X4` therefore verifies
+  a property that is already structurally true rather than enforcing one.
+- **Measure.** `--measure: 34rem`, roughly 65 characters at `--step-0`.
+- **`themeColor`.** `#0F0F10`, derived from `--bg` rather than chosen separately.
+- **Icon.** An inline SVG letterform — the glyph `0`, for sub-*zero* — in `--fg` on `--bg`, embedded
+  as a data URI in `icons[].href` per `A2`. Roughly 180 bytes, legible at 16px.
+
+Rejected: **System mono throughout** — the strongest reading of "the engineering should carry the
+design", rejected because mono-everything *is* a genre, the terminal, and that genre is Platform's;
+the apex taking one would make the parent read as one of its own children. **System serif for prose**
+— closest to a written record and a strong match for the deadpan voice, rejected on the same ground,
+the essay being a genre the brief reserves for the children. **Sans alone with no mono** — rejected
+because reserving mono for data makes the typeface mark exactly the set `X1` governs, which is worth
+more than the simplicity of one stack. **A 1.333 type scale** — more dramatic and the conventional
+reading of typography-first, rejected because the top step starts to read as a marketing hero.
+**A 1.2 scale over six steps** — the most restrained, rejected because hierarchy stops being visible
+at a glance and the page reads flat rather than deliberate. **A colour per lifecycle stage** —
+genuinely useful information design, rejected for six more contrast pairs to verify and for edging
+toward the status-page genre. **A palette with no accent at all** — makes `P2` trivially true, rejected
+because link affordance would rest entirely on underline and the site would have no colour to build on.
+**Warm graphite with a rust accent, and true neutral with amber** — both carried more character;
+rejected because a chosen warmth or a phosphor amber is a *style*, and the apex's whole claim is that
+it has none. **Two primitives with the rest as element selectors** — the plainest option and legible as
+HTML with no stylesheet at all, rejected because `X4`'s class half goes nearly vacuous and the check
+would have to be extended to element selectors to still mean anything. **Primitives as functions
+returning markup** — would make `X4` true by construction, rejected because it moves page structure out
+of Composition, which the design gives Composition ownership of. **One full stylesheet with unused
+selectors stripped per route** — simpler to author, rejected because correctness would then depend on
+the stripping step and `X4` becomes the only thing between a bug there and a wrong page.
+**Hand-maintained per-route stylesheets** — rejected because `X4` failures become routine maintenance
+noise rather than a signal. **An `SZ` or `szd` wordmark** — more conventionally identifiable, rejected
+because two or three glyphs turn to mush at 16px and both read as a logo, a register the apex avoids.
+**Inline PNG icons at two sizes** — guaranteed identical rendering and consistent with the house raster
+rule, rejected for several KB inlined into every document and a mark that is a binary rather than
+readable in source. **Declaring no icon at all** — `A2` would stay vacuously true, rejected on the
+`V2` favicon reasoning now staged under `## Open` for verification.
+
+Also rejected, at the outset: **splitting `U2` into a contract-authored structural half and an
+owner-supplied values half**, which would have unblocked Composition immediately and left the hexes to
+be transcribed like S2's `line` and `stage`. Rejected by the owner in favour of authoring it whole, so
+that the scale ratio, the palette and the primitive set were chosen against one another rather than
+one being fitted to the others afterwards.
+
+Recorded with it, because it was a defect in the options as put: the spacing scale was first offered
+as "the same 1.25 ratio, five steps" over the range `0.75–5.86rem`. Those numbers are not a 1.25
+scale — they run at ×2.0, ×1.60, ×1.563, ×1.563 — and the arithmetic rules the label out entirely:
+five steps at 1.25 span 2.44×, where that range is 7.81× and would need about nine. The
+two-steps-per-token resolution above is what preserves the single ratio the option was chosen for.
+Rejected with it: nine single-step tokens reaching the same endpoints, rejected because most would
+never be referenced and an unused token is the drift a closed primitive set exists to prevent; two
+ratios, 1.25 for type and 1.5 for space, rejected as the thing the single-ratio choice was made to
+avoid; and keeping the previewed numbers as an admittedly hand-tuned scale, rejected because there
+would be no principle to appeal to when a sixth value is wanted.
+Reversibility: expensive — this is the visual identity, and Composition, Adapter's metadata, `X4`'s
+assembly mechanism and `P2`'s checker are all written against it.
+
 ---
 
 ### 2026-08-06 — `checkLinks` requests `GET`, not `HEAD`
