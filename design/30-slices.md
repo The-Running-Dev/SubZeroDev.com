@@ -13,15 +13,17 @@ caller-supplied body, and **could not** omit its entry script when one was given
 `LandingPageConfig`, its route declarations and their metadata, Artifact's server configuration, and
 the two `assert*` signatures `V3` and `V6` previously lacked.
 
-**What still blocks the render path is [`U2`](20-contract.md#u2--presentations-token-set-and-primitives)
-— Presentation's token set — and it needs the owner, not a release.** Composition depends on
-Presentation and Adapter on Composition, so nothing that emits a document can be sliced until it is
-authored. Each route's title, description and social-image metadata are owner-supplied copy on the
-same footing.
+**Nothing blocks the render path any longer.**
+[`U2`](20-contract.md#u2--presentations-token-set-and-primitives) — Presentation's token set, its
+primitives and the per-route stylesheet assembly — was answered by the owner and written into the
+contract on 2026-08-06, so `palette`, `primitives`, `themeColor`, `iconDataUri` and `stylesheetFor`
+are all specified. What is still unwritten is owner-supplied copy: each route's title and description,
+the page prose, and whether a social image asset exists
+([`U6`](20-contract.md#u6--whether-a-social-image-asset-exists)).
 
 `/slices` may not introduce a signature the contract does not carry. That rule is why the three units
-below stop where they do; it is no longer what stops the publication work, which stops on `U2` and on
-owner-supplied copy. The entries under [*Blocked*](#blocked) are corrected in place — deciding what
+below stop where they do; it no longer stops the publication work, which now stops on owner-supplied
+copy alone. The entries under [*Blocked*](#blocked) are corrected in place — deciding what
 slice the released work becomes is `/slices`', and this pass does not make it.
 
 Three units remain fully specified, independently valuable, and deliverable now. They are below.
@@ -158,14 +160,14 @@ because the link check consumes it. The rest arrive with the page.
 Nothing below is a slice. Each names what is missing and the condition that releases it. No slice
 number is allocated until the contract can carry the work.
 
-### Was blocked by `U1` — released at `0.3.0`; now blocked by `U2`
+### Was blocked by `U1` — released at `0.3.0`; and by `U2` — answered 2026-08-06
 
-- Presentation's token set and primitives, and invariants `P1`–`P5`. `P1` and `P5` are blocked by `U2`
-  alone. `P2`–`P4` need `U2` **and**
-  [`U9`](20-contract.md#u9--accessibility-has-no-verification-surface): the token set is what they are
-  maintained against, and `U9` is the unwritten Verification surface they would be checked *through*.
+- Presentation's token set and primitives, and invariants `P1`–`P7`. With `U2` answered, `P1` and
+  `P5`–`P7` are blocked by nothing. `P2`–`P4` still need
+  [`U9`](20-contract.md#u9--accessibility-has-no-verification-surface) — the unwritten Verification
+  surface they would be checked *through*; the token set they are maintained against now exists.
 - Composition's two route entries, all page prose, and invariants `X1`–`X3`.
-- Adapter's `LandingPageConfig`, the route declarations and their metadata, and invariants `A1`–`A2`.
+- Adapter's `LandingPageConfig`, the route declarations and their metadata, and invariants `A1`–`A7`.
   The `origin` constant is written in the contract but has no consumer until then.
 - `readBuildMarker` and the marker format, and invariant `V1`.
 - `pollForCommit`, the deployment critical section and the read-back, and invariants `V6`–`V8`.
@@ -183,12 +185,14 @@ enumerated in [`20-contract.md`](20-contract.md) § `U1` — two required, one p
 against the published source. `U4` pins it exactly.
 
 > **What the list above now means — corrected by `/reconcile`, not re-sliced.** Every entry needing a
-> package capability is released. Every entry needing an *emitted document* is still blocked, but by
-> `U2` — Presentation's token set — since Composition cannot be written without it and nothing above
-> Composition can be written without Composition. The social-image entry (`U6`) and the route titles
-> and descriptions are owner-supplied copy, blocked by neither.
+> package capability is released, and `U2` — the last thing blocking an emitted document — was
+> answered and written on 2026-08-06. **Nothing above is blocked.** The social-image entry (`U6`), the
+> route titles and descriptions and the page prose are owner-supplied copy, which is a different thing
+> from a block.
 >
-> Fully specified and blocked by nothing, belonging to no slice: `parseCommitId` and `C15`; the marker
+> Fully specified and blocked by nothing, belonging to no slice: Presentation's whole surface;
+> Composition's `composeApex` and `composeMiss`, whose prose is copy rather than interface; Adapter's
+> route declarations and default export, less the copy fields; `parseCommitId` and `C15`; the marker
 > format and its constants — `buildMarkerPrefix`, `buildMarkerSuffix`, `buildMarker`,
 > `injectBuildMarker`, `readBuildMarker`; `finalizeArtifact` and `serverConfig`; and the five Content
 > derivations listed under [*Not sliced, and why*](#not-sliced-and-why), whose sole consumer remains
@@ -204,7 +208,7 @@ were written; the storage mechanism and how the function obtains a record were n
 commit from the run's `head_sha`; the type carries `commit` and `approver`, and the first parameter is
 `Attestation | null` so `AttestationAbsent` has a producer.
 
-### Blocked by `U2` — the publication CI
+### The publication CI — was blocked by `U2`, answered 2026-08-06
 
 The job graph below is derived from [`10-design.md`](10-design.md)'s ordering invariant `V7` and its
 *Concurrency and ordering* section. It is recorded here so the shape is not re-derived per slice; it is
@@ -218,11 +222,11 @@ build ──┬──► image-gate ──┐
 
 | Job | Discharges | Runs on | Blocked by |
 |---|---|---|---|
-| `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `V1`, `V2`, `V3`, `V13`, `X4` | push + all PRs | `U2` |
-| `image-gate` — build, run and gate the image before any push | `V10`, `V11`, `V12` (container half) | push + all PRs | `U2` |
+| `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `V1`, `V2`, `V3`, `V13`, `X4` | push + all PRs | — |
+| `image-gate` — build, run and gate the image before any push | `V10`, `V11`, `V12` (container half) | push + all PRs | — |
 | `link-check` — **already implemented** | `V4` | push + same-repo PRs | — |
 | `attestation` — human gate bound to the commit | `V5` | master push | — |
-| `publish` — branch-head check, deploy and push, read-back | `V6`–`V9`, `V12` (Pages half), `V14` | master push | `U2` |
+| `publish` — branch-head check, deploy and push, read-back | `V6`–`V9`, `V12` (Pages half), `V14` | master push | — |
 
 `V3` and `V6` had no callable Verification surface when this table was written. Both gained one on
 2026-08-06 — `assertContentPresent` and `assertDeploymentCandidateCurrent`, per
@@ -250,11 +254,12 @@ call: the browser driver for `V2` and whether it loads over `file://` or a local
 image and file server (`U7`, which also determines Artifact's third duty); the image build and push
 mechanism, with registry write scoped to `publish` alone; and the attestation mechanism (`U3`).
 
-**Released by:** `U1`, `U3`, `U4` and `U7` are all answered as of 2026-08-06 — `0.3.0`, a protected
-GitHub Environment, an exact pin and `nginx:alpine` — and the contract text each gated is written.
-`U2` is what remains, and it gates every job that needs an emitted document. Of the four choices this
-section names as needing a decision-log entry before implementation, two are now made (`U7` and `U3`);
-the browser driver for `V2` and the image build-and-push mechanism are still open.
+**Released by:** `U1`, `U2`, `U3`, `U4` and `U7` are all answered as of 2026-08-06 — `0.3.0`,
+Presentation's token set, a protected GitHub Environment, an exact pin and `nginx:alpine` — and the
+contract text each gated is written. No job in this table is blocked by an unresolved contract item.
+Of the four choices this section names as needing a decision-log entry before implementation, two are
+now made (`U7` and `U3`); the browser driver for `V2` and the image build-and-push mechanism are still
+open.
 
 ---
 

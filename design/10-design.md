@@ -214,7 +214,8 @@ consumes the validated form, which only the validator can produce.
 
 **Presentation** — owns the visual language: the token set, the type scale, the dark-first palette,
 the layout primitives, and **the stylesheet those primitives require, as text**. Depends on
-**nothing**. Per `Idea.md`: minimal, dark, typography-first, large whitespace, no gradients, no
+**Content** for `Branded` only: every type it exports is branded, and that type has one home.
+Per `Idea.md`: minimal, dark, typography-first, large whitespace, no gradients, no
 illustrations, no webfont. The stylesheet is a value this module produces, not a file another tool
 discovers, because it has to be handed to the package as a string.
 
@@ -223,14 +224,15 @@ discovers, because it has to be handed to the package as a string.
 requires. It exposes nothing else. It is the only module that turns data and tokens into markup.
 
 **Adapter** — owns the route declarations, their static head metadata, and the single origin constant
-those URLs are built from. Depends on **Composition**, the **external package**, and **Content** for
-four named things only: `projects`, `validateInventory`, `BuildContext` and `parseCommitId`. It is the
+those URLs are built from. Depends on **Composition**, the **external package**, **Content** for four
+named things only — `projects`, `validateInventory`, `BuildContext` and `parseCommitId` — and
+**Presentation** for two: `themeColor` and `iconDataUri`. It is the
 module the package CLI loads, so it is the one place in the import graph where the build reads its
 entry conditions and the last point at which it can still refuse to produce anything — it validates
 the inventory exactly once and, on failure, reports every error and exits non-zero, rendering nothing.
-Everything **renderable** still comes from Composition, and it reads nothing from Presentation, so
-there is exactly one path from data to markup. Exposes the adapter configuration the package's CLI
-consumes.
+Everything **renderable** still comes from Composition, and nothing renderable comes from Presentation
+— its two imports there are head-metadata values, neither derived from Content — so there is exactly
+one path from data to markup. Exposes the adapter configuration the package's CLI consumes.
 
 **Artifact** — owns everything that turns the package's emitted output into a publishable tree,
 performed as file operations after the build:
@@ -293,8 +295,10 @@ shown separately because the package CLI loads repository entries rather than be
 import.
 
 ```
+Presentation ─► Content (Branded)
 Composition ──► Content, Presentation
-Adapter ──────► Composition, External package, Content (validation entry conditions)
+Adapter ──────► Composition, External package, Content (validation entry conditions),
+                Presentation (themeColor, iconDataUri)
 Artifact ─────► Content (CommitId, parseCommitId, Result), emitted tree
 Verification ─► any module, emitted tree, running image
 
@@ -305,10 +309,10 @@ Package CLI ──loads──► Adapter ──emits──► tree ──► Art
                                               Pages deploy                   image build
 ```
 
-Content and Presentation import no repository module. Nothing imports Adapter, Artifact or
-Verification from within the repository. The graph is therefore acyclic: `Content` and `Presentation`
-are sinks, `Composition` sits above them, `Adapter` above that, and `Artifact` and `Verification` are
-sources with no in-edges.
+Content imports no repository module and is the only sink. Nothing imports Adapter, Artifact or
+Verification from within the repository. The graph is therefore acyclic: `Content` is the sink,
+`Presentation` sits above it, `Composition` above them both, `Adapter` above that, and `Artifact` and
+`Verification` are sources with no in-edges.
 
 **The fork at the bottom is where the two targets separate, and it is the last point at which they
 are provably the same.** Everything above it is shared by construction; everything below it is
@@ -396,8 +400,10 @@ published package source rather than its documentation ([`20-contract.md`](20-co
 `<noscript>` is rejected in *Alternatives considered*, and so is abandoning the package. The failure
 mode is retained rather than deleted because a pin can move and the same fact has to stay checkable: a
 version not providing them re-blocks everything that emits or serves a document. Nothing is blocked by
-the package today. What remains unbuildable is blocked by Presentation's token set, which is authored
-brand material rather than a package capability.
+the package today, and nothing is blocked by Presentation's token set either — `U2` was answered and
+written on 2026-08-06. What is still unwritten is owner-supplied copy — each route's title and
+description, and whether a social image asset exists (`U6`) — and `U9`'s Verification surface, which
+blocks nothing that emits a document.
 
 **State left behind:** none. Nothing is built and nothing is published.
 
@@ -791,8 +797,8 @@ and renumbering would rot those citations silently. An answered question keeps i
    documentation of how to run the image; a compose file in the homelab repository is the deployment.
    They are different things and only one of them is this repository's.
 
-Three further unresolved items were raised downstream and are owned by
-[`20-contract.md`](20-contract.md) rather than restated here: Presentation's token set (`U2`), whether
-a social image asset exists (`U6`), and the Verification surface that would check `P2`–`P4` (`U9`).
-Two others raised there — where the attestation record lives (`U3`) and which server serves the
-container tree (`U7`) — were answered on 2026-08-06.
+Further unresolved items were raised downstream and are owned by
+[`20-contract.md`](20-contract.md) rather than restated here: whether a social image asset exists
+(`U6`), and the Verification surface that would check `P2`–`P4` (`U9`). Raised there and answered on
+2026-08-06: Presentation's token set (`U2`), where the attestation record lives (`U3`), and which
+server serves the container tree (`U7`).

@@ -13,14 +13,171 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
   `file://`-versus-static-server choice for the `V2` driver, since a `file://` load may not issue the
   request at all. If it turns out no request is made, the icon becomes a brand choice rather than a
   `V2` requirement, and the ruling stands on its own but for a different reason.
-- **Candidate invariant: no mono-styled text originates outside a Content derivation.** The `U2`
-  ruling reserves the mono stack for year, stage, project id and `escapedFrom` edges — which is
-  exactly the set `X1` already requires to come from a Content derivation rather than a typed
-  literal. That makes the typeface a visible assertion, and the pairing is checkable against
-  `ComposedRoute`. Whether it becomes an invariant is `/contract`'s call, not this session's.
-- **Write the `U2` ruling into `20-contract.md`.** The decisions below are made and recorded; the
-  contract's § *Presentation*, its `U2` block, Adapter's `themeColor` and `icons` rows, and `U9`'s
-  `P2` entry all still describe the surface as unwritten. That is `/contract`'s work.
+- **A count in prose has now gone stale twice in the same sentence.** `10-design.md`'s closing
+  paragraph was corrected on 2026-08-06 by replacing a count with named items, precisely so it would
+  stop rotting; a numeral returned with the next edit and was wrong again within a day, and a second
+  `/reconcile` pass spent deep-reasoning time recounting it. `AGENTS.md` classes arithmetic over files
+  as work that should leave the model entirely. A recurrence belongs in a check, not a third pass —
+  `/track` should turn this into an issue for a lint over the design documents' counting phrases.
+
+---
+
+### 2026-08-06 — Two module edges the design denied: Presentation → Content, Adapter → Presentation
+Context: `/reconcile`. Writing `U2` into the contract added `A7` and widened `A3`, leaving
+`10-design.md` saying Adapter "reads nothing from Presentation" — the divergence the `U2` entry below
+flags and hands here. Reading the same section against the contract's types found a **second**, older
+one that no note anywhere records: `10-design.md` says Presentation "Depends on **nothing**" and calls
+it a sink, while every type Presentation exports is `Branded<…>` and `Branded` lives in Content by the
+2026-08-05 ruling — which rejected exempting type-only imports **by name**. That was already true when
+`StylesheetText` was first written, and it survived two `/reconcile` passes that each reported no
+drift, because both compared implemented imports against the design and Presentation has no
+implementation to compare.
+Chosen, on the owner's ruling: the design moves for both, and the contract gains one sentence.
+`10-design.md`'s Presentation clause names `Branded` from Content; its Adapter clause names
+`themeColor` and `iconDataUri` from Presentation and keeps the one-path-from-data-to-markup sentence
+by saying nothing *renderable* comes from Presentation; the dependency block gains both edges; and the
+sinks sentence becomes "Content is the only sink". The contract's § *Presentation* states the `Branded`
+import and settles an ownership the `U2` write-up left unstated — `StylesheetText` and `BodyHtml` are
+Presentation's, `ComposedRoute` is Composition's. That direction is forced rather than preferred:
+`stylesheetFor` takes a `BodyHtml`, so Composition owning it would put Presentation above Composition
+and cycle the graph.
+Rejected: Adapter writing `themeColor` and the icon as literals so `A3` and the design survive
+verbatim — already rejected on 2026-08-06 for two uncompared copies of the visual identity, and
+relitigating it needs new evidence there is none of. Presentation declaring its own `Branded` so the
+"depends on nothing" claim holds — the duplicate *Single ownership* forbids, and the 2026-08-05 entry
+rejected the identical move for `Result`. Reading Presentation's edge as exempt because the import is
+type-only and erased — the exact exemption that entry rejected as unwritten and unbounded. Leaving the
+sinks sentence and calling it approximately true — a dependency-direction block whose one job is to be
+read literally.
+Reversibility: cheap — four clauses in the design and one paragraph in the contract; the edges
+themselves were fixed by earlier rulings
+
+### 2026-08-06 — `X4`'s selector half is over class selectors; the token block sits outside it
+Context: `/reconcile`. `P6` requires every route's stylesheet to be the token block followed by the
+referenced primitives' rules. The token block is `:root` rules and nothing else. `X4` requires that
+**every** selector in the stylesheet have a user in `bodyHtml`, and `bodyHtml` is body *content* —
+there is no `:root` in it. As written, `assertStyleAgreement` reports `SelectorWithoutUser` on every
+route, forever, for the two token-block rules. The contract's own claim that the `SelectorWithoutUser`
+half "becomes structurally true" holds for primitive rules, which `Primitive.rules` roots at their own
+`className`, and is false for the block sitting beside them. Introduced by the `U2` write-up and
+caught before any Composition code exists.
+Chosen: `X4` and the `SelectorWithoutUser` row narrow to **class** selectors. No exemption clause is
+needed: the token block carries no class selector, and `Primitive.rules` already constrains every
+other rule to be rooted at its own `className`, so the two halves partition cleanly. The
+`stylesheetFor` paragraph is corrected to say the structural argument covers the primitives and not
+the block.
+Rejected: Exempting the token block by name, the way `P2` exempts `--rule` — same behaviour, and it
+was the closer precedent; rejected because it creates a second place to keep in sync when the block
+changes, where narrowing to class selectors follows from `Primitive.rules` and needs no maintenance.
+Leaving it and letting the `assertStyleAgreement` implementer decide — the first Composition slice
+would either go red for a reason nobody intended or quietly narrow the invariant in code and justify
+it in a comment, which is precisely the "Nothing imports Verification" failure the 2026-08-05 entry
+exists to prevent. Dropping the token block into a primitive so every rule is class-rooted — rejected
+by the `U2` write-up already, for the light viewport gutter a dark-first page gets when its background
+is set inside a primitive.
+Reversibility: cheap — one invariant row, one error row and one paragraph
+
+### 2026-08-06 — `U2` being answered closes three stale blocks and one recurring count
+Context: `/reconcile`. Answering `U2` and writing it into the contract falsified prose in three
+documents at once, none of it reachable from the code. `10-design.md`'s *Failure modes* still said
+"What remains unbuildable is blocked by Presentation's token set"; its closing paragraph still counted
+"Three further unresolved items" and listed `U2` among them; and `30-slices.md` still said the render
+path is blocked by `U2` in seven places, including a CI table whose blocked-by column named it for
+three of five jobs. The tree itself showed **no** contract drift — Content and Verification match
+`20-contract.md` code-for-code, `npm run typecheck` is clean and `npm test` is green at 81 tests over
+7 files.
+Chosen, on the owner's ruling, prose edits in three documents and no code change: (1) the design's
+failure mode says nothing is blocked by the package or by the token set, and names what is genuinely
+unwritten — owner-supplied copy and `U9`'s Verification surface; (2) its closing paragraph drops the
+numeral entirely rather than correcting it, names `U6` and `U9`, and moves `U2` into the answered list
+beside `U3` and `U7`; (3) `30-slices.md` is corrected in place — the render-path headnote, the
+`Blocked` heading and its Presentation bullet, the "what the list now means" note, the publication-CI
+heading, its blocked-by column and its released-by paragraph. `P1`–`P5` becomes `P1`–`P7` and
+`A1`–`A2` becomes `A1`–`A7`, since the `U2` write-up added those rows.
+Recorded with it: the numeral in (2) is the second failure of the same sentence. The 2026-08-06 entry
+below replaced a count in it with named items for exactly this reason, and the count returned with the
+next edit. Staged under `## Open` for `/track` rather than fixed by hand a third time.
+Rejected: Correcting "three" to "two" — the edit that already failed here once. Leaving `30-slices.md`
+to `/slices`, the narrower reading of this command's remit — rejected because it is the document a
+`/slice` session reads to choose work, and it currently says the render path is blocked when it is
+not; `U9` named `/reconcile` as an owner of one such correction and two entries below set the
+precedent for correcting that document's factual claims in place without re-slicing. Deciding what
+slice the released work becomes while in there — that is `/slices`', and no number is allocated.
+Reversibility: cheap — prose in three files, no signature and no code touched
+
+### 2026-08-06 — The mono/`X1` candidate is declined; `P7` takes its checkable half
+Context: The `## Open` item above proposed "no mono-styled text originates outside a Content
+derivation" as an invariant and assigned the ruling to `/contract`. The appeal is real — the `U2`
+ruling reserves `--font-mono` for `year`, `stage`, `ProjectId` and `escapedFrom` edges, which is
+exactly the set `X1` already governs, so the typeface would become a visible assertion.
+Chosen: Decline the invariant as put, and add `P7` — exactly one primitive's rules reference
+`--font-mono`, and no other primitive and no token-block rule does. That is the half that is
+mechanically true of `ComposedRoute` alone. The other half — that what appears in mono is a Content
+derivation rather than a typed literal — is `X1` verbatim with a typeface attached, and *Single
+ownership* forbids the second copy: the day one is relaxed, nothing says which governs.
+Rejected: Adopting it as written — checking it needs the `Inventory` as well as the `ComposedRoute`,
+because "is this string a derivation" is only answerable against the records; that is a new
+Verification signature and a new error code the design determines nothing about, which is the same
+gap `U9` exists to hold rather than to fill. Adopting it as a Composition invariant with no checker —
+it would join `P2`–`P4` as an invariant with nothing callable behind it, and adding a fourth to a list
+`U9` was raised to complain about is the wrong direction. Naming `meta` as the mono primitive in `P7`
+— the obvious candidate by name, and the ruling does not say which primitive carries mono, so naming
+one would be invention for no gain: "exactly one" is the property that matters.
+Reversibility: cheap — one invariant row
+
+### 2026-08-06 — Writing `U2` into the contract settled three things the ruling underdetermined
+Context: The `## Open` item handing the `U2` ruling to `/contract` read as transcription. Three
+questions in it had no answer in the ruling, and each moved a module boundary or changed how much
+force an invariant has, so each was put to the owner rather than chosen: whether the palette is
+exported as values or lives only as text inside the token block; how `stylesheetFor` learns which
+primitives a route referenced; and where `themeColor` and the icon come from, given that Adapter
+declares both while `A3` and `10-design.md` say Adapter reads nothing from Presentation.
+Chosen, on the owner's answers, all three as recommended:
+
+1. **`palette` is exported as typed `HexColor` values**, and the token block is emitted from it rather
+   than authored beside it. Two consumers want values and not CSS — `themeColor`, which the ruling
+   *derives from* `--bg` rather than choosing separately, and any checker for `P2`(a) — so
+   `AGENTS.md`'s "would a second consumer face this question" test answers yes.
+2. **`stylesheetFor(body: BodyHtml): StylesheetText`**, so the referenced set is observed out of the
+   composed body rather than declared by the caller. `X4`'s `SelectorWithoutUser` half becomes
+   structurally true, while its `ClassWithoutRule` half keeps its teeth against a class Composition
+   wrote by hand — which is the sense in which the ruling said `X4` would verify a property rather
+   than enforce one. New invariant `P6`; the module-level `stylesheet: StylesheetText` constant is
+   gone, since one constant cannot be per-route.
+3. **Adapter imports `themeColor` and `iconDataUri` from Presentation**, enumerated the way its four
+   Content imports already are, with `A7` forbidding a colour literal or a data URI written in
+   Adapter. Neither value is renderable and neither derives from Content, so the property the
+   design's clause protects — exactly one path from data to markup, through Composition — is
+   untouched.
+
+Recorded with it: the token block's step indices are not a free choice. `--step-0` is `1rem` because
+the ruling puts the 34rem measure at "roughly 65 characters at `--step-0`", and `--step-2` is
+`1.563rem` because `P2` requires 3:1 "at `--step-2` and above" and 1.563rem is 25px at a 16px root —
+WCAG's large-text threshold. The `0.8rem` step therefore takes `--step--1`. The spacing indices run
+from 0 over the five listed values by analogy, which the ruling does not state; `--space-1` is then
+the record separation `P2` cites. Also re-derived rather than taken on trust: the entry's contrast
+figures are correct — `--fg` on `--bg` is 15.65:1, `--link` on `--bg` 6.03:1, `--link` on `--fg`
+2.60:1.
+Rejected: **Palette as text only** — the smaller surface, and the token block is authored CSS either
+way; rejected because `themeColor` then becomes a second written copy of `#0F0F10` with nothing
+comparing the two, and a `P2` checker would have to parse CSS to find anything to compute over.
+**`stylesheetFor(referenced: readonly PrimitiveName[])`** — more explicit, and it keeps Presentation
+from reading markup; rejected because a declared list can disagree with the body, which puts `X4` back
+to enforcing the property instead of verifying one that already holds. **Adapter writing both values
+as literals** — `A3` and the design survive verbatim, which is its whole appeal; rejected for two
+copies of the visual identity in the fields least likely to be looked at, with nothing checking
+either. **Composition re-exporting them**, since Adapter already depends on Composition — no new edge
+and `A3` untouched; rejected because it costs Composition's "it exposes nothing else", which is the
+sentence keeping exactly one module turning data into markup. **Writing `P2`'s Verification surface
+now that the palette exists** — part (a) is a static computation over `palette` and could be written
+today; rejected because part (b) is a claim about rendered link affordance and sits on the same
+static-versus-browser fork as `P3`, and discharging one invariant through two mechanisms in two states
+is worse than leaving both in `U9`.
+Reversibility: cheap for (1); expensive for (2) and (3) — (2) fixes how Composition obtains a
+stylesheet and what `X4` is worth, and (3) fixes a module edge
+Divergence: `10-design.md` § *Module boundaries* has Adapter depending on "**Composition**, the
+**external package**, and **Content** for four named things only", and its dependency-direction block
+omits Presentation. Two clauses, `/reconcile`'s.
 
 ---
 
