@@ -22,4 +22,25 @@ describe("S1.10 — Content imports no other repository module (invariant C1)", 
     expect(violations).toHaveLength(1);
     expect(violations[0]).toMatchObject({ specifier: "../presentation/tokens" });
   });
+
+  it("a dynamic import escaping src/content is flagged", () => {
+    const violations = importViolations(contentDir, [
+      { file: resolve(contentDir, "types.ts"), source: 'const t = await import("../presentation/tokens");' },
+    ]);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toMatchObject({ specifier: "../presentation/tokens" });
+  });
+
+  it("an import-like sequence in a comment or string is not flagged", () => {
+    const violations = importViolations(contentDir, [
+      {
+        file: resolve(contentDir, "types.ts"),
+        source: [
+          '// import { tokens } from "../presentation/tokens";',
+          'const note = \'see import { x } from "../presentation/tokens"\';',
+        ].join("\n"),
+      },
+    ]);
+    expect(violations).toEqual([]);
+  });
 });

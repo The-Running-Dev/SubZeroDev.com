@@ -5,18 +5,37 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 
+import ts from "typescript";
+
 export type ImportViolation = { readonly file: string; readonly specifier: string };
 
 export type SourceEntry = { readonly file: string; readonly source: string };
 
-// `import ... from "x"`, `export ... from "x"`, and side-effect `import "x"`.
-const FROM_RE = /(?:import|export)\b[^'"]*?\bfrom\s*['"]([^'"]+)['"]/g;
-const SIDE_EFFECT_RE = /\bimport\s*['"]([^'"]+)['"]/g;
-
+// Walks the AST rather than scanning text, so specifiers in comments or strings
+// are never mistaken for imports, and dynamic `import("x")` is not missed.
 export function importSpecifiers(source: string): string[] {
+  const sourceFile = ts.createSourceFile("source.ts", source, ts.ScriptTarget.Latest, true);
   const specifiers: string[] = [];
-  for (const match of source.matchAll(FROM_RE)) specifiers.push(match[1]!);
-  for (const match of source.matchAll(SIDE_EFFECT_RE)) specifiers.push(match[1]!);
+
+  const visit = (node: ts.Node): void => {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      specifiers.push(node.moduleSpecifier.text);
+    } else if (
+      ts.isCallExpression(node) &&
+      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+      node.arguments.length > 0 &&
+      ts.isStringLiteral(node.arguments[0]!)
+    ) {
+      specifiers.push((node.arguments[0] as ts.StringLiteral).text);
+    }
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
   return specifiers;
 }
 
