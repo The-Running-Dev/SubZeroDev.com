@@ -6,10 +6,12 @@ document and the contract disagree, one of them is a defect; say which rather th
 ## What can be sliced, and what cannot
 
 [`20-contract.md`](20-contract.md) § `U1` records a verified fact rather than a risk: at
-`subzerodev-platform-ui-landing-page@0.2.0` the external package **cannot** emit prerendered,
-self-contained route documents, a root `404.html`, or a build marker. The contract therefore does not
-write Composition's route entries, Adapter's `LandingPageConfig`, Presentation's tokens, or the marker
-format `readBuildMarker` parses.
+`subzerodev-platform-ui-landing-page@0.2.0` the external package **cannot** accept a caller-supplied
+body, and **cannot** omit its entry script when one is given. The contract therefore does not write
+Adapter's `LandingPageConfig`, its route declarations and their metadata, or Presentation's tokens.
+
+This paragraph previously also named the root `404.html`, the build marker and Composition's route
+entries. All three have since moved or been written — see the note under [*Blocked*](#blocked).
 
 `/slices` may not introduce a signature the contract does not carry. Every slice that would emit,
 verify or publish a document is consequently unwritable today — not deferred by preference, but absent
@@ -158,9 +160,18 @@ number is allocated until the contract can carry the work.
 - Pinning the package version — `U4`, moot until a version satisfying `U1` exists.
 - Whether a social image asset exists — `U6`, settled with the metadata block.
 
-**Released by:** a released version of `SubZeroDev.Platform.UI.LandingPage` satisfying the four
-requirements enumerated in [`20-contract.md`](20-contract.md) § `U1`. Per the design's *Failure
-modes*, that is a slice in that repository, not something improvised here.
+**Released by:** a released version of `SubZeroDev.Platform.UI.LandingPage` satisfying the
+requirements enumerated in [`20-contract.md`](20-contract.md) § `U1` — two required, one preferred.
+Per the design's *Failure modes*, that is a slice in that repository, not something improvised here.
+
+> **Stale against the revised contract — reported by `/reconcile`, not resolved here.** The revision
+> that moved rendering into this repository also moved the root miss document and the build marker out
+> of the package ask and into Artifact, and the contract now writes them in full: `buildMarkerPrefix`,
+> `buildMarkerSuffix`, `buildMarker`, `injectBuildMarker`, `finalizeArtifact` and `readBuildMarker`.
+> The marker-format half of the `readBuildMarker` entry above is therefore no longer blocked by `U1`;
+> only the parts needing an emitted document still are. `parseCommitId` and `C15` are likewise fully
+> specified and belong to no slice at all. What that work becomes is a slicing decision this note does
+> not make.
 
 ### Blocked by `U3` — where the attestation record lives
 

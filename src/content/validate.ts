@@ -111,7 +111,7 @@ function validateHome(
             "HomeWithinOriginEscape",
             project.id,
             "home.path",
-            `home.path "${home.path}" does not resolve within the parent origin ${parentOrigin}.`,
+            `home.path "${home.path}" is not a root-relative path within the parent origin ${parentOrigin}.`,
           ),
         );
       }
