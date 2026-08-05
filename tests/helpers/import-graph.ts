@@ -97,25 +97,42 @@ function resolveModuleFile(fromFile: string, specifier: string): string {
   return target.endsWith(".ts") ? target : `${target}.ts`;
 }
 
-// The original (pre-alias) names bound by an import or re-export declaration's
-// named clause, e.g. `{ projects }` or `{ projects as p }` both yield "projects".
-function namedBindingNames(node: ts.Node): string[] {
-  if (ts.isImportDeclaration(node) && node.importClause?.namedBindings) {
-    const bindings = node.importClause.namedBindings;
-    if (ts.isNamedImports(bindings)) {
-      return bindings.elements.map((e) => (e.propertyName ?? e.name).text);
-    }
-  }
-  if (ts.isExportDeclaration(node) && node.exportClause && ts.isNamedExports(node.exportClause)) {
-    return node.exportClause.elements.map((e) => (e.propertyName ?? e.name).text);
-  }
-  return [];
+// The original (pre-alias) names bound by a named clause, e.g. `{ projects }`
+// or `{ projects as p }` both yield "projects".
+function namedBindingNames(clause: ts.NamedImports | ts.NamedExports): string[] {
+  return clause.elements.map((e) => (e.propertyName ?? e.name).text);
 }
 
-// Files that import or re-export `symbolName` from a specifier resolving to
-// one of `targetFiles` (C14: who imports `projects`). `targetFiles` themselves
-// are excluded — the module defining and re-exporting its own export is not a
+// Whether a declaration whose specifier resolves to a target module grants the
+// importing file access to `symbolName`. Naming it is only one of the ways:
+// `import * as ns` grants it as `ns.<symbolName>`, and `export *` re-exports it
+// without ever naming it. Both reach the value, so both are users. This fails
+// closed — an unrecognised clause shape is not silently treated as safe.
+function grantsAccess(
+  node: ts.ImportDeclaration | ts.ExportDeclaration,
+  symbolName: string,
+): boolean {
+  if (ts.isImportDeclaration(node)) {
+    const bindings = node.importClause?.namedBindings;
+    if (!bindings) return false; // `import "x"` or a default-only import
+    if (ts.isNamespaceImport(bindings)) return true; // import * as ns from "x"
+    return namedBindingNames(bindings).includes(symbolName);
+  }
+  if (!node.exportClause) return true; // export * from "x"
+  if (ts.isNamespaceExport(node.exportClause)) return true; // export * as ns from "x"
+  return namedBindingNames(node.exportClause).includes(symbolName);
+}
+
+// Files that can reach `symbolName` from a specifier resolving to one of
+// `targetFiles` (C14: who imports `projects`). `targetFiles` themselves are
+// excluded — the module defining and re-exporting its own export is not a
 // "user" of it, only every other consumer is.
+//
+// "Can reach" is deliberately wider than "names in a clause". A namespace
+// import, an `export *` re-export and a dynamic `import()` each hand over the
+// module's whole surface, so each is a user even though none writes the symbol
+// down. An invariant check that only understood named clauses would report a
+// clean graph while `import * as content` read the same value.
 export function namedImportUsers(
   entries: readonly SourceEntry[],
   targetFiles: readonly string[],
@@ -126,19 +143,26 @@ export function namedImportUsers(
   for (const { file, source } of entries) {
     if (targetAbs.has(resolve(file))) continue;
     const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+    const targets = (specifier: string): boolean =>
+      specifier.startsWith(".") && targetAbs.has(resolveModuleFile(file, specifier));
     const visit = (node: ts.Node): void => {
       if (
         (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
         node.moduleSpecifier &&
         ts.isStringLiteral(node.moduleSpecifier)
       ) {
-        const specifier = node.moduleSpecifier.text;
-        if (specifier.startsWith(".")) {
-          const resolved = resolveModuleFile(file, specifier);
-          if (targetAbs.has(resolved) && namedBindingNames(node).includes(symbolName)) {
-            users.add(file);
-          }
+        if (targets(node.moduleSpecifier.text) && grantsAccess(node, symbolName)) {
+          users.add(file);
         }
+      } else if (
+        ts.isCallExpression(node) &&
+        node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+        node.arguments.length > 0 &&
+        ts.isStringLiteral(node.arguments[0]!)
+      ) {
+        // A dynamic import resolves to the whole module namespace, so it reaches
+        // every export regardless of how the caller destructures the result.
+        if (targets((node.arguments[0] as ts.StringLiteral).text)) users.add(file);
       }
       ts.forEachChild(node, visit);
     };

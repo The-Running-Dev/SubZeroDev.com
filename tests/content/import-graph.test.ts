@@ -89,4 +89,27 @@ describe("S2.8 — nothing imports `projects` except the validateInventory call 
     );
     expect(users).toEqual([]);
   });
+
+  // Naming `projects` in a clause is only one of the ways to reach it. Each of
+  // these hands over the module's whole surface without writing the symbol
+  // down, and each went unflagged until the check was widened to fail closed.
+  const offender = resolve(repoRoot, "src/composition/page.ts");
+
+  it.each([
+    ["a namespace import", 'import * as content from "../content";\nconst p = content.projects;'],
+    ["an export-star re-export", 'export * from "../content";'],
+    ["a namespace re-export", 'export * as content from "../content";'],
+    ["a dynamic import", 'const { projects } = await import("../content");'],
+  ])("the check has teeth: %s reaching `projects` is flagged", (_label, source) => {
+    expect(namedImportUsers([{ file: offender, source }], targetFiles, "projects")).toEqual([
+      offender,
+    ]);
+  });
+
+  it.each([
+    ["a side-effect-only import", 'import "../content";'],
+    ["a namespace import of an unrelated module", 'import * as other from "../presentation/tokens";'],
+  ])("%s is not flagged", (_label, source) => {
+    expect(namedImportUsers([{ file: offender, source }], targetFiles, "projects")).toEqual([]);
+  });
 });
