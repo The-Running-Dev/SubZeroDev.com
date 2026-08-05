@@ -9,19 +9,20 @@ Language: TypeScript. Established by the consumer pattern `SubZeroDev.Platform` 
 Module names below — Content, Presentation, Composition, Adapter, Artifact, Verification — are the
 design's module boundaries, not paths.
 
-**One thing in this contract is still blocked, and it is authored brand material rather than a missing
-interface.** The external package released `0.3.0` carrying all three capabilities
-[`U1`](#u1--the-package-cannot-accept-a-caller-supplied-body) asked for, verified against the
-published source, so Adapter's route declarations and default export are written below — as is
-Artifact's server configuration, which [`U7`](#u7--which-server-serves-the-container-tree) settled.
+**Every interface on the render path is now written.** The external package released `0.3.0` carrying
+all three capabilities [`U1`](#u1--the-package-cannot-accept-a-caller-supplied-body) asked for,
+verified against the published source, so Adapter's route declarations and default export are written
+below — as is Artifact's server configuration, which
+[`U7`](#u7--which-server-serves-the-container-tree) settled. The last of them,
+[`U2`](#u2--presentations-token-set-and-primitives) — Presentation's token set, its primitives and
+the per-route stylesheet assembly, with the two head-metadata values that are visual identity — was
+answered on 2026-08-06 and is written below.
 
-**[`U2`](#u2--presentations-token-set-and-primitives) is the only interface still unwritten on the
-render path**: Presentation's token set, and with it the two head-metadata values that are visual
-identity — `themeColor` and the icon set.
-
-**Off that path, one further surface is unwritten** — the Verification functions that would check
-`P2`–`P4`, raised as [`U9`](#u9--accessibility-has-no-verification-surface). It blocks nothing that
-emits a document.
+**One surface is still unwritten, and it is off the render path** — the Verification functions that
+would check `P2`–`P4`, raised as [`U9`](#u9--accessibility-has-no-verification-surface). `U2`
+discharged half of what that entry said `P2` was waiting for: there is now a palette to compute over,
+and an authored definition of what legibility is measured as. What remains is the shape of the check,
+which the design determines nothing about. It blocks nothing that emits a document.
 
 What else is missing is content, not interface, and is owner-supplied rather than derivable: whether a
 social image exists ([`U6`](#u6--whether-a-social-image-asset-exists)), and each route's title and
@@ -154,6 +155,55 @@ export type ResolvedHome = {
 `EcosystemTree` carries exactly one group per `Stage`, in `stageOrder` order, including groups with
 no projects. `ResolvedHome` is produced only for `own` and `within` homes; `none` yields no entry.
 
+### Presentation
+
+```ts
+export type HexColor = Branded<string, "HexColor">;
+
+export type DataUri = Branded<string, "DataUri">;
+
+export type ClassName = Branded<string, "ClassName">;
+
+export type ColorToken = "bg" | "fg" | "fg-muted" | "rule" | "link";
+
+export type Palette = { readonly [T in ColorToken]: HexColor };
+
+export type PrimitiveName =
+  | "page"
+  | "stack"
+  | "entry"
+  | "meta"
+  | "rule"
+  | "link";
+
+export type Primitive = {
+  readonly className: ClassName;
+  readonly rules: string;
+};
+
+export type PrimitiveSet = { readonly [N in PrimitiveName]: Primitive };
+```
+
+| Type | Constraint |
+|---|---|
+| `HexColor` | Matches `/^#[0-9A-F]{6}$/`. Six digits, uppercase, no shorthand and no alpha — so one colour has exactly one spelling and two references to it cannot compare unequal |
+| `DataUri` | Begins with `data:`. It is what makes `A2` a property of the value rather than a promise about it |
+| `ClassName` | Matches `/^[a-z][a-z0-9-]*$/` |
+| `Primitive.rules` | CSS text. Every selector in it is rooted at that primitive's own `className` — the bare class selector, or that selector carrying a pseudo-class, a pseudo-element or a descendant combinator. A rule that could match without that class belongs in the token block, not in a primitive, because `stylesheetFor` emits a primitive's rules only when its class is present. Rules may sit inside an `@media` block; `P3`'s `prefers-reduced-motion` rules are the case that needs one. Contains no `</style` sequence (`P5`) |
+
+`PrimitiveName` is **closed at six**. Composition references a primitive through `primitives`, so a
+seventh is a contract amendment rather than a class someone adds to markup. `rule` and `link` appear
+in both `ColorToken` and `PrimitiveName` and are different things in each — a colour custom property
+in the first, a class in the second.
+
+**Presentation imports `Branded` from Content, and nothing else from this repository.** Every type
+above is branded and `Branded` has one home; the 2026-08-05 ruling that put it in Content rejected
+exempting type-only imports by name, so this is a real edge and
+[`10-design.md`](10-design.md) § *Module boundaries* states it. `StylesheetText` and `BodyHtml` below
+are **Presentation's** for the same reason the edge runs that way: `stylesheetFor` takes a `BodyHtml`,
+so Composition owning it would put Presentation above Composition and cycle the graph.
+`ComposedRoute` is Composition's.
+
 ### Presentation and Composition
 
 ```ts
@@ -179,7 +229,7 @@ is the text of a stylesheet with no `<style>` wrapper, because the package emits
 
 `ComposedRoute.stylesheet` is the stylesheet **that route's body requires**, not the union of every
 rule Presentation can produce. That is what makes `X4` checkable per document rather than only across
-the pair.
+the pair, and `P6` is what makes it true of every `ComposedRoute` rather than a habit.
 
 ### Route
 
@@ -375,14 +425,73 @@ implementation of the 40-hex rule; a second one is the drift *Single ownership* 
 ### Presentation
 
 ```ts
-export const stylesheet: StylesheetText;
+export const palette: Palette;
+
+export const primitives: PrimitiveSet;
+
+export const themeColor: HexColor;
+
+export const iconDataUri: DataUri;
+
+export function stylesheetFor(body: BodyHtml): StylesheetText;
 ```
 
-That the module produces its stylesheet as text is determined by the design. Which tokens, scale
-steps, palette entries and layout primitives exist — and therefore the rest of the module's exported
-surface, including how a route obtains only the rules its body requires — is authored visual identity
-and is not written here. See [`U2`](#u2--presentations-token-set-and-primitives). `P1`–`P5` hold
-whatever the set turns out to be.
+**`stylesheetFor` reads the referenced set out of the body rather than being told it.** It collects
+which of the six `primitives` class names occur in `body` **as a class token**, and returns the token
+block followed by exactly those primitives' `rules`, in `PrimitiveName` declaration order. A class in
+the body that is not one of the six contributes nothing, which is what leaves `X4`'s
+`ClassWithoutRule` half with teeth against a class Composition wrote by hand; the
+`SelectorWithoutUser` half becomes structurally true **over the primitives**, because a primitive's
+rules reach the stylesheet only when its class is already in the body. The token block is not covered
+by that argument, and is not covered by the invariant either: `X4`'s second half is over class
+selectors and the block carries none. That is the sense in which `X4` verifies a property rather
+than enforcing one — `P6`.
+
+It is pure and total: no body is malformed for its purposes, and an empty referenced set yields the
+token block alone.
+
+**The token block.** It declares exactly these custom properties on `:root`, and one further `:root`
+rule applying `--bg` and `--fg` as the document's background and colour. That rule is the token
+block's and not a primitive's for two reasons: a custom property on its own paints nothing, and a
+dark-first page whose background is set inside a primitive has a light viewport gutter outside it.
+Nothing else is in the block. The five colour values are emitted from `palette` rather than written a
+second time.
+
+| Property | Value | |
+|---|---|---|
+| `--font-sans` | a system sans stack | prose |
+| `--font-mono` | a system mono stack | `year`, `stage`, `ProjectId` and `escapedFrom` edges — never prose |
+| `--step--1` | `0.8rem` | |
+| `--step-0` | `1rem` | body |
+| `--step-1` | `1.25rem` | |
+| `--step-2` | `1.563rem` | the threshold `P2` names |
+| `--step-3` | `1.953rem` | |
+| `--space-0` | `0.75rem` | |
+| `--space-1` | `1.17rem` | record separation |
+| `--space-2` | `1.83rem` | |
+| `--space-3` | `2.86rem` | |
+| `--space-4` | `4.47rem` | |
+| `--measure` | `34rem` | |
+| `--bg` | `palette.bg`, `#0F0F10` | |
+| `--fg` | `palette.fg`, `#E8E8E9` | |
+| `--fg-muted` | `palette["fg-muted"]`, `#8C8C8F` | |
+| `--rule` | `palette.rule`, `#252527` | exempt from `P2`'s contrast half, by name |
+| `--link` | `palette.link`, `#6E92C8` | |
+
+Both scales are the single 1.25 ratio the ruling settles, a spacing token advancing two steps of it.
+**The step indices are fixed by two statements in that ruling and are not a free choice**: the measure
+is "roughly 65 characters at `--step-0`", which puts `1rem` at index 0, and `P2` requires 3:1 "at
+`--step-2` and above", which is WCAG's large-text threshold and therefore the `1.563rem` step at a
+16px root. The `0.8rem` step takes `--step--1` as a consequence. The spacing indices run from 0 over
+the same five values, so `--space-1` is the record separation `P2` cites.
+
+The two font properties are named here and their stacks are not, because no assertion turns on which
+system faces they list. What does turn on them is `P1` — neither may reference a webfont or an
+`@font-face` rule — and `P7`, which reserves `--font-mono` to one primitive.
+
+`themeColor` **is** `palette.bg`, not a second literal of the same colour, and Adapter reads it from
+here (`A7`). `iconDataUri` is an inline SVG letterform — the glyph `0` — in `--fg` on `--bg`, encoded
+as a data URI; being a `DataUri` is what discharges `A2`.
 
 ### Composition
 
@@ -394,6 +503,11 @@ export function composeMiss(): ComposedRoute;
 
 These two are the module's entire public surface. Both are total and neither can fail: an `Inventory`
 cannot be malformed by construction, and neither function performs I/O.
+
+Each produces its `bodyHtml` first, referencing classes only through `primitives`, and obtains
+`stylesheet` by calling `stylesheetFor` on that same body. Composition therefore never states which
+primitives it used, and a route whose stylesheet describes a primitive its body does not carry is not
+expressible (`P6`).
 
 `composeMiss` takes no inventory because the miss document displays nothing derived from one. If it
 ever must — a project count, the since year — that is a contract amendment, not an implementer's call,
@@ -439,11 +553,25 @@ default:
 path; `metadata.openGraph.type` is `"website"`. `A1` asserts the pairing so no second origin string
 exists to drift.
 
+`metadata.themeColor` is Presentation's `themeColor`, and `metadata.icons` is exactly one entry whose
+`href` is Presentation's `iconDataUri`. One SVG data URI serves every size, so a second entry would be
+a second copy of one mark. Both values are **imported, never transcribed** — a hex or a data URI
+written out here would be a second copy of visual identity with nothing comparing the two, which is
+what `A7` forbids. Whatever else `LandingPageIcon` requires beside `href` is the package's
+declaration, transcribed at slice time against the pinned `0.3.0` the same way the route metadata's
+other package-owned fields are.
+
+**Adapter therefore imports two named things from Presentation, and only these two.** That is a
+change to `A3`, which said it read nothing from Presentation, and to the clause in
+[`10-design.md`](10-design.md) § *Module boundaries* that it came from. Neither value is renderable
+and neither is derived from Content, so the property that clause exists to protect — exactly one path
+from data to markup, through Composition — is untouched. The design's wording was the stale half;
+`/reconcile` corrected it on 2026-08-06 and the two documents now agree.
+
 The remaining metadata values are **not** written here and are not this contract's to author.
-`themeColor` and `icons` are visual identity ([`U2`](#u2--presentations-token-set-and-primitives)). `socialImageUrl`,
-`openGraph.imageUrl` and the whole `twitter` block turn on whether a social image exists
-([`U6`](#u6--whether-a-social-image-asset-exists)). `title`, `description` and the Open Graph title
-and description are owner-supplied copy. A slice transcribes them; it does not invent them.
+`socialImageUrl`, `openGraph.imageUrl` and the whole `twitter` block turn on whether a social image
+exists ([`U6`](#u6--whether-a-social-image-asset-exists)). `title`, `description` and the Open Graph
+title and description are owner-supplied copy. A slice transcribes them; it does not invent them.
 
 `missPath` is the canonical declaration of the miss route's path. Artifact's `missEmittedEntry` is the
 package's emitted mapping of exactly this value and must change with it; `R5` asserts the pairing.
@@ -795,7 +923,7 @@ export type VerificationError = {
 | `LinkedStylesheetPresent` | An emitted document links a stylesheet rather than inlining it | No | Fail the build |
 | `ExternalAssetReference` | An emitted document references an asset by URL other than a data URI or an outbound link | No | Fail the build |
 | `ClassWithoutRule` | A class in a route's body has no selector in that route's stylesheet | No | Fail the build. **Never a warning** |
-| `SelectorWithoutUser` | A selector in a route's stylesheet matches nothing in that route's body | No | Fail the build |
+| `SelectorWithoutUser` | A **class** selector in a route's stylesheet matches nothing in that route's body. The token block's `:root` rules carry no class selector and cannot raise it (`X4`) | No | Fail the build |
 | `RootMissDocumentAbsent` | `missRootEntry` is absent from the finished tree | No | Fail the build |
 | `UnknownPathStatusWrong` | A unique unknown path answered with a status other than 404 | No | Fail the gate or report the deploy failed. A 200 here is a soft 404 |
 | `UnknownPathBodyWrong` | A unique unknown path answered 404 with a body other than the emitted miss document | No | Fail the gate or report the deploy failed |
@@ -851,22 +979,25 @@ where a separate module checks it, that is said in the row.
 | **C13** | `resolvedHomes` yields one entry per `own` and `within` home and none for `none` | Content |
 | **C14** | Nothing imports `projects` except the `validateInventory` call site — Adapter once it exists, and until then the committed-inventory assertion — and Verification's assertions over the inventory. No derivation function, no Composition entry and no Artifact step reads it | Content |
 | **C15** | `parseCommitId` is the only implementation of the `CommitId` pattern in the repository | Content |
-| **P1** | Nothing in Presentation references a linked font, an external stylesheet, a gradient or an illustration asset | Presentation |
-| **P2** | The rendered page is legible in greyscale | Presentation |
+| **P1** | Nothing in Presentation references a linked font, an external stylesheet, a gradient or an illustration asset. Neither `--font-sans` nor `--font-mono` names a webfont, and no rule is an `@font-face` | Presentation |
+| **P2** | The rendered page is legible in greyscale, in two parts. **(a)** Every foreground colour resolved against the background it is rendered on meets WCAG AA — 4.5:1, or 3:1 at `--step-2` and above. `--rule` is **exempt, by name**: record separation is carried by `--space-1`, so a divider reinforces and never signals. **(b)** No meaning is carried by hue alone, which obliges the `link` primitive to declare a `text-decoration`, or a font weight distinct from body text. Part (b) is what makes this say greyscale rather than contrast: `--link` against `--fg` is 2.60:1, so a link is not separable from body text by luminance at all | Presentation |
 | **P3** | Nothing animates under `prefers-reduced-motion: reduce` | Presentation |
 | **P4** | Focus order matches visual order and every interactive element is keyboard-reachable | Presentation |
 | **P5** | No `StylesheetText` contains a `</style` sequence in any case — the package emits it unescaped inside a `<style>` element and throws on one | Presentation |
+| **P6** | A route's stylesheet is the token block followed by the `rules` of exactly those primitives whose `className` occurs in that route's `bodyHtml`, and nothing else. `stylesheetFor` derives the set from the body, so no caller states it | Presentation |
+| **P7** | Exactly one primitive's `rules` reference `--font-mono`; no other primitive and no token-block rule does. What that primitive may carry is `X1`'s, not restated here | Presentation |
 | **X1** | No count, total, year or other figure on the page is a typed literal; each comes from a Content derivation | Composition |
 | **X2** | Composition imports only Content and Presentation, and nothing imports Composition except Adapter | Composition |
 | **X3** | The page contains no form, no analytics, no consent surface and no third-party script | Composition |
-| **X4** | For each `ComposedRoute`, every class referenced in `bodyHtml` has a matching selector in `stylesheet`, and every selector in `stylesheet` has a user in `bodyHtml` — checked by `assertStyleAgreement` | Composition |
+| **X4** | For each `ComposedRoute`, every class referenced in `bodyHtml` has a matching selector in `stylesheet`, and every **class** selector in `stylesheet` has a user in `bodyHtml` — checked by `assertStyleAgreement`. The token block's `:root` rules fall outside both halves and need no exemption clause: they carry no class selector, and `Primitive.rules` roots every other rule at its own `className` | Composition |
 | **X5** | Every Content value interpolated into `bodyHtml` — `name`, `line`, a present `question` — is HTML-escaped in text position; `<`, `>`, `&`, `"` and `'` never reach the document unescaped from a content value. Asserted with a fixture project carrying all five | Composition |
 | **A1** | Every URL in route metadata is built from `origin`; no origin string is written twice. Each route's `canonicalUrl` and `openGraph.url` equal `origin` concatenated with that route's `path` | Adapter |
-| **A2** | Every icon is embedded in the document as a data URI; no icon is a linked asset | Adapter |
-| **A3** | Adapter obtains everything renderable from Composition; it imports Content only for `projects`, `validateInventory`, `BuildContext` and `parseCommitId`, and never for a derivation function or a copy constant. It reads nothing from Presentation | Adapter |
+| **A2** | Every entry in `metadata.icons` carries a `DataUri` as its `href`; no icon is a linked asset | Adapter |
+| **A3** | Adapter obtains everything renderable from Composition; it imports Content only for `projects`, `validateInventory`, `BuildContext` and `parseCommitId`, and Presentation only for `themeColor` and `iconDataUri` — never a derivation function, a copy constant, a primitive or the stylesheet. Both import lists are enumerated, and nothing renderable is on either | Adapter |
 | **A4** | Exactly two routes are declared: `apexPath` and `missPath` | Adapter |
 | **A5** | Adapter validates the inventory exactly once; on failure it reports every `ContentError` and exits non-zero, and no route body, stylesheet or document is produced | Adapter |
 | **A6** | Both routes are `LandingPageBodyRoute` values: neither declares `entry`, `hydrate` or `noScript`, and the configuration declares no `styles`, `publicDir` or `allow`. Each route's stylesheet travels in its own `stylesheet` field | Adapter |
+| **A7** | No colour literal and no data URI is written in Adapter. `metadata.themeColor` is Presentation's `themeColor` and every `metadata.icons[].href` is Presentation's `iconDataUri`, by reference — the same rule `A1` applies to `origin`, applied to visual identity | Adapter |
 | **R1** | Every emitted document carries exactly one build marker, and it carries the commit being built | Artifact |
 | **R2** | `missRootEntry` and `missEmittedEntry` are byte-identical in the finished tree | Artifact |
 | **R3** | Artifact compiles nothing, bundles nothing and resolves no module; the only change it makes to a document is the marker | Artifact |
@@ -931,9 +1062,9 @@ Presentation's output travels in each route's own `stylesheet`. Two package beha
 same reading became invariants here — the body and the stylesheet are both inserted **unescaped**,
 which is `X5` and `P5`.
 
-Only metadata *values* remain unwritten, and none of them is blocked by the package: `themeColor` and
-`icons` by `U2`, the social-image fields by `U6`, and the titles and descriptions by their being
-owner-supplied copy.
+Only metadata *values* remained unwritten, and none of them was blocked by the package: `themeColor`
+and `icons` by `U2`, since answered and written; the social-image fields by `U6`; and the titles and
+descriptions by their being owner-supplied copy.
 
 The paragraphs below describe the superseded `0.2.0` state and are retained as the record of what was
 asked for and why.
@@ -964,13 +1095,38 @@ something improvised here. **This contract stops at that boundary.**
 
 ### U2 — Presentation's token set and primitives
 
-**This is now the only thing blocking the render path.** `U1`, `U3`, `U4` and `U7` are answered; every
-signature they gated is written. Composition depends on Presentation and Adapter on Composition, so
-nothing that emits a document can be sliced until this is authored — and it needs the owner, not a
-model.
+**Answered 2026-08-06 by the owner, authored whole.** Retained so citations resolve. The ruling and
+its rejected alternatives are in [`90-decisions.md`](90-decisions.md); the measurable definition of
+`P2` that came with it is a separate entry there.
 
-It also gates two head-metadata values that are visual identity rather than interface: `themeColor`,
-and the icon set that travels as data URIs in `icons[].href` (`A2`).
+**Written 2026-08-06.** Presentation's surface is in *Public signatures* — `palette`, `primitives`,
+`themeColor`, `iconDataUri` and `stylesheetFor` — with the token block's properties and values, and
+the `HexColor`, `DataUri`, `ClassName`, `ColorToken`, `Palette`, `PrimitiveName`, `Primitive` and
+`PrimitiveSet` types above them. `P2` becomes measurable, and `P6` and `P7` are new. The single
+`stylesheet: StylesheetText` constant the previous revision carried is **gone**: the ruling makes a
+route's stylesheet the token block plus the rules of exactly the primitives that route referenced,
+which a module-level constant cannot express.
+
+Three things the ruling underdetermined were decided with it, each on the owner's answer and each
+recorded in [`90-decisions.md`](90-decisions.md):
+
+- **The palette is exported as typed values**, not left inside the token block as text. Two consumers
+  need values rather than CSS — `themeColor`, which the ruling derives from `--bg` rather than
+  choosing separately, and any checker for `P2`(a).
+- **`stylesheetFor` takes the body**, so the referenced set is observed rather than declared. That is
+  what makes `X4` verify a property that already holds (`P6`) instead of enforcing one.
+- **Adapter imports `themeColor` and `iconDataUri` from Presentation.** `A3` widens by two names and
+  `A7` is added; see *Public signatures* § *Adapter* for why the one-path-from-data-to-markup property
+  survives it.
+
+**The divergence this entry recorded is closed.** `10-design.md` § *Module boundaries* said Adapter
+"reads nothing from Presentation" and its dependency block omitted the edge; `/reconcile` corrected
+both on 2026-08-06, and corrected a second, older one found in the same pass — Presentation was
+described as depending on nothing while every type it exports is `Branded<…>`. Nothing is outstanding
+here.
+
+What the entry said before it was answered is retained below, as the record of what was blocked and
+why.
 
 The design fixes the constraints — dark-first, minimal, typography-first, large whitespace, no
 gradient, no illustration, no webfont — and names no token, no scale step and no primitive. A token
@@ -1132,12 +1288,17 @@ What is missing, and what would settle each:
   rendered page. The design's own precedent for `V13` and `V2` — "Source inspection cannot prove
   runtime behaviour, and a network capture alone does not name what leaked. **Both are required**" —
   makes that a fork rather than an implementer's choice.
-- **`P2` — greyscale legibility.** A contrast computation over resolved colour pairs. Needs
-  [`U2`](#u2--presentations-token-set-and-primitives): there is no palette to compute over, and what
-  "legible" is measured as — a contrast ratio, against what threshold — is authored visual identity
-  on the same footing as the token set.
+- **`P2` — greyscale legibility.** A contrast computation over resolved colour pairs. **Both halves of
+  what this bullet said it needed are supplied as of 2026-08-06**: `palette` is exported as typed
+  values, so there is something to compute over, and the invariant now names its own thresholds, its
+  one exemption and its hue-independence clause. What is still unwritten is only the surface — which
+  module holds the function, what it takes, and which `VerificationErrorCode` a failure carries.
+  Part (a) is a static computation over `palette` and could be written today; part (b) is a claim
+  about the rendered link affordance, which puts it on the same static-versus-browser fork as `P3`.
+  Writing (a) alone would leave one invariant discharged by two mechanisms in two states, which is why
+  neither is written here.
 - **`P4` — focus order and keyboard reachability.** Needs a rendered document and a driver.
-  [`30-slices.md`](30-slices.md) § *Blocked by `U2`* already lists the browser driver for `V2` as a
+  [`30-slices.md`](30-slices.md) § *The publication CI* already lists the browser driver for `V2` as a
   choice needing a decision-log entry before implementation; this rides on the same one.
 
 **Not blocked by this:** anything that emits a document. `P2`–`P4` stay Presentation's to maintain
