@@ -39,9 +39,20 @@ export function importSpecifiers(source: string): string[] {
   return specifiers;
 }
 
+// Directories skipped when walking — dependency, VCS and build output, never
+// this repository's own source.
+const SKIP_DIRS = new Set([
+  "node_modules",
+  ".git",
+  "dist",
+  "build",
+  "coverage",
+]);
+
 export function listTsFiles(dir: string): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(dir)) {
+    if (SKIP_DIRS.has(entry)) continue;
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) files.push(...listTsFiles(full));
     else if (entry.endsWith(".ts")) files.push(full);
@@ -71,4 +82,67 @@ export function importViolations(
     }
   }
   return violations;
+}
+
+// Resolves a relative module specifier the same way Node/TS would for this
+// repository's `.ts` sources: a directory resolves to its `index.ts`, an
+// extensionless file gains `.ts`.
+function resolveModuleFile(fromFile: string, specifier: string): string {
+  const target = resolve(dirname(fromFile), specifier);
+  try {
+    if (statSync(target).isDirectory()) return join(target, "index.ts");
+  } catch {
+    // not a directory (or doesn't exist) — fall through to extension handling
+  }
+  return target.endsWith(".ts") ? target : `${target}.ts`;
+}
+
+// The original (pre-alias) names bound by an import or re-export declaration's
+// named clause, e.g. `{ projects }` or `{ projects as p }` both yield "projects".
+function namedBindingNames(node: ts.Node): string[] {
+  if (ts.isImportDeclaration(node) && node.importClause?.namedBindings) {
+    const bindings = node.importClause.namedBindings;
+    if (ts.isNamedImports(bindings)) {
+      return bindings.elements.map((e) => (e.propertyName ?? e.name).text);
+    }
+  }
+  if (ts.isExportDeclaration(node) && node.exportClause && ts.isNamedExports(node.exportClause)) {
+    return node.exportClause.elements.map((e) => (e.propertyName ?? e.name).text);
+  }
+  return [];
+}
+
+// Files that import or re-export `symbolName` from a specifier resolving to
+// one of `targetFiles` (C14: who imports `projects`). `targetFiles` themselves
+// are excluded — the module defining and re-exporting its own export is not a
+// "user" of it, only every other consumer is.
+export function namedImportUsers(
+  entries: readonly SourceEntry[],
+  targetFiles: readonly string[],
+  symbolName: string,
+): string[] {
+  const targetAbs = new Set(targetFiles.map((f) => resolve(f)));
+  const users = new Set<string>();
+  for (const { file, source } of entries) {
+    if (targetAbs.has(resolve(file))) continue;
+    const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+    const visit = (node: ts.Node): void => {
+      if (
+        (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+        node.moduleSpecifier &&
+        ts.isStringLiteral(node.moduleSpecifier)
+      ) {
+        const specifier = node.moduleSpecifier.text;
+        if (specifier.startsWith(".")) {
+          const resolved = resolveModuleFile(file, specifier);
+          if (targetAbs.has(resolved) && namedBindingNames(node).includes(symbolName)) {
+            users.add(file);
+          }
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+  }
+  return [...users];
 }
