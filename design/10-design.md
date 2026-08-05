@@ -183,7 +183,10 @@ served document can be checked against the tag of the image serving it. A moving
 the compose stack's convenience and is never an identity.
 
 The container's server is a **delivery wrapper and nothing more**: it serves a read-only tree,
-executes nothing per request, holds no state, and adds no header or body of its own. It must return a
+executes nothing per request, holds no state, adds nothing to the body, and sets no response header of
+its own choosing. `R4` in [`20-contract.md`](20-contract.md) is the canonical statement of that last
+rule and names the forbidden categories, because a server cannot literally add no header at all —
+HTTP requires them and every server identifies itself. It must return a
 **404 status** for an unknown path, not a 200 carrying the miss page — a soft 404 is a defect that
 looks like success to a person and lies to a crawler. Those constraints are the requirement; which
 server satisfies them is not a design decision.
@@ -788,7 +791,8 @@ and renumbering would rot those citations silently. An answered question keeps i
    documentation of how to run the image; a compose file in the homelab repository is the deployment.
    They are different things and only one of them is this repository's.
 
-Two further unresolved items were raised downstream and are owned by
-[`20-contract.md`](20-contract.md) rather than restated here: Presentation's token set (`U2`), and
-whether a social image asset exists (`U6`). Two others raised there — where the attestation record
-lives (`U3`) and which server serves the container tree (`U7`) — were answered on 2026-08-06.
+Three further unresolved items were raised downstream and are owned by
+[`20-contract.md`](20-contract.md) rather than restated here: Presentation's token set (`U2`), whether
+a social image asset exists (`U6`), and the Verification surface that would check `P2`–`P4` (`U9`).
+Two others raised there — where the attestation record lives (`U3`) and which server serves the
+container tree (`U7`) — were answered on 2026-08-06.

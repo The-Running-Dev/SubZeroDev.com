@@ -7,6 +7,112 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 
 ---
 
+### 2026-08-06 — `checkLinks` requests `GET`, not `HEAD`
+Context: `/reconcile`. `check-links.ts` issues `method: "GET"` and destroys the response without
+reading it. No design or contract text names a request method, and the three existing `checkLinks`
+entries cover `fetch`-versus-`node:http`, redirects and the `http:` branch — not this. `HEAD` is the
+conventional choice for a reachability check and is the obvious optimisation for a future author to
+reach for.
+Chosen: Keep `GET` and record why. A host that answers `405` to a `HEAD` is a live site, and the gate
+would report `LinkNotOk` against it — a red build naming a working project page, which is a false
+result rather than a slow one. The gate's whole claim is that the address answers; `GET` is what
+establishes that for every server, and the body is discarded unread, so the cost is one response's
+headers and a destroyed socket.
+Rejected: `HEAD` — cheaper, conventional, and it transfers no body at all, which is the reason it was
+worth checking; rejected because `HEAD` support is optional in practice and a `405` from an otherwise
+healthy host produces exactly the false red this gate must not produce. Sending `HEAD` and falling back
+to `GET` on a `405` — it recovers the saving and keeps correctness; rejected because it doubles the
+request count on the failing path and adds a branch to the one function whose per-target semantics
+three acceptance criteria already turn on, to save bytes nobody is paying for on fourteen targets once
+per push. Leaving it unrecorded — the reason would then live in the absence of a comment, and a
+future author switching to `HEAD` would find nothing to argue with.
+Reversibility: cheap — one option object and this entry
+
+### 2026-08-06 — `InvalidYear` takes precedence over `YearAfterBuild`
+Context: `/reconcile`. The *Error semantics* rows are not mutually exclusive as written: a `year` of
+`99999` is both outside 1000–9999 and greater than `BuildContext.utcYear`, and so is `2026.5`.
+`validate.ts` reports only `InvalidYear`, through an `else if`. The contract also says
+`validateInventory` reports **all** failures in one `Result`, which reads as requiring both.
+Chosen: The contract moves. The `YearAfterBuild` row gains "where `year` is otherwise a valid
+four-digit integer", making the precedence explicit. The code is right: both errors would carry the
+same `projectId`, the same `field` and no additional diagnosis, and the report exists to tell the
+author what to fix. "All failures" means every faulty *value*, not every row a single faulty value can
+be made to match.
+Rejected: Changing the `else if` to an `if` so both are reported — the literal reading of "all
+failures", and the option that needs no document edit; rejected because it produces a strictly worse
+error report for one fault and would need a new assertion in S1.8's fixtures to pin behaviour nobody
+wants. Leaving both untouched — the table's rows would stay non-exclusive while the implementation
+treats them as exclusive, so the next author writing a validator from the table produces different
+behaviour and no test catches it, since S1.8 filters by code and does not forbid a second.
+Reversibility: cheap — one table cell
+
+### 2026-08-06 — Four stale prose claims close: `R4`'s superseded wording, two counts, and one range
+Context: `/reconcile`. The tree showed **no** drift between the implemented modules and the contract —
+Content and Verification match `20-contract.md` code-for-code, and `npm run typecheck` and `npm test`
+(81 tests, 7 files) are green — but four prose claims across three documents were falsified by
+decisions already taken, none of them reachable from the code. `10-design.md` still required the
+container's server to add "no header or body of its own", which the `U7` entry had quoted **verbatim**
+as unsatisfiable when it reworded `R4` the day before. `10-design.md`'s closing sentence still counted
+"two" contract-owned unresolved items with `U9` raised. `20-contract.md` § *Unresolved* still bounded
+its stability note to "`U1`–`U6`" while `30-slices.md` cites `U7`. And `30-slices.md` still listed
+`P1`–`P5` as blocked by "`U2` alone", the correction `U9` explicitly assigned to this command.
+Chosen, on the owner's ruling, four prose edits and no code change: (1) the design's delivery-wrapper
+clause names what the server must not choose to send and points at `R4` as the canonical statement,
+saying why the absolute version cannot hold; (2) its closing sentence names three items and adds `U9`;
+(3) the contract's stability note drops the range and matches `10-design.md`'s own formulation —
+numbers are stable and never reused, with no bound to rot; (4) `30-slices.md` splits the bullet, since
+`P1` and `P5` are blocked by `U2` alone while `P2`–`P4` need `U9` as well.
+Recorded with it: the `U9` entry below asserted that every other item in the design's
+Verification-ownership list has a named function. Counting the eleven items against *Public signatures*
+found **two** counterexamples — content invariants and derived-value correctness — so the sentence was
+narrowed in both the contract and that entry, which was still uncommitted. The gap is unchanged; the
+reason for it is now true. The `U9` entry's own forward-pointing note is closed in this same commit,
+per `agent.md`'s lesson that a note about another file survives its own resolution.
+Rejected: Restoring `R4` to the design's absolute wording so the two agree — it makes the documents
+consistent by making the invariant unpassable, which the `U7` entry rejected on the same evidence, and
+it relitigates a signed-off decision with nothing new. Marking the design's clause as a known
+disagreement and changing no wording — cheaper and it makes the conflict visible; rejected because it
+leaves a third statement of one rule to keep in sync, which *Single ownership* forbids, and leaves the
+impossible sentence in the document a fresh `/design` or `/redteam` session reads first. Widening the
+contract's range to "`U1`–`U7`" — correct today and stale at the next citation, which is the failure
+this instance already is. Leaving `30-slices.md` to `/slices` — the narrower reading of this command's
+remit; rejected because `U9` named `/reconcile` as an owner of the correction and the 2026-08-05 and
+2026-08-06 entries already set the precedent for correcting that document's factual claims in place
+without re-slicing.
+Reversibility: cheap — prose in four files, no signature and no code touched
+
+### 2026-08-06 — `U9`: accessibility is a contract gap, not a loose word in the design
+Context: `/contract` re-derivation. `10-design.md` § *Module boundaries* enumerates what Verification
+owns, and **accessibility** is the only item in that list with nothing callable behind it at all. Two
+others — content invariants and derived-value correctness — also have no function in `20-contract.md`
+§ *Public signatures*, and need none, because each is discharged by a test calling Content's own total
+functions. `P2` (greyscale legibility), `P3` (`prefers-reduced-motion`) and `P4`
+(focus order and keyboard reachability) are invariants with nothing callable behind them and no
+`VerificationErrorCode`. All three are `00-brief.md` *Definition of done* bullets. This is the same
+shape as the four orphan codes closed on 2026-08-06, and it survived that pass because that pass
+counted error codes against the signature list and these three have no code to count.
+Chosen, on the owner's ruling: the contract is short, and the gap is recorded as `U9` rather than
+resolved. No signature is written — the design assigns the check to Verification and determines
+nothing about its shape, so writing one would be invention. Each of the three is separated by what
+would settle it: `P3` is a fork between a static `StylesheetText` check and a computed-style check in
+a browser, on the design's own "both are required" precedent for `V13` and `V2`; `P2` needs `U2`,
+because there is no palette to compute over and the legibility threshold is authored visual identity;
+`P4` needs the browser driver `30-slices.md` already lists as an open decision.
+Recorded with it: `30-slices.md` § *Blocked* said `P1`–`P5` were "blocked by `U2` alone", which `U9`
+narrows. `/contract` does not edit that document — reported, not corrected; `/reconcile` corrected it
+the same day, per the entry above.
+Rejected: Striking "accessibility" from the design's Verification list and adding a fourth bullet to
+the contract's "deliberately does not encode as build-time checks" list — it is the cheaper
+resolution, it costs one word, and it is defensible on the brief's own wording, since the
+accessibility bullet is the only *Definition of done* item that does not say how it is asserted while
+the two around it do; rejected because the three properties would then never be machine-checked and a
+regression in any of them is invisible until someone looks at the page, which is the class of silent
+failure `X4` was written to prevent for styling. Writing the three signatures now — it closes the gap
+in one pass; rejected because two of the three are underdetermined and the third would embed a
+contrast threshold that is `U2`'s to author. Leaving it unrecorded on the grounds that nothing on the
+render path is blocked — the exact shape of gap a re-derivation exists to find.
+Reversibility: cheap — one Unresolved entry and one headnote clause
+
 ### 2026-08-06 — `checkLinks` speaks `http:` so the gate can be tested against a local stub
 Context: `/reconcile`. `check-links.ts` selects `node:https` or `node:http` on the target's protocol,
 while `AbsoluteUrl` is https-only by contract, so the `http:` branch is unreachable from any real
