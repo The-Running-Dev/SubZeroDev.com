@@ -5,10 +5,6 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-- **Landing-page package version drift, across two other repositories.** `SubZeroDev.Platform.UI.LandingPage/design/30-slices.md` records UI2 as `in progress` with `0.1.0` as the published handoff, while that repo's `package.json` reads `0.2.0` and `SubZeroDev.Platform` pins `0.2.0` exactly in a shipped slice. One of those is stale. Reported, not reconciled — neither repository is this one. Blocks nothing here until a version must be pinned.
-- **`schemas.subzerodev.com` is referenced in the ecosystem's docs and does not resolve** (NXDOMAIN, verified 2026-08-05). Not this repository's to fix; noted because the project inventory here must not repeat the claim.
-- **`Idea.md` is CRLF.** House conventions say UTF-8 with LF. The content is clean UTF-8 — no CP1252 mojibake in the arrows or box-drawing — so this is line endings only.
-
 ---
 
 ### 2026-08-05 — Content exports the raw `projects` array, guarded by an import rule
