@@ -5,7 +5,103 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
+- Three `VerificationErrorCode` values have no producing function in `20-contract.md` § *Public
+  signatures*, so two invariants have no callable surface: `ManifestoAbsent` and `ProjectNameAbsent`
+  (`V3` — nothing takes built HTML and asserts the manifesto sentences and project names are present),
+  and `StaleDeploymentCandidate` (`V6` — nothing performs the branch-head check). `UnexpectedRequest`
+  and `ServedBytesMismatch` by contrast have producers, so this is a gap rather than the pattern. Found
+  while planning the publication CI ([`30-slices.md`](30-slices.md) § *Blocked*). It is `/contract`'s
+  work, a slice may not invent the signatures, and it is **not** blocked by `U1`, `U3` or `U7`.
+- `10-design.md`'s closing sentence says "Two further unresolved items … are owned by `20-contract.md`"
+  and names the attestation record and the social image. There are three — `U7`, which server serves
+  the container tree, has been contract-owned since `8ade7a6` and was never counted. Found by
+  `/contract`; the edit is `/reconcile`'s, since the sentence is the design's.
+
 ---
+
+### 2026-08-06 — `U1` verified closed at `0.3.0`; pin it, and `U6` becomes an owner question
+Context: The owner reported `U1` done. `AGENTS.md` forbids treating a published artifact as real
+before it reports success, and this repository's whole blocked list rests on the claim, so it was
+checked rather than accepted.
+Chosen: Record `U1` answered and `U4` answered at `0.3.0`. Evidence, in the order it decides the
+question: `npm` carries `0.3.0`; its `gitHead` is `ab44435e3bc1af90509dd0364856a84aa7d932e8`, the
+release commit, which is what makes the inspected working tree the published source rather than a
+guess about it; `LandingPageRoute` is a union whose `LandingPageBodyRoute` carries `body` and an
+optional `stylesheet` and has no `entry`; the adapter's `<script type="module">` sits on the
+entry-route branch alone; the stylesheet is emitted as `<style>` inside `<head>`. That is all three
+requirements, the third of which was only preferred, so `<style>` has a conforming home and the
+fallback of carrying it inside the body string is not needed.
+Consequences recorded rather than acted on: `U6` is no longer blocked but is not thereby answered —
+`socialImageUrl`, `openGraph.imageUrl` and `twitter.imageUrl` are all optional, so whether a social
+image asset exists is an owner content decision that now has nothing in front of it. `U5` still holds,
+since `noScript` remained optional. `LandingPageConfig` carries a config-level `styles?: readonly
+string[]` distinct from the per-route `stylesheet`, and which one carries Presentation's output is an
+unmade contract decision.
+Rejected: Accepting the report and marking `U1` closed without checking — it is the whole gate on the
+publication work, and *Verification* forbids asserting what a command could confirm. Reading only the
+type declarations — the shape permits a body route without proving the emitter omits the script, which
+is the requirement that actually matters. Trusting the local working tree alone — it sits one commit
+past the release, so the `gitHead` comparison is what closes the gap between inspected and published.
+Reversibility: cheap to re-verify; the pin is one lockfile entry
+
+### 2026-08-06 — `U7` answered: nginx on alpine, and `R4`'s header clause is reworded to be passable
+Context: `U7` blocked Artifact's third duty — the emitted server configuration — because the file's
+format belongs to whichever server serves the tree. Settling it also forced a second question: `R4` as
+written required the server to add "no header of its own", which nothing can satisfy, since HTTP
+requires headers and every server sends an identifier. An invariant nothing can pass is not an
+invariant.
+Chosen: `nginx:alpine`. `try_files $uri $uri/ =404` with `error_page 404 /404.html` expresses the whole
+requirement in two lines, and the config format is the one most likely to be read correctly by whoever
+reviews the file Artifact emits. `R4` becomes "adds no response header beyond those the protocol and
+the file's content type require", which keeps the intent — no cookie, no tracking header, no rewriting
+— without naming a header set that rots at the next base-image bump.
+Rejected: Caddy — a shorter config that is harder to get wrong, and header removal is a first-class
+directive, which would have made the `R4` question easier; rejected because the Caddyfile is less
+widely read than an nginx config and auto-HTTPS has to be explicitly disabled for this use. A minimal
+static binary on distroless — the smallest surface and the fewest default headers, fitting "delivery
+wrapper and nothing more" most literally; rejected because it adds a less-scrutinised dependency in a
+bespoke format nobody reviewing this repository would recognise. For `R4`: an explicit allowlist of
+permitted response headers asserted in the image gate — more rigorous, and the gate already runs the
+container so the check is cheap; rejected because the list must be revisited on every server bump and
+would go red for reasons that are not defects. Keeping `R4` as unasserted intent — byte identity
+covers the body only, so an added caching or tracking header would pass every gate.
+Reversibility: cheap for the wording; moderate for the server, which fixes the emitted config's format
+
+### 2026-08-06 — `U3` answered: a protected GitHub Environment is the attestation record
+Context: `U3` blocked `assertAttestation`'s CI wiring. The `Attestation` type and `V5` were written;
+where the record lives, and how the function obtains one, were not.
+Chosen: The `publish` job targets an environment with required reviewers. A human approves, and the
+provider records approver and timestamp; `assertAttestation` reads the run's approval record and takes
+the commit from the run's `head_sha`. It is the only candidate that both **gates** and **records** —
+an approval cannot be replayed onto another run, which is `V5` natively rather than by assertion.
+Recorded with it: the record binds to a run rather than to a commit, so the commit is derived rather
+than stored, and the exact API shape must be verified when `/contract` writes the retrieval path
+rather than assumed from this entry.
+Rejected: A signed `attestations/<commit>.json` committed per release — auditable forever and
+verifiable offline, which was its appeal; rejected on a flaw that is fatal rather than awkward,
+because attesting commit X creates commit X+1, so the deployed commit is never the attested one unless
+the deploy deliberately runs one behind. It also introduces persisted state into a design whose
+*Persisted schemas* section is deliberately "None". A `workflow_dispatch` naming the commit as an
+input — the commit binding is explicit rather than derived, which is the one thing it does better;
+rejected because it records without gating, so anyone able to dispatch can attest, and making it
+actually block publication means adding the environment anyway.
+Reversibility: expensive — it fixes where the release gate lives and what `assertAttestation` reads
+
+### 2026-08-05 — `V14`: the image tag gets its own announcement invariant, separate from `V8`
+Context: `/contract` re-derivation. `10-design.md`'s *Failure modes* § *The registry push fails* states
+"**No image tag is announced**, on the same rule that governs the live URL", and the contract encoded
+only the live-URL half — `V8` and the `PollExhausted` row. `V9` covers not *pushing* an ungated image,
+which is a different rule: it governs the push, not what is claimed after one fails. The gap is the
+only place a full re-derivation found the contract short of what the design determines.
+Chosen: A new `V14` — no image tag is stated or implied until the push for that tag has succeeded and
+the tag resolves in the registry. Owned by Verification, alongside `V8`.
+Rejected: Widening `V8` to name both the live URL and the image tag — fewer rows, and it reads as one
+rule because the design derives one from the other; rejected because the two are gated by different
+events, `V8` by `pollForCommit`'s exact-marker read-back and this one by the push's exit status, so a
+merged row cannot become a single assertion. Leaving the contract unchanged and relying on the design's
+failure mode — the rule is written there either way; rejected because the release workflow will be
+written from the invariant table, which is where the rule would have been absent.
+Reversibility: cheap — one table row
 
 ### 2026-08-05 — `checkLinks` uses `node:http`/`node:https`, not `fetch`
 Context: `/reconcile`. S3 chose the raw request modules over `fetch` and recorded the reason only in a

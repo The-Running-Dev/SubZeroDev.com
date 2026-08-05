@@ -740,7 +740,7 @@ where a separate module checks it, that is said in the row.
 | **R1** | Every emitted document carries exactly one build marker, and it carries the commit being built | Artifact |
 | **R2** | `missRootEntry` and `missEmittedEntry` are byte-identical in the finished tree | Artifact |
 | **R3** | Artifact compiles nothing, bundles nothing and resolves no module; the only change it makes to a document is the marker | Artifact |
-| **R4** | The emitted server configuration resolves every unknown path to `missRootEntry` with status 404, adds no header of its own, and executes nothing per request | Artifact |
+| **R4** | The emitted server configuration resolves every unknown path to `missRootEntry` with status 404; sets no cookie, no cache-control directive chosen by application logic, and no tracking or rewrite header; and executes nothing per request. A response header that is an unconfigured byproduct of serving a static file over HTTP — a content-type, a content-length, a last-modified time, an entity tag, the server's own identifying header — is not a violation | Artifact |
 | **R5** | `missEmittedEntry` is the package's emitted entry for Adapter's `missPath` — checked against the emitted tree, never assumed | Artifact |
 | **V1** | No document reaches publication unless it carries the exact commit's marker | Verification |
 | **V2** | Loading a route document triggers zero requests other than the navigation document itself | Verification |
@@ -755,6 +755,7 @@ where a separate module checks it, that is said in the row.
 | **V11** | What the running image serves for `/` is byte-identical to the emitted apex document | Verification |
 | **V12** | An unknown path returns status 404 carrying the emitted miss document, on **both** targets | Verification |
 | **V13** | No emitted document contains a script element, a linked stylesheet or an external asset reference | Verification |
+| **V14** | No image tag is stated or implied until the push for that tag has succeeded and the tag resolves in the registry | Verification |
 
 Three things the design states that this contract deliberately does **not** encode as build-time
 checks, because encoding them would duplicate a fact another module owns or claim a check that cannot
@@ -778,6 +779,25 @@ stable: `U1`–`U6` keep the meaning [`30-slices.md`](30-slices.md) cites them b
 has narrowed.
 
 ### U1 — The package cannot accept a caller-supplied body
+
+**Answered 2026-08-06: released at `0.3.0`, with all three capabilities including the preferred one.**
+Retained so citations resolve.
+
+Verified against the published package, not its documentation: `npm` carries `0.3.0`, whose `gitHead`
+is `ab44435e3bc1af90509dd0364856a84aa7d932e8` — the `Release landing page package 0.3.0 (#8)` commit —
+so the inspected source is the published source. `LandingPageRoute` is now
+`LandingPageEntryRoute | LandingPageBodyRoute`. A `LandingPageBodyRoute` carries `body: string` and
+`stylesheet?: string`, has **no** `entry` field, and the adapter emits the `<script type="module">`
+only on the entry-route branch. The stylesheet is emitted as a `<style>` element inside `<head>`.
+`LandingPageMetadata.noScript` remains optional, so `U5`'s decision to declare none still holds.
+
+**Still to write:** Adapter's `LandingPageConfig` default export, its two route declarations and the
+metadata block — `A1`, `A2` and `A4` become enforceable with them. `LandingPageConfig` also carries a
+config-level `styles?: readonly string[]` distinct from the per-route `stylesheet`; which one carries
+Presentation's output is a contract decision that has not been made.
+
+The paragraphs below describe the superseded `0.2.0` state and are retained as the record of what was
+asked for and why.
 
 Verified against `subzerodev-platform-ui-landing-page@0.2.0`: the adapter composes one fixed document
 per route — `<div id="root"></div>` plus `<script type="module" src="…">` — and hands it to Vite.
@@ -814,17 +834,29 @@ and which depends on what a primitive is. `stylesheet: StylesheetText` is writte
 
 ### U3 — Where the attestation record lives
 
-The design requires an attestation bound to the full commit id, recording approver, commit and
-timestamp, that cannot be reused. The `Attestation` type and `V5` are written above. The storage — a
-CI environment approval, a signed file, a workflow artifact — is not determined, and neither is how
-`assertAttestation` obtains the record. Settled by choosing the CI gate mechanism.
+**Answered 2026-08-06: a protected GitHub Environment with required reviewers.** Retained so citations
+resolve.
+
+The `publish` job targets the environment; a human approves; the provider records approver and
+timestamp. `assertAttestation` reads the run's approval record and takes the commit from the run's
+`head_sha`, so the commit is derived rather than stored. An approval cannot be replayed onto another
+run, which satisfies `V5` natively.
+
+**Still to write:** how `assertAttestation` obtains the record — the API shape must be verified rather
+than assumed — and the token scope the `publish` job needs to read it. The `Attestation` type and `V5`
+are unchanged.
 
 ### U4 — Package version to pin
 
-The design's *Open question 2*, unchanged. `SubZeroDev.Platform` pins `0.2.0` exactly and the
-package's `package.json` reads `0.2.0`, while that package's own `30-slices.md` records UI2 as in
-progress with `0.1.0` as the published handoff. Reported, not reconciled — neither repository is this
-one. U1 makes this moot until a version exists that satisfies it.
+**Answered 2026-08-06: pin `0.3.0` exactly.** Retained so citations resolve.
+
+It is the version that satisfies `U1`, verified as published rather than assumed — see that entry for
+the evidence. The pin is exact, with a lockfile, per the design's *The package is unavailable or
+drifts*.
+
+The prior drift this entry recorded — `SubZeroDev.Platform` pinning `0.2.0`, the package's own
+`30-slices.md` naming `0.1.0` as the published handoff — is superseded for this repository's purposes
+but is still live for the other two, and is tracked as issue #4. Neither repository is this one.
 
 ### U5 — `<noscript>` is withdrawn, pending an owner edit to the brief
 
@@ -852,15 +884,24 @@ determined. Settled with U1, since the whole metadata block is written then.
 
 ### U7 — Which server serves the container tree
 
+**Answered 2026-08-06: `nginx:alpine`.** Retained so citations resolve.
+
 The design states the requirements — a read-only tree, nothing executed per request, no state, no
 added header, and an unknown path resolved to the root miss document with a **404 status** — and says
-explicitly that which server satisfies them is not a design decision. It is, however, a contract
-decision the moment Artifact has to emit a configuration file, because the file's format belongs to
-the server. `R4` states the behaviour; the emitted file's shape and `finalizeArtifact`'s third duty
-are not written.
+explicitly that which server satisfies them is not a design decision. It became a contract decision the
+moment Artifact had to emit a configuration file, because the file's format belongs to the server.
 
-Settled by choosing the base image and server. `V12` verifies the behaviour whatever the choice, so
-nothing downstream of the image gate depends on this.
+`try_files $uri $uri/ =404` with `error_page 404 /404.html` expresses the requirement. Settling this
+also reworded `R4`: "adds no header of its own" was unsatisfiable, since HTTP requires headers and
+every server sends an identifier. A later pass (PR #12 review) found the rewording itself untestable —
+"the protocol and the file's content type require" named no boundary a verifier could check — and
+sharpened it to name the forbidden category directly: no cookie, no application-chosen cache-control
+directive, no tracking or rewrite header, with the unconfigured byproducts of serving a static file
+carved out by name rather than by an open-ended "require".
+
+**Still to write:** the emitted configuration's shape, `finalizeArtifact`'s third duty, and the
+`ArtifactReport` field that names the emitted config. `V12` verifies the behaviour whatever the file
+says, so nothing downstream of the image gate depends on those being written first.
 
 ### U8 — The `validateInventory` call site and load-time failure
 

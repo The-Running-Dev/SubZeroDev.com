@@ -188,6 +188,58 @@ are written; the storage mechanism and how the function obtains a record are not
 
 **Released by:** choosing the CI gate mechanism.
 
+### Blocked by `U1`, `U3` and `U7` — the publication CI
+
+The job graph below is derived from [`10-design.md`](10-design.md)'s ordering invariant `V7` and its
+*Concurrency and ordering* section. It is recorded here so the shape is not re-derived per slice; it is
+not itself a slice, and it allocates no number.
+
+```
+build ──┬──► image-gate ──┐
+        │                 ├──► attestation ──► publish
+        └──► link-check ──┘
+```
+
+| Job | Discharges | Runs on | Blocked by |
+|---|---|---|---|
+| `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `V1`, `V2`, `V3`\*, `V13`, `X4` | push + all PRs | `U1`, `U7` |
+| `image-gate` — build, run and gate the image before any push | `V10`, `V11`, `V12` (container half) | push + all PRs | `U1`, `U7` |
+| `link-check` — **already implemented** | `V4` | push + same-repo PRs | — |
+| `attestation` — human gate bound to the commit | `V5` | master push | `U3` |
+| `publish` — branch-head check, deploy and push, read-back | `V6`\*–`V9`, `V12` (Pages half), `V14` | master push | `U1`, `U3`, `U7` |
+
+\* `V3` and `V6` have **no callable Verification surface today** — no `assert*` function discharges
+either, per [`90-decisions.md`](90-decisions.md) § *Open*. The table names the job each will run in
+once that surface exists; neither is runnable as this table stands, and a slice built from this table
+before `/contract` closes the gap would either skip the check silently or invent a signature `/slices`
+is not permitted to invent.
+
+Three constraints follow from the design rather than from preference. A slice that re-decides any of
+them fails silently:
+
+1. **`publish` is one job.** The design holds that two publication targets are not two critical
+   sections. A workflow's concurrency group is per job, and two jobs sharing a group serialize against
+   each other, which cannot express one critical section spanning both. Pages deploy and registry push
+   therefore share a single job holding a single group.
+2. **That group does not cancel in progress.** Cancelling mid-publish produces the torn state the
+   critical section exists to prevent. The design's mechanism for stopping a superseded run is the
+   branch-head check — a clean stop — not cancellation.
+3. **The gated image is carried, never rebuilt.** The gate precedes the push and the push follows the
+   branch-head check, so the image crosses a job boundary. Rebuilding breaks *the gated image is the
+   pushed image*; a staging tag would be a registry write before the branch-head check, which the
+   design forbids. That leaves saving and reloading it, with the digest asserted across the boundary.
+
+Four choices are open and each needs a decision-log entry before implementation, not an implementer's
+call: the browser driver for `V2` and whether it loads over `file://` or a local static server; the base
+image and file server (`U7`, which also determines Artifact's third duty); the image build and push
+mechanism, with registry write scoped to `publish` alone; and the attestation mechanism (`U3`).
+
+**Released by:** `U7` and `U3` are answered as of 2026-08-06 — `nginx:alpine` and a protected GitHub
+Environment respectively — so what remains for each is contract text, not a decision. `U1` is the
+external half and is the gate on the whole graph. Independently of all three, `V3` and `V6` have no
+callable surface; that gap is staged in [`90-decisions.md`](90-decisions.md) § *Open* and is
+`/contract`'s, not a slice's.
+
 ---
 
 ## Next
