@@ -7,6 +7,260 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 
 ---
 
+### 2026-08-05 — Adapter is the `validateInventory` call site and owns the build's non-zero exit
+Context: Answers the `U8` the entry two below left open. The package CLI loads Adapter, Adapter needs
+an `Inventory`, and only Adapter or Composition can supply one — a module above Adapter has no channel
+to pass a value into a module the CLI imports, so a seventh orchestration module would have to
+validate a second time and was not a real third option. Either answer amends the design, because the
+design forbids Adapter reading Content *and* says Composition exposes nothing but its two route
+entries.
+Chosen, on the owner's ruling: Adapter. It constructs `BuildContext` from the environment, calls
+`validateInventory(projects, context)`, and on failure reports every `ContentError` and exits
+non-zero, rendering nothing (`A5`). `A3` narrows from "reads nothing from Content" to an enumerated
+import list — `projects`, `validateInventory`, `BuildContext`, `parseCommitId` — which is checkable at
+the import level, where the original prose was not, and preserves the property the design actually
+wanted: exactly one path from data to markup. `C14` now names Adapter as the call site. The exit is a
+process exit, not a throw, so *Error semantics* holds where a `Result` returned from module evaluation
+would have had no caller.
+Rejected: Composition holding it — it leaves `A3` untouched, which was the argument for it; rejected
+because what gives instead is Composition's "exposes nothing else", and it puts a process exit inside
+the one module that is otherwise pure, DOM-free and testable without stubbing anything. A seventh
+`Build` module — the tidiest boundary on paper and the option that changes no existing invariant;
+rejected because it cannot reach the CLI-loaded module graph, so it buys a module and still leaves the
+call site question unanswered. Leaving `U8` open until `U1` releases — the previous position, declined
+by the owner; it would have handed a cheaper model an unresolved architectural question at the moment
+the package finally moved.
+Reversibility: expensive — it fixes where the build reads its environment and where it refuses to build
+Divergence: `10-design.md` § *Module boundaries* still says Adapter reads nothing from Content
+directly. One clause, `/reconcile`'s to edit; recorded in `20-contract.md` § `U8`.
+
+### 2026-08-05 — The build marker is an HTML comment, injected after the root miss document is copied
+Context: `/contract` re-run. The design moved the marker from the package's closed metadata set to
+Artifact, which owns the format outright and had no format written down. The requirements are fixed:
+the full commit id, non-visual, machine-readable, and extractable from a raw response body with
+nothing parsed and nothing executed.
+Chosen: `<!-- build-commit: <40 hex> -->`, injected immediately before the first `</head>` of every
+emitted document and nowhere else, exactly once. `finalizeArtifact` copies `404/index.html` to
+`404.html` **before** injecting, so both documents are marked in the same pass and stay byte-identical
+(`R2`). The prefix and suffix are Artifact constants; `readBuildMarker` imports them rather than
+restating the pattern.
+Rejected: `<meta name="build-commit" content="…">` — it is inspectable in devtools and reads as
+conventional; rejected because an unregistered `meta` name is flagged by a conforming HTML validator,
+and this design already refused once to ship output it would have to except from validation, when it
+kept `<style>` out of `<body>`. Injecting before copying — it also works today and breaks silently the
+day a second post-build rewrite lands, since the copy would then miss it. Leaving the format
+unresolved — it was blocked only while the package owned it, and leaving it open now would block
+`readBuildMarker`, `V1` and the whole read-back for no reason.
+Reversibility: cheap — two constants and one insertion rule, with a single reader
+
+### 2026-08-05 — Composition exposes two total functions; the validation call site is left open
+Context: The design gives Composition a public surface of "per route, the prerendered body HTML, plus
+the stylesheet that body requires" and says it exposes nothing else. It does not say where the
+`Inventory` comes from, and it forbids Adapter reading Content — so the `validateInventory` call site
+has no named home.
+Chosen: `composeApex(inventory: Inventory): ComposedRoute` and `composeMiss(): ComposedRoute`, both
+total and neither returning an error. `ComposedRoute.stylesheet` is the route's own stylesheet, not
+the union of Presentation's rules, which is what makes the markup/stylesheet agreement check (`X4`)
+per document. `BodyHtml` and `StylesheetText` are branded, because both are handed to an external
+package as bare strings. Where the `Inventory` is produced is recorded as `U8` rather than answered —
+taking it as a parameter means no signature depends on the answer.
+Rejected: `composeApex` performing validation itself and returning `Result<ComposedRoute,
+ContentError>` — it is the only module that may hold the call under the design's dependency direction,
+and it was the leading candidate for that reason; rejected because Composition is evaluated by the
+package CLI during a build, where a returned `Result` has no caller, so the choice silently forces
+either a throw or a process exit — a decision that belongs with Adapter's entry point, not smuggled
+into a render signature. `composeMiss(inventory)` for symmetry — an unused parameter is an invitation
+to use it, and `X1` already makes any figure on the miss page a contract amendment. Unbranded
+`string` for both values — the package would accept any string at all, including a fragment that was
+never composed.
+Reversibility: cheap for the brands; `U8` is the expensive half and is deliberately still open
+
+### 2026-08-05 — Content gains `parseCommitId`; Artifact validates the environment's commit through it
+Context: Artifact takes the commit from the build environment as a raw string and the design says it
+depends on Content for the commit-id type only. Without a shared parser the 40-hex rule would have one
+implementation in whatever constructs `BuildContext` and a second inside Artifact.
+Chosen: `parseCommitId(value: string): CommitId | null` in Content, named in `C15` as the only
+implementation of the pattern. Artifact turns a `null` into `CommitIdMalformed`.
+Rejected: Artifact validating the string itself — two copies of one regex, which *Single ownership*
+forbids, and the copies would be in the two modules furthest apart in the dependency graph. A
+`Result`-returning parser — a second error vocabulary for a single-condition parse, with one caller
+that immediately re-wraps it. Adding a matching `parseYear` for symmetry — no second consumer exists,
+and the budget rule says not to manufacture one.
+Reversibility: cheap
+
+### 2026-08-05 — Verification's new assertions compare exactly, and Artifact gets its own error type
+Context: The re-run design added four checks with no contract surface: markup/stylesheet agreement,
+built-output self-containment, byte identity between what the image serves and what was emitted, and
+an unknown path that must carry both a 404 status and the miss composition. The previous contract
+carried one `UnknownPathNotHandled` code for the last of those.
+Chosen: Pure `assert*` functions returning `Result<null, VerificationError>` and reporting every fault
+in one result, matching the surface already established. `UnknownPathNotHandled` splits into
+`UnknownPathStatusWrong` and `UnknownPathBodyWrong`, because a soft 404 and a wrong body are different
+defects with different causes. `assertUnknownPathResponse` requires body **equality** with the emitted
+miss document, and `assertServedBytesMatchEmitted` compares bytes rather than parsed documents.
+Artifact gets its own `ArtifactError`, none of it retryable, including `WriteFailed`.
+Rejected: Substring containment for the miss body — it passes on a host that wraps the right
+composition in its own error chrome, which is a different page from the one that was verified.
+Comparing parsed documents for byte identity — the failure being caught is a transform on one
+publication path, and a transform that preserves the parse tree still changes what a crawler receives.
+Reusing `VerificationError` for Artifact — Artifact is a build step, not an assertion, and its faults
+are answered by fixing the build rather than by failing a gate. Retryable `WriteFailed` — a build that
+cannot write its own output directory has an environment fault, and retrying inside the step hides it.
+Reversibility: cheap
+
+### 2026-08-05 — Two publication targets: Pages as permanent preview, a container image as the release
+Context: The owner stated mid-`/design` that the site is delivered through a docker compose stack and
+a container this repository publishes — a requirement absent from `00-brief.md`, which describes a
+static site with no server and frames *Definition of done* around a single deployed target. Verified
+while assessing it: GitHub Pages is already enabled on this repository (`build_type: workflow`,
+source `master`, public, never deployed), and the landing-page package already ships a reusable
+Pages deploy workflow.
+Chosen: Both targets publish the same emitted tree. Pages is the permanent preview, deployed every
+commit; the container image is the release. Byte identity between them is asserted rather than
+assumed. The container's server is a delivery wrapper — read-only tree, nothing executed per request,
+no state, no added headers — which preserves the intent of the brief's *Environment* sentence while
+contradicting its letter. The conflict is recorded in `10-design.md` as a known disagreement; the
+brief is the owner's to edit.
+Rejected: Pages as scaffolding removed once the container works — cheaper, one gate, no identity
+assertion; rejected because a per-commit URL costs almost nothing here and a preview you delete was
+never load-bearing. Pages as the release with the container as an extra distribution — the original
+single-target design with a container bolted on; rejected on the owner's ruling, and because it leaves
+two answers to which target the attestation governs. Treating the container as packaging outside the
+design — rejected because the 404 story, the release gate and image identity are all design concerns,
+not build details.
+Reversibility: expensive — it adds a publication path, a server configuration this repository owns,
+and an identity assertion that exists only because there are two targets
+Accepted cost: if the preview is ever allowed to drift from the release it is worse than no preview,
+because it will be trusted
+
+### 2026-08-05 — The image is gated in CI before publication, never after deployment
+Context: The design's release gate — marker read-back and unknown-path check — was written for one
+target. A container introduces a second, and the question is where it is proved correct.
+Chosen: CI runs the image it just built, polls until the served marker equals the commit, requires a
+unique unknown path to return a 404 **status** carrying the miss composition, and compares served
+bytes for `/` against the emitted file. Only a passing gate licenses the registry push, so no compose
+stack can pull an image that was never run. The gate sits before the human attestation, because it is
+hermetic and a failure there means the artifact is wrong — spending the one gate that cannot be re-run
+cheaply on an artifact a machine can already prove broken is waste.
+Rejected: Gating against the deployed compose instance — proves the actually delivered thing, and was
+seriously considered for that; rejected because it needs a network path from CI into the delivery
+environment, couples the gate to infrastructure the brief puts out of scope, and publishes the broken
+image before anything notices. Both gates — the most rigorous option and it closes the real gap
+between *the image is correct* and *the site is serving it*; deferred rather than dismissed, and
+nothing here forecloses adding it if the stack becomes reachable from CI. Publishing on a green build
+with no image gate — the convention, and it makes the compose stack the first thing to run the image.
+Reversibility: cheap — the gate is a CI job
+
+### 2026-08-05 — Image identity is commit identity: GHCR, tagged by full commit id
+Context: The design binds the build marker, the attestation and the deployment read-back to the full
+commit id. An image carries its own digest and tag, so the two identities have to be related or there
+are two answers to what is deployed.
+Chosen: Publish to GHCR, tagged with the full commit id — the same value the build marker carries —
+plus a moving `latest` for the compose stack's convenience that is never treated as an identity. The
+marker inside a served document is therefore checkable against the tag of the image serving it.
+Rejected: Semantic version tags — they read better in a compose file, which is a genuine benefit to
+whoever maintains one; rejected because it introduces a second identity with a mapping nothing
+maintains, and this repository has no release process to produce a version. Docker Hub — credentials
+outside the repository's own permission model for no capability GHCR lacks. Tagging only `latest` —
+one less thing to think about, and it makes rollback inexpressible and the read-back impossible to
+bind to a commit.
+Reversibility: cheap — additional tags can be added later; the commit tag is the one that must exist
+
+### 2026-08-05 — Artifact owns the container's server configuration alongside root `404.html`
+Context: GitHub Pages serves root `404.html` by host convention. A container has no such convention
+and needs explicit configuration to resolve an unknown path to that file with a 404 status. The two
+targets reach the same document by different mechanisms.
+Chosen: Both belong to **Artifact**. One concern in two files: the first puts the miss document where
+a host convention expects it, the second tells a host with no such convention where it is. The image
+build and registry push are packaging, not a module — they consume Artifact's tree, import nothing and
+are imported by nothing.
+Rejected: A separate module for the server configuration — a seventh module for one static file, and
+split across modules the two would drift with a silent failure, since a container answering every
+unknown path with 200 looks fine until a crawler indexes it. Leaving the configuration to the
+deployment environment — it makes correctness depend on something outside this repository that no gate
+here can check.
+Reversibility: cheap
+
+### 2026-08-05 — The site renders here; the package accepts a body rather than learning to render
+Context: `/design` re-run. The earlier design required the external package to emit prerendered
+documents, decided before anyone had read the package. Verified against
+`subzerodev-platform-ui-landing-page@0.2.0` at `be67a11`: it composes a fixed `<head>`, emits a shell
+body of `<div id="root"></div>` plus a module script, and hands that to Vite. No render path, no
+React dependency, no server-render step. The route entry it bundles is already consumer-owned code,
+so the content is generated here either way. Requiring the package to render means requiring it to
+execute consumer entry modules — a rendering framework grafted onto a bundler.
+Chosen: This repository renders its composition to HTML and to a stylesheet, and hands both to the
+package. The package's obligation narrows to two capabilities: emit a caller-supplied body instead of
+the fixed shell, and omit the entry script when one is supplied. It keeps Vite, the shell, the head
+and the output tree. Composition's public surface becomes body HTML plus a stylesheet rather than
+route entries; Adapter now depends on Composition.
+Rejected: Requiring the package to render — the earlier position, rejected because it is a large
+feature every consumer pays for, to buy what two optional fields buy. Abandoning the package and
+owning emission here — the only option that ships without another repository moving, and the reason
+it was seriously considered; rejected because it puts a bundler and an HTML pipeline into the
+repository with the least reason to own one, and the duplication is paid forever while the wait is
+paid once. Client rendering with a `noScript` line — free for a joke status page, not for the
+company's only public statement. Duplicating the manifesto into `<noscript>` — a second copy of every
+sentence, which *Single ownership* forbids and `agent.md` records as silently drifting.
+Reversibility: expensive — it sets the module boundaries and what the package is asked for
+Note: the package declares a per-route `hydrate` flag that nothing reads. Whether it is wired to this
+mechanism or removed is that repository's call.
+
+### 2026-08-05 — A post-build Artifact step is owned here, cutting the package ask from four to two
+Context: The design's four package requirements included a root `404.html` and injection of the
+commit build marker. Neither needs any knowledge of the package: the first copies one emitted file,
+the second rewrites a string in the others. The package's head metadata is a closed set with no
+element for a marker, so it cannot be route metadata.
+Chosen: A new **Artifact** module in this repository performs both over the emitted output, after the
+package build and before any verification read. It compiles nothing, bundles nothing and resolves no
+module — the moment it needs to, it has become a build system and belongs back in the package. The
+package build, Artifact and the offline assertions run sequentially in one CI job over one working
+directory, because a job boundary is where a stale or partial output tree becomes invisible.
+Rejected: Keeping both in the package ask — tidier on paper, and it leaves this repository owning
+nothing after the build; rejected because it doubles the ask and blocks two trivially-solvable
+requirements behind another repository's release schedule. Treating the marker as head metadata — the
+metadata set is closed, so this collapses into the previous option. Deriving the served commit from
+page content instead of a marker — two commits can emit identical copy and a CDN can serve either.
+Reversibility: cheap — the step is small and could move into the package later
+
+### 2026-08-05 — The stylesheet is a head element; icons are data URIs in the existing field
+Context: Two smaller shape questions fell out of the passthrough decision. The stylesheet has to
+reach the document somehow, and the brief requires an icon set with no additional request.
+Chosen: The stylesheet is supplied separately and emitted as a `<style>` element in the head. Icons
+are embedded as data URIs in the icon `href` the package already emits — no package change, since the
+field is a string and a data URI is a URL.
+Rejected: Carrying `<style>` inside the prerendered body string — it reduces the package ask to a
+single field and keeps markup and stylesheet travelling together, which is where the drift risk is;
+rejected because `<style>` is metadata content and is not conforming in `<body>`, and a design that
+asserts its own output shape should not ship output it must except from validation. Asking the
+package for an icon-embedding mechanism — a third requirement on an awaited release, to buy nothing.
+Reversibility: cheap
+
+### 2026-08-05 — Markup/stylesheet agreement is a build-time assertion, not a review habit
+Context: Splitting the document into a body string and a stylesheet string, produced by two modules
+and reassembled by a third, creates a drift risk this design did not previously have: a class with no
+rule, or a rule with no user, and no compiler to notice. A page that silently loses its styling is
+indistinguishable from a page that never had any.
+Chosen: An assertion that every class referenced in the emitted body has a matching selector in the
+emitted stylesheet, and every selector has a user. Failure is a build failure.
+Rejected: Reporting it as a warning — an unstyled apex is the failure the whole design exists to
+prevent, and a warning in a log nobody reads is how it would ship. Relying on visual review — it
+catches the missing rule and never catches the dead one, and it does not run in CI.
+Reversibility: cheap
+
+### 2026-08-05 — `40-site.md` citations removed; the rule they quoted lives in this repo's brief
+Context: `10-design.md` twice cited `40-site.md` as governing authority. That file does not exist in
+this repository. The rule quoted at one site — *nothing may be funnier than it is true* — is in
+`design/00-brief.md`. The other, about a parser returning zero slices, describes a markdown parser
+this repository does not have and has no local home at all. Both were imported from a sibling
+repository's design set, which `AGENTS.md` *What not to do* forbids.
+Chosen: Re-attribute the first to the brief, and restate the second on its own terms — an inventory
+that reduces to nothing is a fault in the inventory, not a page with no projects on it.
+Rejected: Copying `40-site.md`'s text into this repository so the citation resolves — two copies of a
+rule is the divergence *Single ownership* exists to prevent. Leaving the citations and adding the
+missing file — this repository has no `40-site.md` to write and no reason for one.
+Reversibility: cheap
+
 ### 2026-08-05 — Content exports the raw `projects` array, guarded by an import rule
 Context: `/slices` found that `validateInventory` takes `readonly Project[]` and is described as the
 sole entry point into Content's data, while no public signature produces that array. S2 cannot commit
