@@ -6,7 +6,8 @@
   "description": "The SubZeroDev.com apex site.",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check-links": "vitest run --config vitest.link-check.config.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

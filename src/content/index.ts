@@ -1,7 +1,7 @@
-// Content — public surface delivered by S1 and S2.
+// Content — public surface delivered by S1, S2 and S3.
 //
-// The copy constants and the derivation functions arrive in later slices; only
-// what S1 and S2 deliver is re-exported here.
+// The copy constants and the remaining derivation functions arrive in later
+// slices; only what S1, S2 and S3 deliver is re-exported here.
 
 export type {
   AbsoluteUrl,
@@ -13,6 +13,7 @@ export type {
   Inventory,
   Project,
   ProjectId,
+  ResolvedHome,
   Result,
   RootRelativePath,
   Stage,
@@ -21,4 +22,5 @@ export type {
 export type { ContentError, ContentErrorCode } from "./errors";
 export { stageOrder } from "./stage-order";
 export { validateInventory } from "./validate";
+export { resolvedHomes } from "./resolved-homes";
 export { projects } from "./projects";

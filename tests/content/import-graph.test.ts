@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
+  importsIntoDir,
   importViolations,
   listTsFiles,
   namedImportUsers,
@@ -12,6 +13,7 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const contentDir = resolve(here, "../../src/content");
+const verificationDir = resolve(here, "../../src/verification");
 const repoRoot = resolve(here, "../..");
 
 describe("S1.10 — Content imports no other repository module (invariant C1)", () => {
@@ -51,15 +53,21 @@ describe("S1.10 — Content imports no other repository module (invariant C1)", 
   });
 });
 
-describe("S2.8 — nothing imports `projects` except the validateInventory call site (invariant C14)", () => {
+describe("S2.8/S3.7 — nothing imports `projects` except validateInventory's call site and Verification's inventory assertion (invariant C14)", () => {
   const targetFiles = [resolve(contentDir, "projects.ts"), resolve(contentDir, "index.ts")];
-  const callSite = resolve(repoRoot, "tests/content/inventory.test.ts");
+  // C14's closed importer set: the S2 call site that validates the inventory,
+  // and S3's live link-check test — the "Verification's inventory assertion"
+  // the contract names as C14's other permitted importer.
+  const callSites = [
+    resolve(repoRoot, "tests/content/inventory.test.ts"),
+    resolve(repoRoot, "tests/verification/live/link-check.test.ts"),
+  ];
 
-  it("the only importer across the repository is the validateInventory call site", () => {
+  it("the only importers across the repository are those two call sites", () => {
     const files = listTsFiles(repoRoot);
     expect(files.length).toBeGreaterThan(0);
     const users = namedImportUsers(readEntries(files), targetFiles, "projects");
-    expect(users).toEqual([callSite]);
+    expect(users.sort()).toEqual([...callSites].sort());
   });
 
   it("the check has teeth: an unrelated file importing `projects` is flagged", () => {
@@ -111,5 +119,35 @@ describe("S2.8 — nothing imports `projects` except the validateInventory call 
     ["a namespace import of an unrelated module", 'import * as other from "../presentation/tokens";'],
   ])("%s is not flagged", (_label, source) => {
     expect(namedImportUsers([{ file: offender, source }], targetFiles, "projects")).toEqual([]);
+  });
+});
+
+describe("S3.7 — nothing imports Verification", () => {
+  // Scoped to `src`: tests are legitimate consumers of Verification's public
+  // surface, the same way `tests/content/inventory.test.ts` is C14's named
+  // exception for `projects`. What this invariant forbids is a production
+  // module — Content, Composition, Presentation, Adapter, Artifact — reading
+  // Verification, not a test exercising it.
+  const srcDir = resolve(repoRoot, "src");
+
+  it("no source file outside src/verification imports it", () => {
+    const files = listTsFiles(srcDir);
+    expect(files.length).toBeGreaterThan(0);
+    expect(importsIntoDir(verificationDir, readEntries(files))).toEqual([]);
+  });
+
+  it("the check has teeth: an import into src/verification from elsewhere is flagged", () => {
+    const violations = importsIntoDir(verificationDir, [
+      { file: resolve(contentDir, "types.ts"), source: 'import { checkLinks } from "../verification";' },
+    ]);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toMatchObject({ specifier: "../verification" });
+  });
+
+  it("a file inside src/verification importing another file inside it is not flagged", () => {
+    const violations = importsIntoDir(verificationDir, [
+      { file: resolve(verificationDir, "check-links.ts"), source: 'import type { RetryPolicy } from "./types";' },
+    ]);
+    expect(violations).toEqual([]);
   });
 });
