@@ -1,0 +1,16 @@
+{
+  "name": "subzerodev-com",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The SubZeroDev.com apex site.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.10"
+  }
+}
