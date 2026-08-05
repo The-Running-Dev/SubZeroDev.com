@@ -1,5 +1,6 @@
-// S2.1–S2.7 — the committed inventory. This is C14's designated call site:
-// the one place outside Content permitted to import `projects`.
+// S2.1–S2.7 — the committed inventory. Under C14 this stands in for the
+// `validateInventory` call site until Adapter exists to hold it; Adapter is
+// blocked by the contract's U1.
 
 import { describe, expect, it } from "vitest";
 

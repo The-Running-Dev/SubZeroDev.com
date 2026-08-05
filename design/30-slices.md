@@ -119,6 +119,14 @@ Acceptance:
   - S3.4 Against a local stub answering 301, `checkLinks` returns `{ ok: true }` for that target.
   - S3.5 Against a local stub answering 500, `checkLinks` returns `{ ok: false }` with a `LinkNotOk` error naming that target, and that target's `attempts` is 1 — the code is not retryable.
   - S3.6 Against a local address that refuses connection, `checkLinks` returns `{ ok: false }` with `LinkUnreachable`, and that target's `LinkCheckResult` carries `status: null` and `attempts: 3`.
+
+> **S3.5 and S3.6 name a value the contract does not return — reported by `/reconcile`, not
+> re-sliced.** `Result`'s error branch carries errors only, so a failing run yields no
+> `LinkCheckResult` and neither criterion's `attempts` is readable through `checkLinks`. Both are met
+> against the stub that answered — a request count for S3.5, a connection count for S3.6 — which
+> observes the same fact from the other end. [`20-contract.md`](20-contract.md) § *Public signatures*
+> now states the loss. Whether the criteria are reworded to match is a slicing decision this note
+> does not make.
   - S3.7 The link check runs as a CI job distinct from the typecheck-and-test job, over `resolvedHomes` of the committed inventory; no Content or Composition source imports Verification, asserted by the same import-graph check S1.10 introduced.
   - S3.8 A temporary inventory entry addressing a host known not to resolve turns the networked job red and leaves the build job green — verified and reverted before merge.
 
