@@ -5,18 +5,24 @@ document and the contract disagree, one of them is a defect; say which rather th
 
 ## What can be sliced, and what cannot
 
-[`20-contract.md`](20-contract.md) § `U1` records a verified fact rather than a risk: at
-`subzerodev-platform-ui-landing-page@0.2.0` the external package **cannot** accept a caller-supplied
-body, and **cannot** omit its entry script when one is given. The contract therefore does not write
-Adapter's `LandingPageConfig`, its route declarations and their metadata, or Presentation's tokens.
+**Superseded 2026-08-06 and annotated in place, not re-sliced.**
+[`20-contract.md`](20-contract.md) § `U1` recorded a verified fact rather than a risk: at
+`subzerodev-platform-ui-landing-page@0.2.0` the external package **could not** accept a
+caller-supplied body, and **could not** omit its entry script when one was given. That released at
+`0.3.0`, and `U3`, `U4` and `U7` are answered with it, so the contract now writes Adapter's
+`LandingPageConfig`, its route declarations and their metadata, Artifact's server configuration, and
+the two `assert*` signatures `V3` and `V6` previously lacked.
 
-This paragraph previously also named the root `404.html`, the build marker and Composition's route
-entries. All three have since moved or been written — see the note under [*Blocked*](#blocked).
+**What still blocks the render path is [`U2`](20-contract.md#u2--presentations-token-set-and-primitives)
+— Presentation's token set — and it needs the owner, not a release.** Composition depends on
+Presentation and Adapter on Composition, so nothing that emits a document can be sliced until it is
+authored. Each route's title, description and social-image metadata are owner-supplied copy on the
+same footing.
 
-`/slices` may not introduce a signature the contract does not carry. Every slice that would emit,
-verify or publish a document is consequently unwritable today — not deferred by preference, but absent
-from the contract. Those are enumerated under [*Blocked*](#blocked) with the condition that releases
-each one.
+`/slices` may not introduce a signature the contract does not carry. That rule is why the three units
+below stop where they do; it is no longer what stops the publication work, which stops on `U2` and on
+owner-supplied copy. The entries under [*Blocked*](#blocked) are corrected in place — deciding what
+slice the released work becomes is `/slices`', and this pass does not make it.
 
 Three units remain fully specified, independently valuable, and deliverable now. They are below.
 
@@ -152,9 +158,9 @@ because the link check consumes it. The rest arrive with the page.
 Nothing below is a slice. Each names what is missing and the condition that releases it. No slice
 number is allocated until the contract can carry the work.
 
-### Blocked by `U1` — the package cannot emit the required artifact shape
+### Was blocked by `U1` — released at `0.3.0`; now blocked by `U2` alone
 
-- Presentation's token set and primitives, and invariants `P1`–`P4`. Also blocked by `U2`.
+- Presentation's token set and primitives, and invariants `P1`–`P5`. Blocked by `U2` alone.
 - Composition's two route entries, all page prose, and invariants `X1`–`X3`.
 - Adapter's `LandingPageConfig`, the route declarations and their metadata, and invariants `A1`–`A2`.
   The `origin` constant is written in the contract but has no consumer until then.
@@ -165,30 +171,37 @@ number is allocated until the contract can carry the work.
 - The built-output content assertions and invariant `V3`.
 - The `/404` route and the root `404.html` artifact.
 - Deployment itself, and with it every *Definition of done* bullet that names the deployed site.
-- Pinning the package version — `U4`, moot until a version satisfying `U1` exists.
+- Pinning the package version — `U4`, answered 2026-08-06: `0.3.0`, exactly, with a lockfile. The
+  dependency is not yet added, because no slice has needed it.
 - Whether a social image asset exists — `U6`, settled with the metadata block.
 
-**Released by:** a released version of `SubZeroDev.Platform.UI.LandingPage` satisfying the
-requirements enumerated in [`20-contract.md`](20-contract.md) § `U1` — two required, one preferred.
-Per the design's *Failure modes*, that is a slice in that repository, not something improvised here.
+**Released 2026-08-06.** `SubZeroDev.Platform.UI.LandingPage@0.3.0` satisfies all three requirements
+enumerated in [`20-contract.md`](20-contract.md) § `U1` — two required, one preferred — verified
+against the published source. `U4` pins it exactly.
 
-> **Stale against the revised contract — reported by `/reconcile`, not resolved here.** The revision
-> that moved rendering into this repository also moved the root miss document and the build marker out
-> of the package ask and into Artifact, and the contract now writes them in full: `buildMarkerPrefix`,
-> `buildMarkerSuffix`, `buildMarker`, `injectBuildMarker`, `finalizeArtifact` and `readBuildMarker`.
-> The marker-format half of the `readBuildMarker` entry above is therefore no longer blocked by `U1`;
-> only the parts needing an emitted document still are. `parseCommitId` and `C15` are likewise fully
-> specified and belong to no slice at all. What that work becomes is a slicing decision this note does
-> not make.
+> **What the list above now means — corrected by `/reconcile`, not re-sliced.** Every entry needing a
+> package capability is released. Every entry needing an *emitted document* is still blocked, but by
+> `U2` — Presentation's token set — since Composition cannot be written without it and nothing above
+> Composition can be written without Composition. The social-image entry (`U6`) and the route titles
+> and descriptions are owner-supplied copy, blocked by neither.
+>
+> Fully specified and blocked by nothing, belonging to no slice: `parseCommitId` and `C15`; the marker
+> format and its constants — `buildMarkerPrefix`, `buildMarkerSuffix`, `buildMarker`,
+> `injectBuildMarker`, `readBuildMarker`; `finalizeArtifact` and `serverConfig`; and the five Content
+> derivations listed under [*Not sliced, and why*](#not-sliced-and-why), whose sole consumer remains
+> Composition. What that work becomes is a slicing decision these notes do not make.
 
-### Blocked by `U3` — where the attestation record lives
+### Was blocked by `U3` — answered 2026-08-06
 
 `assertAttestation`'s CI wiring and invariant `V5`. The `Attestation` type and the function signature
-are written; the storage mechanism and how the function obtains a record are not.
+were written; the storage mechanism and how the function obtains a record were not.
 
-**Released by:** choosing the CI gate mechanism.
+**Released 2026-08-06.** A protected GitHub Environment with required reviewers, per
+[`20-contract.md`](20-contract.md) § `U3`. The function reads the run's approval record and takes the
+commit from the run's `head_sha`; the type carries `commit` and `approver`, and the first parameter is
+`Attestation | null` so `AttestationAbsent` has a producer.
 
-### Blocked by `U1`, `U3` and `U7` — the publication CI
+### Blocked by `U2` — the publication CI
 
 The job graph below is derived from [`10-design.md`](10-design.md)'s ordering invariant `V7` and its
 *Concurrency and ordering* section. It is recorded here so the shape is not re-derived per slice; it is
@@ -202,17 +215,17 @@ build ──┬──► image-gate ──┐
 
 | Job | Discharges | Runs on | Blocked by |
 |---|---|---|---|
-| `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `V1`, `V2`, `V3`\*, `V13`, `X4` | push + all PRs | `U1`, `U7` |
-| `image-gate` — build, run and gate the image before any push | `V10`, `V11`, `V12` (container half) | push + all PRs | `U1`, `U7` |
+| `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `V1`, `V2`, `V3`, `V13`, `X4` | push + all PRs | `U2` |
+| `image-gate` — build, run and gate the image before any push | `V10`, `V11`, `V12` (container half) | push + all PRs | `U2` |
 | `link-check` — **already implemented** | `V4` | push + same-repo PRs | — |
-| `attestation` — human gate bound to the commit | `V5` | master push | `U3` |
-| `publish` — branch-head check, deploy and push, read-back | `V6`\*–`V9`, `V12` (Pages half), `V14` | master push | `U1`, `U3`, `U7` |
+| `attestation` — human gate bound to the commit | `V5` | master push | — |
+| `publish` — branch-head check, deploy and push, read-back | `V6`–`V9`, `V12` (Pages half), `V14` | master push | `U2` |
 
-\* `V3` and `V6` have **no callable Verification surface today** — no `assert*` function discharges
-either, per [`90-decisions.md`](90-decisions.md) § *Open*. The table names the job each will run in
-once that surface exists; neither is runnable as this table stands, and a slice built from this table
-before `/contract` closes the gap would either skip the check silently or invent a signature `/slices`
-is not permitted to invent.
+`V3` and `V6` had no callable Verification surface when this table was written. Both gained one on
+2026-08-06 — `assertContentPresent` and `assertDeploymentCandidateCurrent`, per
+[`20-contract.md`](20-contract.md) § *Public signatures* — so no job in this table now names a check
+that nothing can perform. `attestation` is blocked by nothing and has no standalone value: it gates
+`publish`, which needs an emitted document.
 
 Three constraints follow from the design rather than from preference. A slice that re-decides any of
 them fails silently:
@@ -234,11 +247,11 @@ call: the browser driver for `V2` and whether it loads over `file://` or a local
 image and file server (`U7`, which also determines Artifact's third duty); the image build and push
 mechanism, with registry write scoped to `publish` alone; and the attestation mechanism (`U3`).
 
-**Released by:** `U7` and `U3` are answered as of 2026-08-06 — `nginx:alpine` and a protected GitHub
-Environment respectively — so what remains for each is contract text, not a decision. `U1` is the
-external half and is the gate on the whole graph. Independently of all three, `V3` and `V6` have no
-callable surface; that gap is staged in [`90-decisions.md`](90-decisions.md) § *Open* and is
-`/contract`'s, not a slice's.
+**Released by:** `U1`, `U3`, `U4` and `U7` are all answered as of 2026-08-06 — `0.3.0`, a protected
+GitHub Environment, an exact pin and `nginx:alpine` — and the contract text each gated is written.
+`U2` is what remains, and it gates every job that needs an emitted document. Of the four choices this
+section names as needing a decision-log entry before implementation, two are now made (`U7` and `U3`);
+the browser driver for `V2` and the image build-and-push mechanism are still open.
 
 ---
 

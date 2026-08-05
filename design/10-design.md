@@ -260,22 +260,28 @@ read-back. It may read any other module and the built output; **no repository mo
 Verification** — its own tests necessarily do, which is the one reading of that rule an
 implementation can satisfy. Offline checks run against the output *after* Artifact has finished
 with it. Networked checks run as a separate CI stage after the build and do not feed content back
-into it. The truth attestation is a required human CI gate bound to the full commit id; it records
-approver, commit and timestamp and cannot be reused by another commit. Exposes nothing.
+into it. The truth attestation is a required human CI gate bound to the full commit id, and cannot be
+reused by another commit: the CI provider records the approver, the run and the approval instant,
+while the value this repository reads back from that record carries the commit and the approver — see
+[`20-contract.md`](20-contract.md) § `U3`. Exposes nothing.
 
 **External: `SubZeroDev.Platform.UI.LandingPage`** — owns the build mechanism: the Vite invocation,
 the document shell, the `<head>`, and writing the output tree. This repository owns no build system,
 and adding one would re-create exactly the duplication that package was extracted to remove.
 
-Two things are required of it that `0.2.0` does not provide:
+Three things are required of it, and **all three are delivered as of `0.3.0`** — verified against the
+published source rather than its documentation, in [`20-contract.md`](20-contract.md) § `U1`:
 
 1. **Emit a caller-supplied body** into the document instead of the fixed `<div id="root"></div>`.
 2. **Omit the entry script** when a body is supplied, so the emitted document loads nothing.
+3. Preferred rather than required, and shipped alongside the other two: a caller-supplied inline
+   stylesheet emitted as a `<style>` element in the head. See *Alternatives considered* for why the
+   stylesheet is not simply carried inside the body string.
 
-A third is preferred and cheap: a caller-supplied inline stylesheet emitted as a `<style>` element in
-the head. See *Alternatives considered* for why the stylesheet is not simply carried inside the body
-string. The package already declares a per-route hydration flag that nothing reads; whether that flag
-is wired to this mechanism or removed is the package's call, not this design's.
+The list is retained as the record of what was asked for and why. `0.2.0` provided none of the three,
+which is the state every argument in *Failure modes* and *Alternatives considered* below was written
+against. The package also declares a per-route hydration flag that nothing reads; whether that flag is
+wired to this mechanism or removed is the package's call, not this design's.
 
 ### Dependency direction
 
@@ -377,14 +383,18 @@ the in-CI image gate and fails before the image is published.
 **What fails:** the composed content has nowhere to go. The emitted document is the fixed shell, the
 manifesto is absent from the served HTML, and the document loads a module script.
 
-**Detected by:** this is a static fact about the pinned version, not a runtime condition. At `0.2.0`
-it is **true today** — verified against the package source, not inferred from its documentation.
+**Detected by:** this is a static fact about the pinned version, not a runtime condition. It was true
+at `0.2.0` and is **false at `0.3.0`**, which delivers all three capabilities — verified against the
+published package source rather than its documentation ([`20-contract.md`](20-contract.md) § `U1`).
 
-**Response:** this design **states the requirement and stops**, exactly as `SubZeroDev.Platform`'s L2
-did. The two required capabilities are a package slice in `SubZeroDev.Platform.UI.LandingPage`, not
-something improvised here. Duplicating the manifesto into `<noscript>` is rejected in *Alternatives
-considered*, and so is abandoning the package. Everything that emits or serves a document is blocked
-until a version providing them is released; the work that does not touch a document is not.
+**Response:** while it held, this design **stated the requirement and stopped**, exactly as
+`SubZeroDev.Platform`'s L2 did — the capabilities were a package slice in
+`SubZeroDev.Platform.UI.LandingPage`, not something improvised here. Duplicating the manifesto into
+`<noscript>` is rejected in *Alternatives considered*, and so is abandoning the package. The failure
+mode is retained rather than deleted because a pin can move and the same fact has to stay checkable: a
+version not providing them re-blocks everything that emits or serves a document. Nothing is blocked by
+the package today. What remains unbuildable is blocked by Presentation's token set, which is authored
+brand material rather than a package capability.
 
 **State left behind:** none. Nothing is built and nothing is published.
 
@@ -749,12 +759,12 @@ and renumbering would rot those citations silently. An answered question keeps i
    than its documentation. The question is superseded — this design no longer asks the package to
    render. What it now asks for is in *Module boundaries*, and what happens if it is unavailable is
    in *Failure modes*. Retained so the citations to it resolve.
-2. **Which package version?** The version this design requires does not exist yet — it is whichever
-   release first accepts a caller-supplied body and omits the entry script. Separately, and still
-   unreconciled: `SubZeroDev.Platform` pins `0.2.0` and the package's `package.json` reads `0.2.0`,
-   while the package's own `30-slices.md` records UI2 as in progress with `0.1.0` as the published
-   handoff. One of those is stale. Reporting rather than reconciling, per `AGENTS.md` — neither
-   repository is this one.
+2. ~~**Which package version?**~~ **Answered 2026-08-06: `0.3.0`, pinned exactly.** It is the first
+   release that accepts a caller-supplied body and omits the entry script, verified as published
+   rather than assumed — [`20-contract.md`](20-contract.md) § `U4`. The separate version drift this
+   question also recorded — `SubZeroDev.Platform` pinning `0.2.0` while the package's own
+   `30-slices.md` names `0.1.0` as the published handoff — is unaffected by this answer and is tracked
+   as issue #4; neither repository is this one. Retained so the citations to it resolve.
 3. ~~**What is Ogre's Kitchen?**~~ **Answered 2026-08-05: the owner supplied the copy, and S2
    committed it.** It carries `stage: "Curiosity"`, a `line` and a `question`, and `home` is `none` —
    it has no repository and no subdomain, which is the entry's whole content. Retained so the
@@ -779,5 +789,6 @@ and renumbering would rot those citations silently. An answered question keeps i
    They are different things and only one of them is this repository's.
 
 Two further unresolved items were raised downstream and are owned by
-[`20-contract.md`](20-contract.md) rather than restated here: where the attestation record lives, and
-whether a social image asset exists.
+[`20-contract.md`](20-contract.md) rather than restated here: Presentation's token set (`U2`), and
+whether a social image asset exists (`U6`). Two others raised there — where the attestation record
+lives (`U3`) and which server serves the container tree (`U7`) — were answered on 2026-08-06.

@@ -5,19 +5,174 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-- Three `VerificationErrorCode` values have no producing function in `20-contract.md` § *Public
-  signatures*, so two invariants have no callable surface: `ManifestoAbsent` and `ProjectNameAbsent`
-  (`V3` — nothing takes built HTML and asserts the manifesto sentences and project names are present),
-  and `StaleDeploymentCandidate` (`V6` — nothing performs the branch-head check). `UnexpectedRequest`
-  and `ServedBytesMismatch` by contrast have producers, so this is a gap rather than the pattern. Found
-  while planning the publication CI ([`30-slices.md`](30-slices.md) § *Blocked*). It is `/contract`'s
-  work, a slice may not invent the signatures, and it is **not** blocked by `U1`, `U3` or `U7`.
-- `10-design.md`'s closing sentence says "Two further unresolved items … are owned by `20-contract.md`"
-  and names the attestation record and the social image. There are three — `U7`, which server serves
-  the container tree, has been contract-owned since `8ade7a6` and was never counted. Found by
-  `/contract`; the edit is `/reconcile`'s, since the sentence is the design's.
-
 ---
+
+### 2026-08-06 — `checkLinks` speaks `http:` so the gate can be tested against a local stub
+Context: `/reconcile`. `check-links.ts` selects `node:https` or `node:http` on the target's protocol,
+while `AbsoluteUrl` is https-only by contract, so the `http:` branch is unreachable from any real
+`ResolvedHome`. It exists because S3.3–S3.6 assert against a stub on `127.0.0.1`, and a TLS stub would
+need a certificate the test would then have to trust. Nothing recorded that, so the widening read as
+either deliberate or an oversight with no way to tell which.
+Chosen: Keep the branch and record it. The https guarantee is `AbsoluteUrl`'s and is earned by
+`validateInventory`; `checkLinks` is total on whatever `ResolvedHome` it is handed and asserts nothing
+about the scheme. Recorded with it: if the brand is ever dropped or relaxed, this function is the one
+that will accept a plaintext URL without complaining, and the compensating control is the type, not
+the checker.
+Rejected: Rejecting non-https inside `checkLinks` — it makes the module self-defending, which is the
+more rigorous option; rejected because it duplicates the `AbsoluteUrl` constraint in a second module,
+which *Single ownership* forbids, and it would need a new `VerificationErrorCode` for a condition the
+type already prevents. A TLS stub so the branch could be deleted — a self-signed certificate and a
+trust override in the test process, to remove three lines. Leaving it unrecorded — the exact shape of
+gap this reconciliation exists to close.
+Reversibility: cheap — one conditional and this entry
+
+### 2026-08-06 — Two vitest configs are what keep the build network-free
+Context: `/reconcile`. `vitest.config.ts` excludes `tests/verification/live/**` and
+`vitest.link-check.config.ts` includes only it. That split, not a naming convention or a runtime
+guard, is the mechanism enforcing the brief's non-goal that the build reaches no other site: a plain
+`vitest run` cannot pick up a networked test, and the networked job cannot pick up anything else. The
+rationale lived only in the two file headers.
+Chosen: Keep the split and record it, on the same argument the `node:http` entry below makes — a
+reason that lives only in a comment dies with the file that carries it, and this one enforces a
+binding non-goal rather than an implementation preference. A future consolidation into a single config
+with a tag filter or an environment guard has to argue with this entry rather than read the split as
+tidying that was never finished.
+Rejected: One config with a `--exclude` flag or a test-name filter in the CI job — fewer files, and it
+is the conventional shape; rejected because the guarantee then lives in a workflow argument, where
+running `npm test` locally would reach the network and nothing would say so. A runtime guard inside the
+live test that skips unless an environment variable is set — it keeps one config and one command;
+rejected because a check that silently skips is the failure mode `/verify` exists to prevent, and a
+green run would prove nothing about whether the gate ran. Leaving it in the file headers only — the
+node:http precedent already decided this class.
+Reversibility: cheap — two config files and this entry
+
+### 2026-08-06 — The design docs are reconciled against `0.3.0`; four stale blocks and two dead divergence notes close
+Context: `/reconcile`. Between them, `U1`, `U3`, `U4` and `U7` being answered on 2026-08-06 falsified
+prose in three documents at once, and none of it is reachable from the code — a reader would find it
+only by reading each document against the others. `10-design.md` still required two capabilities
+"`0.2.0` does not provide", still recorded its *Failure modes* entry as **true today**, and still
+listed *Open question 2* as unanswerable. `30-slices.md` still headed two sections "Blocked by `U1`"
+and "Blocked by `U3`" and still footnoted that `V3` and `V6` had no callable surface. Separately, two
+`Divergence:` notes in `20-contract.md` described design clauses that had already been corrected — one
+by the previous `/reconcile`, one by an edit made in this pass.
+Chosen, on the owner's ruling, four edits and no code change: (1) the design's package ask and failure
+mode state that `0.3.0` delivers all three capabilities, with the `0.2.0` requirement list retained as
+the record of what was asked and the failure mode retained because a pin can move; *Open question 2*
+is marked answered in the `OQ1` style. (2) The design's closing sentence names the two items still
+contract-owned — `U2` and `U6` — rather than a count; the `## Open` item asking for "three" is removed,
+since two of the three it would have counted are answered. (3) The attestation clause distinguishes
+what the CI provider records (approver, run, instant) from what this repository reads back (commit,
+approver), which is what `U3` verified. (4) `30-slices.md` is corrected in place: `U2` is named as the
+sole remaining block on the render path, the CI table's blocked-by column and the `V3`/`V6` footnote
+are updated, and what the released work becomes is left to `/slices`.
+Recorded with it: the verification behind (1) was re-run rather than taken from `U1` — `npm` lists
+`0.1.0`, `0.2.0`, `0.3.0` and `gitHead` is `ab44435e3bc1af90509dd0364856a84aa7d932e8`, matching what
+that entry claims. The tree itself showed **no** contract drift: every implemented surface in Content
+and Verification matches `20-contract.md` code-for-code, and `npm run typecheck` and `npm test` (81
+tests, 7 files) are green.
+Rejected: Leaving the design alone on the grounds that the contract already carries `0.3.0` with
+evidence — cheapest, and the design outranks nothing here; rejected because the design is the document
+a fresh `/design` or `/redteam` session reads first, and its *Failure modes* section is exactly where a
+reader looks for what blocks the work. Correcting the closing sentence's count to three as the `##
+Open` item literally asked — it was written before `U3` and `U7` were answered, so it would have landed
+wrong on the day it landed. Leaving `30-slices.md` to `/slices` — defensible, since this command names
+only the design and the contract; rejected because it is the document a `/slice` session reads to
+choose work, and the 2026-08-05 entry below already set the precedent that `/reconcile` corrects its
+factual claims in place without re-slicing. Deleting the superseded `0.2.0` text rather than retaining
+it — it is the record of what was asked for and why, and every *Alternatives considered* argument in
+the design was written against it.
+Reversibility: cheap — prose in three files, no signature and no code touched
+
+### 2026-08-06 — `Attestation` carries no timestamp, because the provider exposes none
+Context: `/contract` writing `U3`'s retrieval path. That entry required the API shape to be verified
+rather than assumed, and the verification overturned an assumption the type already encoded.
+`GET /repos/{owner}/{repo}/actions/runs/{run_id}/approvals` returns `state`, `user`, `comment` and an
+`environments` array; the approval object carries **no timestamp**, and the `created_at` and
+`updated_at` inside `environments[]` belong to the environment resource, not to the approval. Read
+access to the repository is the whole permission requirement, so the `publish` job needs no scope it
+does not have.
+Chosen, on the owner's ruling: drop `attestedAtUtc`. `Attestation` is `commit` — the run's `head_sha`
+— and `approver` — `user.login`. Both are read from the record without inference. GitHub still
+records the approval instant in the run and the audit log, which is what the design asks of the
+*gate*; it does not require this type to carry all three.
+Rejected: Redefining the field as the instant the `publish` job observed the approval — true and
+recordable, and it keeps the type shape; rejected because it reads as the approval time and is not,
+the gap being however long the run waited to be approved, and a record that invites a wrong reading is
+worse than one that omits the fact. Sourcing it from `GET /deployments/{id}/statuses`, which does
+carry `created_at` and `creator.login` — the only option that keeps all three fields; rejected because
+that status's creator is the run's actor rather than the approver, so the timestamp and the approver
+would come from different objects and describe different people. Keeping the field and populating it
+from `environments[].updated_at` — the shape fits and the value is wrong, which is the fabricated fact
+*Verification* forbids.
+Reversibility: cheap — one field, and `V5` never depended on it
+Divergence: `10-design.md` says the attestation "records approver, commit and timestamp". The provider
+records all three; the type carries two. One clause, `/reconcile`'s.
+
+### 2026-08-06 — Four orphan error codes get producers; `assertAttestation` takes `Attestation | null`
+Context: `/contract`. The `## Open` item above reported three `VerificationErrorCode` values with no
+producing function. Counting the table against the signature list rather than re-reading the item
+found **four**: `AttestationAbsent` was missed because `assertAttestation` exists, and it was not
+noticed that a parameter typed `Attestation` can never observe an absent one. `V3`, `V5` and `V6` were
+therefore invariants with nothing callable behind them, and the publication CI table in
+`30-slices.md` already carried a footnote saying two of its jobs could not run.
+Chosen: `assertContentPresent(documentHtml, manifestoSentences, inventory)` for `V3`;
+`assertDeploymentCandidateCurrent(commit, branchHead)` for `V6`; and `assertAttestation`'s first
+parameter widens to `Attestation | null`, where `null` is `AttestationAbsent`. Two shapes are
+deliberate. `assertContentPresent` takes the whole `Inventory`, not a name list, so a caller cannot
+discharge `V3` with three names of fourteen, and `manifestoSentences` is a non-empty tuple so an empty
+list cannot pass vacuously. `assertDeploymentCandidateCurrent` compares two values and reads nothing,
+in the same shape as `assertImageIdentity` — the workflow observes the branch head and passes it in,
+which is what lets `V6` be tested with no repository, token or network.
+Recorded with it: `assertContentPresent` compares literal text, so a manifesto sentence or project
+`name` containing `&`, `<` or `>` will have been escaped by `X5` and will not match. Accepted, because
+the failure is a red build naming the value rather than a silent pass.
+Rejected: Two functions for `V3`, one per code — it reads tidier and it splits one document read into
+two passes over the same string for two faults with one cause and one fix. A `readAttestation` that
+performs the API call and returns `Result<Attestation, VerificationError>` — it would produce
+`AttestationAbsent` from a real absence rather than from a `null` argument, which is more honest;
+rejected because it puts a network call and a token inside the only Verification surface that is
+otherwise pure, and `U3` shows the retrieval is not yet fully determined. A branch-head function that
+shells out to git or calls the API — same objection, and it makes `V6` untestable without a fixture
+repository.
+Reversibility: cheap — three signatures, one of which is a widened parameter
+
+### 2026-08-06 — Presentation's stylesheet travels per route, not in `LandingPageConfig.styles`
+Context: `U1`'s answer recorded that `0.3.0` carries both a config-level `styles?: readonly string[]`
+and a per-route `stylesheet?: string`, and that which one carries Presentation's output was an unmade
+contract decision. It was treated as a preference; it is not.
+Chosen: the per-route `stylesheet`. `config.styles` is **read by nothing** in the package at `0.3.0` —
+verified across every source file at the published commit, the same state `hydrate` is in. Declaring
+it would emit no element. The per-route field is also what keeps `X4` a per-document check: a route's
+stylesheet is the rules that route's body requires, which is the property the invariant was written
+for.
+Recorded with it, from the same reading: the package inserts both `body` and `stylesheet` into the
+document **unescaped**, and throws a bare `Error` on a stylesheet containing `</style`. Those became
+`X5` and `P5` rather than notes, because a build that dies inside `defineLandingPage` reports an error
+this contract's semantics cannot reach.
+Rejected: `config.styles` — it is the field whose name suggests it, and a single site-wide stylesheet
+is one string rather than two; rejected because it is inert, and an inert declaration is worse than an
+absent one since it reads as a fact about the emitted document. Declaring both — two copies of the
+same rules, and only one of them reaching the page.
+Reversibility: cheap for this repository; a package release that wires `styles` does not change it
+
+### 2026-08-06 — The server configuration is emitted beside the output tree, never inside it
+Context: `U7` settled the server and left the emitted file's shape to `/contract`. Writing it forced a
+question that entry did not anticipate: where the file goes. `ArtifactReport`'s existing fields are
+positions inside the emitted tree, so the obvious reading put the configuration there too.
+Chosen: outside. `ArtifactInput` gains `serverConfigDir`, `ArtifactReport` gains `serverConfigPath`,
+and `R6` asserts the separation. A file the server reads must not also be a file it serves: in-tree,
+the instruction that copies documents into the container's web root copies the configuration with
+them, and Pages publishes it at the apex. `serverConfig()` takes no argument and is pure, so the text
+is assertable before any image exists — which is what makes `R4` checkable rather than only observable
+through `V12` once a container is running.
+Rejected: Emitting into the output tree — one destination, one report field, no new input; rejected on
+the two consequences above, neither of which any existing gate would catch, since byte identity covers
+`/` and the unknown-path check covers a path that does not exist. Committing a static configuration
+file to the repository instead of emitting it — it needs no Artifact duty at all; rejected because the
+file must name `missRootEntry`, which Artifact owns, and the design already refused to split that pair
+across modules on the grounds that they drift silently. A `serverConfig(missRootEntry)` taking its own
+constant as a parameter — ceremony that lets a caller pass the wrong value.
+Reversibility: cheap — one input field, one report field and one invariant
 
 ### 2026-08-06 — `U1` verified closed at `0.3.0`; pin it, and `U6` becomes an owner question
 Context: The owner reported `U1` done. `AGENTS.md` forbids treating a published artifact as real
