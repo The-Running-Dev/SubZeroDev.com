@@ -19,6 +19,10 @@ Artifact's server configuration, which [`U7`](#u7--which-server-serves-the-conta
 render path**: Presentation's token set, and with it the two head-metadata values that are visual
 identity — `themeColor` and the icon set.
 
+**Off that path, one further surface is unwritten** — the Verification functions that would check
+`P2`–`P4`, raised as [`U9`](#u9--accessibility-has-no-verification-surface). It blocks nothing that
+emits a document.
+
 What else is missing is content, not interface, and is owner-supplied rather than derivable: whether a
 social image exists ([`U6`](#u6--whether-a-social-image-asset-exists)), and each route's title and
 description, transcribed at slice time exactly as the inventory's `line` and `question` were.
@@ -696,7 +700,7 @@ first only.
 | `MalformedProjectId` | An `id` fails the `ProjectId` pattern or length | the raw value | `"id"` |
 | `DuplicateProjectId` | Two projects share an `id` | the duplicate | `"id"` |
 | `InvalidYear` | `year` is non-integer or outside 1000–9999 | set | `"year"` |
-| `YearAfterBuild` | `year > BuildContext.utcYear` | set | `"year"` |
+| `YearAfterBuild` | `year > BuildContext.utcYear`, where `year` is otherwise a valid four-digit integer. `InvalidYear` takes precedence, so one bad value yields one error rather than two carrying the same `field` | set | `"year"` |
 | `EmptyField` | `name`, `line`, or a present `question` is empty after trimming | set | the field |
 | `HomeOwnUrlInvalid` | `home.url` fails the `AbsoluteUrl` constraint | set | `"home.url"` |
 | `HomeWithinParentMissing` | `home.parent` is not an `id` in the inventory | set | `"home.parent"` |
@@ -901,9 +905,10 @@ be performed:
 
 ## Unresolved
 
-Nothing below is invented. Each item names what is missing and what would settle it. Numbers are
-stable: `U1`–`U6` keep the meaning [`30-slices.md`](30-slices.md) cites them by, even where the item
-has narrowed.
+Nothing below is invented. Each item names what is missing and what would settle it. **Numbers are
+stable and are never reused** — [`30-slices.md`](30-slices.md) cites these by number, and an item keeps
+its number even where it has narrowed or been answered. No range is named here, because a range rots
+the moment a higher number is cited.
 
 ### U1 — The package cannot accept a caller-supplied body
 
@@ -1097,3 +1102,46 @@ and asserted as `A5`.
 "reads nothing from Content or Presentation directly"; `/reconcile` changed the clause on 2026-08-05
 and it now names the same four Content imports, with nothing renderable among them. Nothing is
 outstanding here.
+
+### U9 — Accessibility has no Verification surface
+
+**Raised 2026-08-06 by a full re-derivation, and open. Nothing is invented here.**
+
+`10-design.md` § *Module boundaries* gives Verification ownership of "content invariants,
+derived-value correctness, markup and stylesheet agreement, **accessibility**, built-output shape,
+browser request capture, link resolution, the in-CI image gate, byte identity between the two
+targets, release attestation and deployment read-back". Accessibility is the only item in that list
+with nothing callable behind it **at all**. Two others — content invariants and derived-value
+correctness — also have no function in *Public signatures*, and need none: each is discharged by a
+test calling Content's own total functions, which this contract does write. Accessibility has neither a
+Verification function nor a Content one to call, and no `VerificationErrorCode` names it.
+
+`P2`, `P3` and `P4` are therefore invariants with nothing callable behind them — the same shape `V3`,
+`V5` and `V6` were in before 2026-08-06. It survived that pass because that pass counted error codes
+against the signature list, and these three have no code to count.
+
+All three are `00-brief.md` *Definition of done* bullets. That bullet is also the only one in the
+list that does **not** say how it is asserted, where the two around it say "asserted against the
+built HTML" and "asserted with a browser network log". Whether that omission is deliberate is the
+owner's to say, and it does not change that the design assigns the check to Verification.
+
+What is missing, and what would settle each:
+
+- **`P3` — `prefers-reduced-motion`.** Determinable in shape but not in kind. A check over
+  `StylesheetText` is static and cheap; a computed-style check in a browser is what proves the
+  rendered page. The design's own precedent for `V13` and `V2` — "Source inspection cannot prove
+  runtime behaviour, and a network capture alone does not name what leaked. **Both are required**" —
+  makes that a fork rather than an implementer's choice.
+- **`P2` — greyscale legibility.** A contrast computation over resolved colour pairs. Needs
+  [`U2`](#u2--presentations-token-set-and-primitives): there is no palette to compute over, and what
+  "legible" is measured as — a contrast ratio, against what threshold — is authored visual identity
+  on the same footing as the token set.
+- **`P4` — focus order and keyboard reachability.** Needs a rendered document and a driver.
+  [`30-slices.md`](30-slices.md) § *Blocked by `U2`* already lists the browser driver for `V2` as a
+  choice needing a decision-log entry before implementation; this rides on the same one.
+
+**Not blocked by this:** anything that emits a document. `P2`–`P4` stay Presentation's to maintain
+and stay in the invariant table; what is unwritten is the surface that would check them, which is why
+this is a contract gap rather than a design one. [`30-slices.md`](30-slices.md) § *Blocked* listed
+`P1`–`P5` as "blocked by `U2` alone", which this narrows; `/reconcile` corrected that entry on
+2026-08-06, so nothing is outstanding there.

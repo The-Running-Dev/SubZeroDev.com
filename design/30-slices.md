@@ -158,9 +158,12 @@ because the link check consumes it. The rest arrive with the page.
 Nothing below is a slice. Each names what is missing and the condition that releases it. No slice
 number is allocated until the contract can carry the work.
 
-### Was blocked by `U1` — released at `0.3.0`; now blocked by `U2` alone
+### Was blocked by `U1` — released at `0.3.0`; now blocked by `U2`
 
-- Presentation's token set and primitives, and invariants `P1`–`P5`. Blocked by `U2` alone.
+- Presentation's token set and primitives, and invariants `P1`–`P5`. `P1` and `P5` are blocked by `U2`
+  alone. `P2`–`P4` need `U2` **and**
+  [`U9`](20-contract.md#u9--accessibility-has-no-verification-surface): the token set is what they are
+  maintained against, and `U9` is the unwritten Verification surface they would be checked *through*.
 - Composition's two route entries, all page prose, and invariants `X1`–`X3`.
 - Adapter's `LandingPageConfig`, the route declarations and their metadata, and invariants `A1`–`A2`.
   The `origin` constant is written in the contract but has no consumer until then.
