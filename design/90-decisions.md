@@ -5,20 +5,8 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-- **Verify whether a document with no declared icon triggers a `/favicon.ico` request, before the `V2`
-  slice.** `V2` permits zero load-triggered requests other than the navigation document. Browsers
-  auto-request `/favicon.ico` when no icon is declared, which would breach it; a declared data-URI
-  icon suppresses the request, and `A2` forbids a linked one. That reasoning is what made the icon
-  non-optional in the `U2` ruling below, and it is **unverified** — it also depends on the still-open
-  `file://`-versus-static-server choice for the `V2` driver, since a `file://` load may not issue the
-  request at all. If it turns out no request is made, the icon becomes a brand choice rather than a
-  `V2` requirement, and the ruling stands on its own but for a different reason.
-- **A count in prose has now gone stale twice in the same sentence.** `10-design.md`'s closing
-  paragraph was corrected on 2026-08-06 by replacing a count with named items, precisely so it would
-  stop rotting; a numeral returned with the next edit and was wrong again within a day, and a second
-  `/reconcile` pass spent deep-reasoning time recounting it. `AGENTS.md` classes arithmetic over files
-  as work that should leave the model entirely. A recurrence belongs in a check, not a third pass —
-  `/track` should turn this into an issue for a lint over the design documents' counting phrases.
+(none — both prior items became [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16)
+and [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
 
 ---
 
