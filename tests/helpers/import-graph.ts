@@ -127,8 +127,109 @@ export function importsIntoDir(
 
 // The original (pre-alias) names bound by a named clause, e.g. `{ projects }`
 // or `{ projects as p }` both yield "projects".
-function namedBindingNames(clause: ts.NamedImports | ts.NamedExports): string[] {
+export function namedBindingNames(clause: ts.NamedImports | ts.NamedExports): string[] {
   return clause.elements.map((e) => (e.propertyName ?? e.name).text);
+}
+
+// A violation is a relative import from a file inside `dir` that escapes to
+// somewhere outside both `dir` and every directory in `allowedDirs` — no
+// restriction on which names are bound within an allowed directory. Used for
+// X2's first half: Composition may import Content and Presentation, and
+// nothing else.
+export function importViolationsAllowing(
+  dir: string,
+  entries: readonly SourceEntry[],
+  allowedDirs: readonly string[],
+): ImportViolation[] {
+  const roots = [dir, ...allowedDirs].map((d) => resolve(d));
+  const violations: ImportViolation[] = [];
+  for (const { file, source } of entries) {
+    for (const specifier of importSpecifiers(source)) {
+      if (!specifier.startsWith(".")) continue;
+      const resolved = resolve(dirname(file), specifier);
+      const insideAny = roots.some((root) => !relative(root, resolved).startsWith(".."));
+      if (!insideAny) violations.push({ file, specifier });
+    }
+  }
+  return violations;
+}
+
+// A violation is a relative import from a file inside `dir` that either
+// escapes to somewhere outside both `dir` and `allowedDir`, or reaches into
+// `allowedDir` but binds a name outside `allowedNames` — including a
+// namespace import, a dynamic import or an `export *`, each of which grants
+// the whole module rather than a name on the list. Used for Presentation's
+// "imports `Branded` from Content and nothing else" (S4.14).
+export function foreignImportsNamedOutside(
+  dir: string,
+  entries: readonly SourceEntry[],
+  allowedDir: string,
+  allowedNames: readonly string[],
+): ImportViolation[] {
+  const dirAbs = resolve(dir);
+  const allowedAbs = resolve(allowedDir);
+  const violations: ImportViolation[] = [];
+
+  const boundNames = (
+    node: ts.ImportDeclaration | ts.ExportDeclaration,
+  ): readonly string[] | "namespace" => {
+    if (ts.isImportDeclaration(node)) {
+      const names: string[] = node.importClause?.name ? ["default"] : [];
+      const nb = node.importClause?.namedBindings;
+      if (nb && ts.isNamespaceImport(nb)) return "namespace";
+      if (nb) names.push(...namedBindingNames(nb));
+      return names;
+    }
+    if (!node.exportClause) return "namespace"; // export * from "x"
+    if (ts.isNamespaceExport(node.exportClause)) return "namespace"; // export * as ns from "x"
+    return namedBindingNames(node.exportClause);
+  };
+
+  for (const { file, source } of entries) {
+    const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+    const visit = (node: ts.Node): void => {
+      if (
+        (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+        node.moduleSpecifier &&
+        ts.isStringLiteral(node.moduleSpecifier)
+      ) {
+        const specifier = node.moduleSpecifier.text;
+        if (specifier.startsWith(".")) {
+          const resolved = resolve(dirname(file), specifier);
+          const insideOwn = !relative(dirAbs, resolved).startsWith("..");
+          if (!insideOwn) {
+            const insideAllowed = !relative(allowedAbs, resolved).startsWith("..");
+            if (!insideAllowed) {
+              violations.push({ file, specifier });
+            } else {
+              const names = boundNames(node);
+              if (names === "namespace" || names.some((n) => !allowedNames.includes(n))) {
+                violations.push({ file, specifier });
+              }
+            }
+          }
+        }
+      } else if (
+        ts.isCallExpression(node) &&
+        node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+        node.arguments.length > 0 &&
+        ts.isStringLiteral(node.arguments[0]!)
+      ) {
+        const specifier = (node.arguments[0] as ts.StringLiteral).text;
+        if (specifier.startsWith(".")) {
+          const resolved = resolve(dirname(file), specifier);
+          const insideOwn = !relative(dirAbs, resolved).startsWith("..");
+          // A dynamic import grants the whole module namespace regardless of
+          // how the caller destructures it, so it is always a violation once
+          // it escapes `dir` — there is no name list it could satisfy.
+          if (!insideOwn) violations.push({ file, specifier });
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+  }
+  return violations;
 }
 
 // Whether a declaration whose specifier resolves to a target module grants the
