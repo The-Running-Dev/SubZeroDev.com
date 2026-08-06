@@ -8,7 +8,7 @@
 // `<path>/index.html`, then the root miss document with a 404 status.
 
 import { createServer } from "node:http";
-import type { Server } from "node:http";
+import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize, sep } from "node:path";
 
@@ -29,6 +29,34 @@ async function readIfExists(path: string): Promise<Buffer | null> {
   }
 }
 
+async function handleRequest(rootDir: string, url: string, res: ServerResponse<IncomingMessage>): Promise<void> {
+  let requestPath: string;
+  try {
+    requestPath = decodeURIComponent(url.split("?")[0]!);
+  } catch {
+    res.writeHead(400, { "content-type": "text/plain; charset=utf-8" });
+    res.end("Bad request");
+    return;
+  }
+
+  const safePath = normalize(requestPath).replace(/^(\.\.[/\\])+/, "");
+  const candidates = [join(rootDir, safePath), join(rootDir, safePath, "index.html")];
+
+  for (const candidate of candidates) {
+    if (!candidate.startsWith(rootDir + sep) && candidate !== rootDir) continue;
+    const body = await readIfExists(candidate);
+    if (body !== null) {
+      res.writeHead(200, { "content-type": MIME_TYPES[extname(candidate)] ?? "application/octet-stream" });
+      res.end(body);
+      return;
+    }
+  }
+
+  const missBody = await readIfExists(join(rootDir, "404.html"));
+  res.writeHead(404, { "content-type": "text/html; charset=utf-8" });
+  res.end(missBody ?? "Not found");
+}
+
 export type StaticServer = {
   readonly url: string;
   close(): Promise<void>;
@@ -36,25 +64,10 @@ export type StaticServer = {
 
 export async function startStaticServer(rootDir: string): Promise<StaticServer> {
   const server: Server = createServer((req, res) => {
-    void (async () => {
-      const requestPath = decodeURIComponent((req.url ?? "/").split("?")[0]!);
-      const safePath = normalize(requestPath).replace(/^(\.\.[/\\])+/, "");
-      const candidates = [join(rootDir, safePath), join(rootDir, safePath, "index.html")];
-
-      for (const candidate of candidates) {
-        if (!candidate.startsWith(rootDir + sep) && candidate !== rootDir) continue;
-        const body = await readIfExists(candidate);
-        if (body !== null) {
-          res.writeHead(200, { "content-type": MIME_TYPES[extname(candidate)] ?? "application/octet-stream" });
-          res.end(body);
-          return;
-        }
-      }
-
-      const missBody = await readIfExists(join(rootDir, "404.html"));
-      res.writeHead(404, { "content-type": "text/html; charset=utf-8" });
-      res.end(missBody ?? "Not found");
-    })();
+    handleRequest(rootDir, req.url ?? "/", res).catch(() => {
+      if (!res.headersSent) res.writeHead(500);
+      res.end();
+    });
   });
 
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
