@@ -4,8 +4,10 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
+  foreignImportsNamedOutside,
   importsIntoDir,
   importViolations,
+  importViolationsAllowing,
   listTsFiles,
   namedImportUsers,
   readEntries,
@@ -13,6 +15,8 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const contentDir = resolve(here, "../../src/content");
+const presentationDir = resolve(here, "../../src/presentation");
+const compositionDir = resolve(here, "../../src/composition");
 const verificationDir = resolve(here, "../../src/verification");
 const repoRoot = resolve(here, "../..");
 
@@ -119,6 +123,108 @@ describe("S2.8/S3.7 — nothing imports `projects` except validateInventory's ca
     ["a namespace import of an unrelated module", 'import * as other from "../presentation/tokens";'],
   ])("%s is not flagged", (_label, source) => {
     expect(namedImportUsers([{ file: offender, source }], targetFiles, "projects")).toEqual([]);
+  });
+});
+
+describe("S4.14 — Presentation imports Branded from Content, and nothing else from this repository", () => {
+  it("no file under src/presentation imports anything but Branded from Content, or escapes to another module", () => {
+    const files = listTsFiles(presentationDir);
+    expect(files.length).toBeGreaterThan(0);
+    const violations = foreignImportsNamedOutside(presentationDir, readEntries(files), contentDir, [
+      "Branded",
+    ]);
+    expect(violations).toEqual([]);
+  });
+
+  it("the check has teeth: importing a second name from Content is flagged", () => {
+    const violations = foreignImportsNamedOutside(
+      presentationDir,
+      [
+        {
+          file: resolve(presentationDir, "types.ts"),
+          source: 'import type { Branded, ProjectId } from "../content";',
+        },
+      ],
+      contentDir,
+      ["Branded"],
+    );
+    expect(violations).toHaveLength(1);
+  });
+
+  it("the check has teeth: a namespace import of Content is flagged", () => {
+    const violations = foreignImportsNamedOutside(
+      presentationDir,
+      [{ file: resolve(presentationDir, "types.ts"), source: 'import * as content from "../content";' }],
+      contentDir,
+      ["Branded"],
+    );
+    expect(violations).toHaveLength(1);
+  });
+
+  it("the check has teeth: a dynamic import of Content is flagged", () => {
+    const violations = foreignImportsNamedOutside(
+      presentationDir,
+      [{ file: resolve(presentationDir, "types.ts"), source: 'const c = await import("../content");' }],
+      contentDir,
+      ["Branded"],
+    );
+    expect(violations).toHaveLength(1);
+  });
+
+  it("the check has teeth: an import escaping to a third module is flagged", () => {
+    const violations = foreignImportsNamedOutside(
+      presentationDir,
+      [{ file: resolve(presentationDir, "types.ts"), source: 'import { checkLinks } from "../verification";' }],
+      contentDir,
+      ["Branded"],
+    );
+    expect(violations).toHaveLength(1);
+  });
+
+  it("an import of only Branded from Content is not flagged", () => {
+    const violations = foreignImportsNamedOutside(
+      presentationDir,
+      [{ file: resolve(presentationDir, "types.ts"), source: 'import type { Branded } from "../content";' }],
+      contentDir,
+      ["Branded"],
+    );
+    expect(violations).toEqual([]);
+  });
+});
+
+describe("S4.14 — Composition imports only Content and Presentation", () => {
+  it("no file under src/composition imports outside Content or Presentation", () => {
+    const files = listTsFiles(compositionDir);
+    expect(files.length).toBeGreaterThan(0);
+    const violations = importViolationsAllowing(compositionDir, readEntries(files), [
+      contentDir,
+      presentationDir,
+    ]);
+    expect(violations).toEqual([]);
+  });
+
+  it("the check has teeth: an import escaping to Verification is flagged", () => {
+    const violations = importViolationsAllowing(
+      compositionDir,
+      [{ file: resolve(compositionDir, "miss.ts"), source: 'import { checkLinks } from "../verification";' }],
+      [contentDir, presentationDir],
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toMatchObject({ specifier: "../verification" });
+  });
+
+  it("an import from Content or Presentation is not flagged", () => {
+    const violations = importViolationsAllowing(
+      compositionDir,
+      [
+        {
+          file: resolve(compositionDir, "miss.ts"),
+          source: 'import { projects } from "../content";\nimport { palette } from "../presentation";',
+        },
+      ],
+      [contentDir, presentationDir],
+    );
+    expect(violations).toEqual([]);
   });
 });
 
