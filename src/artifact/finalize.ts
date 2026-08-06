@@ -8,7 +8,7 @@
 // from identical pre-marker content and stay byte-identical.
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { readdirSync, statSync } from "node:fs";
+import { lstatSync, readdirSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 
 import { parseCommitId } from "../content";
@@ -27,7 +27,10 @@ function listHtmlEntries(outputDir: string): string[] {
   const walk = (dir: string): void => {
     for (const name of readdirSync(dir)) {
       const full = join(dir, name);
-      if (statSync(full).isDirectory()) {
+      const stat = lstatSync(full);
+      if (stat.isSymbolicLink()) {
+        continue;
+      } else if (stat.isDirectory()) {
         walk(full);
       } else if (name.endsWith(".html")) {
         entries.push(relative(outputDir, full).split(sep).join("/"));
