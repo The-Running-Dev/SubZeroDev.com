@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -5,6 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   foreignImportsNamedOutside,
+  importedNamesBySpecifier,
   importsIntoDir,
   importViolations,
   importViolationsAllowing,
@@ -57,12 +59,16 @@ describe("S1.10 — Content imports no other repository module (invariant C1)", 
   });
 });
 
-describe("S2.8/S3.7 — nothing imports `projects` except validateInventory's call site and Verification's inventory assertion (invariant C14)", () => {
+describe("S2.8/S3.7/S6.7 — nothing imports `projects` except validateInventory's call site and Verification's inventory assertion (invariant C14)", () => {
   const targetFiles = [resolve(contentDir, "projects.ts"), resolve(contentDir, "index.ts")];
-  // C14's closed importer set: the S2 call site that validates the inventory,
+  // C14's closed importer set: S6's Adapter, the production `validateInventory`
+  // call site (contract's Adapter § "Adapter is the validateInventory call
+  // site"); the S2 test that stood in for that call site before Adapter
+  // existed, kept for its own S2/S5 assertions over the committed inventory;
   // and S3's live link-check test — the "Verification's inventory assertion"
   // the contract names as C14's other permitted importer.
   const callSites = [
+    resolve(repoRoot, "site/landing.config.ts"),
     resolve(repoRoot, "tests/content/inventory.test.ts"),
     resolve(repoRoot, "tests/verification/live/link-check.test.ts"),
   ];
@@ -225,6 +231,85 @@ describe("S4.14 — Composition imports only Content and Presentation", () => {
       [contentDir, presentationDir],
     );
     expect(violations).toEqual([]);
+  });
+});
+
+describe("S6.13 — nothing imports Composition except Adapter (X2)", () => {
+  // Scoped to non-test source: `src` plus Adapter's file, which lives outside
+  // it at site/landing.config.ts because that path is the package CLI's own
+  // convention. Tests import Composition directly for their own assertions
+  // (tests/composition/*.test.ts, tests/content/inventory.test.ts), the same
+  // exemption the Verification boundary check below takes.
+  const srcDir = resolve(repoRoot, "src");
+  const adapterFile = resolve(repoRoot, "site/landing.config.ts");
+
+  it("only site/landing.config.ts imports Composition among non-test source", () => {
+    const files = [...listTsFiles(srcDir), adapterFile];
+    expect(files.length).toBeGreaterThan(0);
+    const violations = importsIntoDir(compositionDir, readEntries(files));
+    expect(violations.map((v) => v.file)).toEqual([adapterFile]);
+  });
+
+  it("the check has teeth: a second non-test importer of Composition is flagged", () => {
+    const violations = importsIntoDir(compositionDir, [
+      {
+        file: resolve(contentDir, "rogue.ts"),
+        source: 'import { composeApex } from "../composition";',
+      },
+    ]);
+    expect(violations).toHaveLength(1);
+  });
+
+  it("a file inside src/composition importing another file inside it is not flagged", () => {
+    const violations = importsIntoDir(compositionDir, [
+      { file: resolve(compositionDir, "apex.ts"), source: 'import type { ComposedRoute } from "./types";' },
+    ]);
+    expect(violations).toEqual([]);
+  });
+});
+
+describe("S6.7 — Adapter imports exactly Composition, the external package, Content's projects/validateInventory/BuildContext/parseCommitId, and Presentation's themeColor/iconDataUri (A3)", () => {
+  const adapterFile = resolve(repoRoot, "site/landing.config.ts");
+  // Composition and the external package may be imported by whichever names
+  // they expose — A3 closes the module list, not which symbols travel from
+  // Composition or the package. Content and Presentation each close to an
+  // exact name list.
+  const ALLOWED_ANY_NAMES = new Set([
+    "subzerodev-platform-ui-landing-page",
+    "../src/composition",
+  ]);
+  const ALLOWED_NAMES: Record<string, readonly string[]> = {
+    "../src/content": ["projects", "validateInventory", "BuildContext", "parseCommitId"],
+    "../src/presentation": ["themeColor", "iconDataUri"],
+  };
+
+  it("imports only the allowed specifiers, and only the allowed names from Content and Presentation", () => {
+    const source = readFileSync(adapterFile, "utf8");
+    const imports = importedNamesBySpecifier(source);
+    const allowedSpecifiers = new Set([...ALLOWED_ANY_NAMES, ...Object.keys(ALLOWED_NAMES)]);
+
+    expect([...imports.keys()].sort()).toEqual([...allowedSpecifiers].sort());
+
+    for (const [specifier, allowedNames] of Object.entries(ALLOWED_NAMES)) {
+      const names = [...(imports.get(specifier) ?? [])];
+      expect(names.length).toBeGreaterThan(0);
+      for (const name of names) expect(allowedNames).toContain(name);
+    }
+  });
+
+  it("the check has teeth: an extra Content import is flagged", () => {
+    const imports = importedNamesBySpecifier(
+      'import { sinceYear } from "../src/content";\nimport { projects } from "../src/content";',
+    );
+    const names = [...(imports.get("../src/content") ?? [])];
+    const allowed = ALLOWED_NAMES["../src/content"]!;
+    expect(names.some((n) => !allowed.includes(n))).toBe(true);
+  });
+
+  it("the check has teeth: an import from an unlisted specifier is flagged", () => {
+    const imports = importedNamesBySpecifier('import { checkLinks } from "../src/verification";');
+    const allowedSpecifiers = new Set([...ALLOWED_ANY_NAMES, ...Object.keys(ALLOWED_NAMES)]);
+    expect([...imports.keys()].some((s) => !allowedSpecifiers.has(s))).toBe(true);
   });
 });
 
