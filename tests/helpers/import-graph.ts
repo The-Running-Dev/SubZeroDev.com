@@ -131,6 +131,39 @@ export function namedBindingNames(clause: ts.NamedImports | ts.NamedExports): st
   return clause.elements.map((e) => (e.propertyName ?? e.name).text);
 }
 
+// Maps each import specifier used in `source` to the set of names it binds —
+// used for exact-surface checks like Adapter's import list (A3, S6.7). A
+// namespace import binds the sentinel "*", since no finite name list could
+// describe what it grants.
+export function importedNamesBySpecifier(source: string): Map<string, Set<string>> {
+  const sourceFile = ts.createSourceFile("source.ts", source, ts.ScriptTarget.Latest, true);
+  const result = new Map<string, Set<string>>();
+
+  const add = (specifier: string, names: readonly string[]): void => {
+    const set = result.get(specifier) ?? new Set<string>();
+    for (const name of names) set.add(name);
+    result.set(specifier, set);
+  };
+
+  const visit = (node: ts.Node): void => {
+    if (
+      ts.isImportDeclaration(node) &&
+      node.moduleSpecifier &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      const names: string[] = [];
+      if (node.importClause?.name) names.push("default");
+      const bindings = node.importClause?.namedBindings;
+      if (bindings && ts.isNamespaceImport(bindings)) names.push("*");
+      else if (bindings) names.push(...namedBindingNames(bindings));
+      add(node.moduleSpecifier.text, names);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return result;
+}
+
 // A violation is a relative import from a file inside `dir` that escapes to
 // somewhere outside both `dir` and every directory in `allowedDirs` — no
 // restriction on which names are bound within an allowed directory. Used for

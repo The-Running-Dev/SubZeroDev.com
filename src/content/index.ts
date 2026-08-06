@@ -1,4 +1,4 @@
-// Content — public surface delivered by S1 through S5.
+// Content — public surface delivered by S1 through S6.
 
 export type {
   AbsoluteUrl,
@@ -24,6 +24,7 @@ export type {
 export type { ContentError, ContentErrorCode } from "./errors";
 export { stageOrder } from "./stage-order";
 export { validateInventory } from "./validate";
+export { parseCommitId } from "./commit";
 export { resolvedHomes } from "./resolved-homes";
 export { projects } from "./projects";
 export { primarySlogan, apexFooterQuote } from "./copy";
