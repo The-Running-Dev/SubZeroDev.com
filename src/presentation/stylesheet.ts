@@ -40,7 +40,7 @@ function tokenBlock(): string {
 }`;
 }
 
-const CLASS_ATTR_PATTERN = /class="([^"]*)"/g;
+const CLASS_ATTR_PATTERN = /(?:^|\s)class="([^"]*)"/g;
 
 function referencedClasses(body: string): Set<string> {
   const found = new Set<string>();

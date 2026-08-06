@@ -12,8 +12,9 @@ import type { Result } from "../content";
 import type { BodyHtml, StylesheetText } from "../presentation";
 import type { VerificationError } from "./errors";
 
-const CLASS_ATTR_PATTERN = /class="([^"]*)"/g;
+const CLASS_ATTR_PATTERN = /(?:^|\s)class="([^"]*)"/g;
 const CLASS_SELECTOR_PATTERN = /\.([a-zA-Z][a-zA-Z0-9-]*)/g;
+const RULE_PRELUDE_PATTERN = /([^{}]*)\{/g;
 
 function bodyClasses(body: string): Set<string> {
   const found = new Set<string>();
@@ -27,8 +28,11 @@ function bodyClasses(body: string): Set<string> {
 
 function stylesheetClassSelectors(stylesheet: string): Set<string> {
   const found = new Set<string>();
-  for (const match of stylesheet.matchAll(CLASS_SELECTOR_PATTERN)) {
-    found.add(match[1]!);
+  for (const preludeMatch of stylesheet.matchAll(RULE_PRELUDE_PATTERN)) {
+    const prelude = preludeMatch[1]!;
+    for (const match of prelude.matchAll(CLASS_SELECTOR_PATTERN)) {
+      found.add(match[1]!);
+    }
   }
   return found;
 }
