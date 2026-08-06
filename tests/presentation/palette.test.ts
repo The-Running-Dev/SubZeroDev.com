@@ -14,11 +14,11 @@ const presentationDir = resolve(here, "../../src/presentation");
 // The contract's token-block table, transcribed once here so a drift between
 // the table and `palette` fails a test rather than going unnoticed.
 const EXPECTED: Record<ColorToken, string> = {
-  bg: "#0F0F10",
-  fg: "#E8E8E9",
-  "fg-muted": "#8C8C8F",
-  rule: "#252527",
-  link: "#6E92C8",
+  bg: "#111113",
+  fg: "#F3F1EC",
+  "fg-muted": "#9A989F",
+  rule: "#2B2B31",
+  link: "#5B7CFF",
 };
 
 describe("S4.1 — palette has exactly the five ColorToken keys, matching the contract's table", () => {

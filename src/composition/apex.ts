@@ -45,6 +45,7 @@ const manifestoParagraphs: readonly string[] = [
 function renderManifesto(): string {
   return [
     `<div class="${primitives.stack.className}">`,
+    `<p class="${primitives.meta.className}">01 / Effortless Action</p>`,
     `<h2>Effortless Action</h2>`,
     ...manifestoParagraphs.map((sentence) => `<p>${sentence}</p>`),
     `<p><em>Effortless Action.</em></p>`,
@@ -58,10 +59,13 @@ function renderProjectEntry(project: Project): string {
       ? ` · escaped from ${escapeHtml(project.escapedFrom)}`
       : "";
   const question =
-    project.question !== undefined ? `<p><em>${escapeHtml(project.question)}</em></p>` : "";
+    project.question !== undefined
+      ? `<p><em>${escapeHtml(project.question)}</em></p>`
+      : "";
+
   return [
     `<div class="${primitives.entry.className}">`,
-    `<p>${escapeHtml(project.name)}</p>`,
+    `<h4>${escapeHtml(project.name)}</h4>`,
     `<p class="${primitives.meta.className}">${escapeHtml(project.id)} · ${project.year} · ${escapeHtml(project.stage)}${edge}</p>`,
     `<p>${escapeHtml(project.line)}</p>`,
     question,
@@ -80,6 +84,7 @@ function renderEcosystem(inventory: Inventory): string {
       group.projects.length > 0
         ? `<div class="${primitives.stack.className}">${group.projects.map(renderProjectEntry).join("")}</div>`
         : `<p class="${primitives.meta.className}">No projects here yet.</p>`;
+
     return [
       `<div class="${primitives.stack.className}">`,
       `<h3>${escapeHtml(group.stage)} (${count})</h3>`,
@@ -90,6 +95,7 @@ function renderEcosystem(inventory: Inventory): string {
 
   return [
     `<div class="${primitives.stack.className}">`,
+    `<p class="${primitives.meta.className}">02 / The Ecosystem</p>`,
     `<h2>The Ecosystem</h2>`,
     `<p class="${primitives.meta.className}">${projectTotal(inventory)} projects.</p>`,
     ...groupHtml,
@@ -99,15 +105,18 @@ function renderEcosystem(inventory: Inventory): string {
 
 function renderContaminationNode(node: ContaminationNode): string {
   const edge =
-    node.project.escapedFrom !== undefined ? `${escapeHtml(node.project.escapedFrom)} → ` : "";
+    node.project.escapedFrom !== undefined
+      ? `${escapeHtml(node.project.escapedFrom)} → `
+      : "";
   const children =
     node.escapes.length > 0
       ? `<div class="${primitives.stack.className}">${node.escapes.map(renderContaminationNode).join("")}</div>`
       : "";
+
   return [
     `<div class="${primitives.entry.className}">`,
     `<p class="${primitives.meta.className}">${edge}${escapeHtml(node.project.id)}</p>`,
-    `<p>${escapeHtml(node.project.name)}</p>`,
+    `<h4>${escapeHtml(node.project.name)}</h4>`,
     children,
     `</div>`,
   ].join("");
@@ -115,8 +124,10 @@ function renderContaminationNode(node: ContaminationNode): string {
 
 function renderContamination(inventory: Inventory): string {
   const forest = contaminationForest(inventory);
+
   return [
     `<div class="${primitives.stack.className}">`,
+    `<p class="${primitives.meta.className}">03 / Contamination</p>`,
     `<h2>Contamination</h2>`,
     ...forest.map(renderContaminationNode),
     `</div>`,

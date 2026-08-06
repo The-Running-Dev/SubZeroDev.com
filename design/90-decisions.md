@@ -10,6 +10,58 @@ and [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-0
 
 ---
 
+### 2026-08-06 — Visual identity revised: an editorial pass over the U2 palette, type scale and spacing
+Context: The owner judged the U2 apex identity (`90-decisions.md`, "`U2` answered: Presentation's token
+set, primitives and stylesheet assembly") too large and too spacious in practice — display-scale `h1`
+at up to 8.5rem, section gaps up to 7rem — and wanted an editorial pass toward the smaller, tighter
+scale already in production on `SubZeroDev.GameEngine`'s landing page (`site/src/landing.css`), plus a
+numbered `01 / 02 / 03` section-index label ahead of each top-level section, read from that same
+sibling site's `section-index` convention (`App.tsx`), reusing the existing `meta` primitive rather
+than adding a seventh.
+Chosen: Palette — `--bg` #111113, `--fg` #F3F1EC, `--fg-muted` #9A989F, `--rule` #2B2B31, `--link`
+#5B7CFF, replacing the U2 values. Recomputed contrast: `--fg` vs `--bg` 16.71:1, `--fg-muted` vs `--bg`
+6.62:1, `--link` vs `--bg` 5.19:1 (all clear WCAG AA's 4.5:1), `--rule` vs `--bg` 1.34:1 (exempt, as
+before). `--link` vs `--fg` (the pairing `P2`(b) cites) is 3.22:1, below the 4.5:1 body-text threshold
+— still below what luminance alone could carry, so the `text-decoration` `P2`(b) requires stays load-
+bearing exactly as it did at the old 2.60:1. `20-contract.md`'s token table and `P2`(b)'s prose, and
+`tests/presentation/palette.test.ts`'s `EXPECTED` transcription, were updated in the same change so
+none of the three drift from one another. Heading scale and spacing in `primitives.ts` (`page`,
+`stack`, `entry`) were cut roughly in half throughout — `h1` clamp(4rem,12vw,8.5rem) →
+clamp(1.9rem,3.6vw,2.75rem), `h2` clamp(2.5rem,6vw,5rem) → clamp(1.3rem,1.7vw,1.75rem), the
+`.page > .stack` section gap 7rem → 2.5rem — matched against `GameEngine`'s landing scale rather than
+re-derived from the `--step`/`--space` ratio. `apex.ts` gained a `meta`-styled `NN / Title` label ahead
+of each of the three top-level sections' `h2` (Effortless Action, The Ecosystem, Contamination); the
+numbers are structural ordinals, not a Content-derived figure, so `X1` does not apply to them.
+Rejected: Re-deriving the tighter scale from the existing `--step`/`--space` 1.25-ratio tokens instead
+of matching `GameEngine`'s literal values — rejected by the owner in favour of visual consistency with
+the sibling site's already-shipped scale over strict adherence to U2's single-ratio principle; noted
+here as a real tension for whoever reconciles this against `10-design.md`'s ratio language. A literal
+left/right alternating section layout, also requested — abandoned once neither `landing.css` nor
+`App.tsx` in `GameEngine` was found to contain one; sections there are uniformly `margin-inline: auto`
+and centred, so there was nothing concrete to port.
+Reversibility: expensive — same as U2, this is the visual identity; cheap for the section-index labels
+alone, which are three literal strings in `apex.ts` with no contract surface of their own.
+Divergence: `10-design.md`'s *visual identity* / *Copy* sections and `30-slices.md`'s `S4`/`S5`
+acceptance text may still describe the U2 values verbatim (hex codes, the 4rem–8.5rem `h1` range) —
+not reconciled in this change; owner intends to run `/reconcile` once the revision is complete.
+
+### 2026-08-06 — Local dev preview reuses S8's static-server harness rather than a second server
+Context: No way existed to preview `site/dist` locally without either running the full Docker/nginx
+path (S9) or hand-serving the tree with an ad hoc script.
+Chosen: `tools/preview.mjs` builds via the landing-page package's CLI, then serves the result with
+`tests/build/static-server.ts` — the same server S8's browser-capture harness already drives — rather
+than a second implementation, so the dev preview observes the same `try_files $uri $uri/ =404`
+semantics `serverConfig()` gives nginx rather than a third, possibly-divergent set. It rebuilds on
+every change under `src/` or `site/landing.config.ts` (debounced 150ms) and never needs restarting,
+since it reads `site/dist` fresh off disk per request. `GITHUB_SHA` defaults to the current commit when
+unset, a dev-only convenience the package's own build (which refuses to run without a real 40-hex
+commit id) does not extend to CI.
+Rejected: A second minimal HTTP server written for preview alone — rejected for duplicating semantics
+the S8 harness already has right, with no guarantee the two would stay in sync. `vite preview` or an
+equivalent bundler dev server — rejected because the emitted tree is static output from an external
+package's CLI, not a bundler graph this repo owns; a bundler-native dev server has no route into it.
+Reversibility: cheap — dev-only tooling, referenced by nothing else in the repository
+
 ### 2026-08-06 — S9's image build and push mechanism confirmed, scoped: this slice pushes nothing
 Context: S9.1 requires a decision-log entry naming the image build and push mechanism, with the
 registry write scoped to the publication job alone, before any S9 code is written. `30-slices.md`
