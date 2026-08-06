@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
+    "playwright": "^1.62.1",
     "subzerodev-platform-ui-landing-page": "0.3.0",
     "typescript": "^5.7.3",
     "vitest": "^4.1.10"

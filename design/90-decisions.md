@@ -1334,6 +1334,52 @@ Chosen: Installed the kit's `AGENTS.md` with a Project identity section stating 
 Rejected: Inverting the direction (`CLAUDE.md` as content) — no reason favoured it in a fresh repo with no prior convention.
 Reversibility: expensive once other files reference the pointer; cheap right now
 
+### 2026-08-06 — Browser driver and load mechanism for S8's request capture
+Context: `S8.1` requires this decision logged before any code is written. `V2` needs a real browser to
+prove a route document triggers zero requests beyond the navigation document itself — source
+inspection (`assertSelfContained`, S6) cannot prove runtime behaviour on its own.
+Chosen: Playwright, driving Chromium headless, loading the built tree from a local static HTTP server
+(not `file://`). The server is minimal CI-only test scaffolding — no new runtime dependency — that
+mirrors the `try_files $uri $uri/ =404` shape `serverConfig()` already writes for the container, so the
+capture observes the document under roughly the same serving semantics it will actually be published
+under. `page.on("request")` records every load-triggered request; the navigation itself is recorded
+separately with `initiatedByTester: true`.
+Rejected: Puppeteer — Chrome-only, no material advantage over Playwright for a single-browser capture,
+and a less direct request-list API for this shape of check. `@vitest/browser-playwright` (already an
+optional peer of the installed `vitest` per `package-lock.json`) — built for in-browser
+component/unit testing, not a standalone navigation-and-capture check against a finalized static tree;
+using it here would mean fighting a test-runner integration for a job a plain Playwright script does
+directly. `file://` — its origin semantics differ from http(s) (no real same-origin model, some
+relative-path and MIME behaviour differs), which risks the capture not matching what the container and
+Pages actually serve.
+Reversibility: expensive — `V2`'s only authority is this capture, and every later slice that reads a
+browser-verified fact (`P4`, `V13`'s browser half) inherits the same driver.
+
+### 2026-08-06 — A document with no declared icon does not trigger an auto-favicon request
+Context: `S8.5` (closing [issue #16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) —
+`30-slices.md`'s own text at `S8.5` misnames it `#17`, which is a different, unrelated issue; noted as
+a drift for `/reconcile`, not corrected here). `U2` relied on the declared data-URI icon to suppress a
+browser's automatic `/favicon.ico` request, but that reasoning was unverified.
+Chosen: Verified against Chromium headless (this slice's driver, `90-decisions.md` above) with a
+served document carrying no `<link rel="icon">` at all: the browser issued no `/favicon.ico` request —
+only the one navigation request appeared in the capture. The declared icon is therefore a brand
+choice, not a `V2` requirement.
+Rejected: n/a — this is a verified fact about browser behaviour, not a choice between alternatives.
+Reversibility: cheap — a future browser or driver change could alter this, and it would be re-verified
+the same way
+
+### 2026-08-06 — S8.6 demonstrated: both self-contained halves go red together
+Context: `S8.6` requires demonstrating, verifying and reverting a temporary external-stylesheet route
+change before merge — not a committed test.
+Chosen: Added `<link rel="stylesheet" href="https://example.com/style.css">` to the built
+`site/dist/index.html` after a fresh `npm run build`, then ran `vitest.build.config.ts`. Both halves
+went red on the same change: `assertSelfContained` (S6.9's apex case) returned `LinkedStylesheetPresent`,
+and S8.2's browser capture picked up the extra request and failed its `toHaveLength(1)` assertion. The
+change was reverted by discarding `site/dist` and rebuilding; the full build-config suite (33 tests, 6
+files) passed clean afterward.
+Rejected: n/a — a demonstration, not a choice.
+Reversibility: cheap
+
 ### 2026-08-05 — Kit install into a new, empty repository
 Context: `/install SubZeroDev.com` was run before the repository existed. It was created and git-initialized as an empty repo, so every kit artifact classified as Absent — no reconciliation was needed.
 Chosen: Installed `AGENTS.md`, `CLAUDE.md`, `agent.md` (seed kept in full, see below), all `.claude/commands/*.md`, `tools/Measure-Session.ps1` and `tools/Wait-PullRequestCheck.ps1` (with their `.Tests.ps1` companions), `design/` seeded from `templates/design/`, `.github/ISSUE_TEMPLATE/{bug,story}.md`. `codex/PROFILES.md` skipped — no evidence of Codex use.
