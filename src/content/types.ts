@@ -69,3 +69,22 @@ export type ResolvedHome = {
   readonly projectId: ProjectId;
   readonly url: AbsoluteUrl;
 };
+
+export type StageCount = {
+  readonly stage: Stage;
+  readonly count: number;
+};
+
+export type EcosystemGroup = {
+  readonly stage: Stage;
+  readonly projects: readonly Project[];
+};
+
+export type EcosystemTree = readonly EcosystemGroup[];
+
+export type ContaminationNode = {
+  readonly project: Project;
+  readonly escapes: readonly ContaminationNode[];
+};
+
+export type ContaminationForest = readonly ContaminationNode[];
