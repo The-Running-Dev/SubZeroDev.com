@@ -10,6 +10,27 @@ and [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-0
 
 ---
 
+### 2026-08-06 — S9's image build and push mechanism confirmed, scoped: this slice pushes nothing
+Context: S9.1 requires a decision-log entry naming the image build and push mechanism, with the
+registry write scoped to the publication job alone, before any S9 code is written. `30-slices.md`
+still listed this as open even though the S1-reconciliation entry below ("Image identity is commit
+identity: GHCR, tagged by full commit id", 2026-08-05) already names the mechanism and its rejected
+alternatives — that entry predates S9's explicit call-out and never states which job performs the
+push.
+Chosen: The existing mechanism stands — build over `nginx:alpine`, tag with the full commit id, push
+to GHCR — and is confirmed here as answering S9.1's dependency. S9 builds the image, runs it, and
+gates it (`assertImageIdentity`, `assertServedBytesMatchEmitted`, `assertUnknownPathResponse`, header
+assertions); it authenticates to no registry and pushes nothing. The registry push is S10's `publish`
+job alone, carrying the image S9 already gated rather than rebuilding it (S10.7). Confirmed by the
+owner on 2026-08-06.
+Rejected: Writing a new mechanism from scratch — rejected because the S1-era decision already answers
+the "what mechanism" question and rejected its alternatives (semver tags, Docker Hub, `latest`-only);
+redoing that work would relitigate a settled choice with no new evidence. Leaving `30-slices.md`'s
+"still open" note unaddressed and proceeding without logging anything — rejected because S9.1 is an
+explicit stop condition for an implementing agent, and silently treating stale prose as resolved is
+exactly the drift *Verification* exists to prevent.
+Reversibility: cheap — this entry states scope, not a new mechanism
+
 ### 2026-08-06 — S6's route titles and descriptions start as placeholder copy
 Context: S6 requires each route's `title`, `description` and Open Graph title/description as
 owner-supplied copy, transcribed rather than invented (`20-contract.md`). Final copy was not ready

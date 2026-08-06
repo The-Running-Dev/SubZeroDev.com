@@ -1,0 +1,5 @@
+*
+!site/dist
+!site/dist/**
+!site/server
+!site/server/**

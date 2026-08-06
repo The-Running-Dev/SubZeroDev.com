@@ -32,6 +32,53 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run build
       - run: npx vitest run --config vitest.build.config.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: publishable-tree
+          path: |
+            site/dist
+            site/server
+          retention-days: 1
+
+  # Builds and interrogates the release artifact inside CI before anything
+  # could publish it (design/30-slices.md § S9). Consumes the `build` job's
+  # already-finalized tree rather than re-running finalizeArtifact. Pushes
+  # nothing and authenticates to no registry — the registry push is S10's
+  # `publish` job alone (design/90-decisions.md, 2026-08-06 — "S9's image
+  # build and push mechanism confirmed, scoped: this slice pushes nothing").
+  image-gate:
+    name: Image gate
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: publishable-tree
+          path: site
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: docker build -t "subzerodev-com:${{ github.sha }}" .
+      - run: docker run -d --name subzerodev-com -p 8080:80 "subzerodev-com:${{ github.sha }}"
+      - name: Wait for the container to answer
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          echo "the container never answered on :8080" >&2
+          exit 1
+      - run: npm run image-gate
+        env:
+          SERVED_BASE_URL: http://localhost:8080
+      - name: Stop the container
+        if: always()
+        run: docker rm -f subzerodev-com
 
   link-check:
     name: Link check
