@@ -9,7 +9,10 @@
     "test": "vitest run",
     "check-links": "vitest run --config vitest.link-check.config.ts",
     "build": "subzerodev-platform-ui-landing-page build",
-    "image-gate": "vitest run --config vitest.image-gate.config.ts"
+    "image-gate": "vitest run --config vitest.image-gate.config.ts",
+    "attestation-gate": "vitest run --config vitest.attestation.config.ts",
+    "deployment-candidate-gate": "vitest run --config vitest.publish.config.ts tests/publish/deployment-candidate.test.ts",
+    "publish-gate": "vitest run --config vitest.publish.config.ts tests/publish/read-back.test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

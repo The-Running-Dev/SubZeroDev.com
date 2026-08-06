@@ -2,9 +2,7 @@
 //
 // The full code vocabulary is written here because `VerificationError.code` is
 // one shared union across the whole module (contract's Error semantics §
-// Verification). `UnexpectedRequest` is raised by `assertNoAdditionalRequests`
-// as of this slice; every code still unraised belongs to a function not yet
-// implemented.
+// Verification).
 
 export type VerificationErrorCode =
   | "LinkUnreachable"

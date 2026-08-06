@@ -1,10 +1,6 @@
 // Verification — the module's shared value shapes.
-//
-// `RetryPolicy`, `LinkCheckResult` and `RequestRecord` are exercised as of
-// this slice; the rest of the module's public surface (S3's Out of scope) is
-// blocked.
 
-import type { ResolvedHome } from "../content";
+import type { CommitId, ResolvedHome } from "../content";
 
 export type RetryPolicy = {
   readonly attempts: number;
@@ -29,4 +25,14 @@ export type RequestRecord = {
 export type ServedResponse = {
   readonly status: number;
   readonly body: string;
+};
+
+export type Attestation = {
+  readonly commit: CommitId;
+  readonly approver: string;
+};
+
+export type ReadBackResult = {
+  readonly servedCommit: CommitId;
+  readonly polls: number;
 };
