@@ -24,9 +24,10 @@ discharged half of what that entry said `P2` was waiting for: there is now a pal
 and an authored definition of what legibility is measured as. What remains is the shape of the check,
 which the design determines nothing about. It blocks nothing that emits a document.
 
-What else is missing is content, not interface, and is owner-supplied rather than derivable: whether a
-social image exists ([`U6`](#u6--whether-a-social-image-asset-exists)), and each route's title and
-description, transcribed at slice time exactly as the inventory's `line` and `question` were.
+What else is missing is content, not interface, and is owner-supplied rather than derivable: each
+route's title and description, transcribed at slice time exactly as the inventory's `line` and
+`question` were. Whether a social image exists is no longer open —
+[`U6`](#u6--whether-a-social-image-asset-exists) settled it: none.
 
 ---
 
@@ -568,10 +569,10 @@ and neither is derived from Content, so the property that clause exists to prote
 from data to markup, through Composition — is untouched. The design's wording was the stale half;
 `/reconcile` corrected it on 2026-08-06 and the two documents now agree.
 
-The remaining metadata values are **not** written here and are not this contract's to author.
-`socialImageUrl`, `openGraph.imageUrl` and the whole `twitter` block turn on whether a social image
-exists ([`U6`](#u6--whether-a-social-image-asset-exists)). `title`, `description` and the Open Graph
-title and description are owner-supplied copy. A slice transcribes them; it does not invent them.
+`socialImageUrl`, `openGraph.imageUrl` and the `twitter` block are **not** written here — `U6`
+settled that no social image exists, so all three are omitted entirely. `title`, `description` and
+the Open Graph title and description are owner-supplied copy, not this contract's to author. A slice
+transcribes them; it does not invent them.
 
 `missPath` is the canonical declaration of the miss route's path. Artifact's `missEmittedEntry` is the
 package's emitted mapping of exactly this value and must change with it; `R5` asserts the pairing.
@@ -1063,8 +1064,8 @@ same reading became invariants here — the body and the stylesheet are both ins
 which is `X5` and `P5`.
 
 Only metadata *values* remained unwritten, and none of them was blocked by the package: `themeColor`
-and `icons` by `U2`, since answered and written; the social-image fields by `U6`; and the titles and
-descriptions by their being owner-supplied copy.
+and `icons` by `U2`, since answered and written; the social-image fields by `U6`, since answered and
+omitted; and the titles and descriptions by their being owner-supplied copy.
 
 The paragraphs below describe the superseded `0.2.0` state and are retained as the record of what was
 asked for and why.
@@ -1204,21 +1205,24 @@ Until it is made, the brief and this contract disagree on a released requirement
 
 ### U6 — Whether a social image asset exists
 
-**Unblocked 2026-08-06 and still unanswered — it is an owner content decision, not an interface gap.**
+**Answered 2026-08-06: no social image asset.** `socialImageUrl` and `openGraph.imageUrl` are both
+omitted, and the whole `twitter` block is omitted with them. No route declares an `og:image` or a
+Twitter card.
 
 The brief requires Open Graph and X/Twitter metadata. Verified at `0.3.0`: `socialImageUrl`,
 `openGraph.imageUrl` and `twitter.imageUrl` are all optional, and the whole `twitter` block is
 omitted when absent. An Open Graph image is fetched by a crawler, not by the document, so it does not
 engage the zero-additional-request non-goal.
 
-Two consequences make this a real fork rather than a missing string. `card: "summary_large_image"`
-with no image is a claim about a picture that does not exist, so no image means either
-`card: "summary"` or no `twitter` block at all. And `socialImageUrl` and `openGraph.imageUrl` each
-emit an `og:image`, so declaring both emits the element twice.
+Two consequences made this a real fork rather than a missing string, and both are moot now that no
+image exists: `card: "summary_large_image"` with no image would have been a claim about a picture
+that does not exist, so an image would have forced either `card: "summary"` or no `twitter` block;
+and `socialImageUrl` and `openGraph.imageUrl` each emit an `og:image`, so declaring both would have
+emitted the element twice.
 
-An image would also be the **only** asset in this design that is neither inline nor a data URI —
-`V13` permits it, since a crawler fetch is not a load-triggered request, but it is the one place the
-self-contained-document rule has an edge.
+An image would also have been the **only** asset in this design that is neither inline nor a data
+URI — `V13` permits it, since a crawler fetch is not a load-triggered request — but with no image
+declared, this design has no such asset and the self-contained-document rule has no edge to hold.
 
 ### U7 — Which server serves the container tree
 
