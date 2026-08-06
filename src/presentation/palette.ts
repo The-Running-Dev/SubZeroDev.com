@@ -9,11 +9,11 @@ import type { HexColor, Palette } from "./types";
 const hex = (value: string): HexColor => value as HexColor;
 
 export const palette: Palette = {
-  bg: hex("#0F0F10"),
-  fg: hex("#E8E8E9"),
-  "fg-muted": hex("#8C8C8F"),
-  rule: hex("#252527"),
-  link: hex("#6E92C8"),
+  bg: hex("#111113"),
+  fg: hex("#F3F1EC"),
+  "fg-muted": hex("#9A989F"),
+  rule: hex("#2B2B31"),
+  link: hex("#5B7CFF"),
 };
 
 // Derived from `--bg` rather than chosen separately (U2's ruling): the

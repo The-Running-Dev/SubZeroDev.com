@@ -473,11 +473,11 @@ second time.
 | `--space-3` | `2.86rem` | |
 | `--space-4` | `4.47rem` | |
 | `--measure` | `34rem` | |
-| `--bg` | `palette.bg`, `#0F0F10` | |
-| `--fg` | `palette.fg`, `#E8E8E9` | |
-| `--fg-muted` | `palette["fg-muted"]`, `#8C8C8F` | |
-| `--rule` | `palette.rule`, `#252527` | exempt from `P2`'s contrast half, by name |
-| `--link` | `palette.link`, `#6E92C8` | |
+| `--bg` | `palette.bg`, `#111113` | |
+| `--fg` | `palette.fg`, `#F3F1EC` | |
+| `--fg-muted` | `palette["fg-muted"]`, `#9A989F` | |
+| `--rule` | `palette.rule`, `#2B2B31` | exempt from `P2`'s contrast half, by name |
+| `--link` | `palette.link`, `#5B7CFF` | |
 
 Both scales are the single 1.25 ratio the ruling settles, a spacing token advancing two steps of it.
 **The step indices are fixed by two statements in that ruling and are not a free choice**: the measure
@@ -981,7 +981,7 @@ where a separate module checks it, that is said in the row.
 | **C14** | Nothing imports `projects` except the `validateInventory` call site — Adapter once it exists, and until then the committed-inventory assertion — and Verification's assertions over the inventory. No derivation function, no Composition entry and no Artifact step reads it | Content |
 | **C15** | `parseCommitId` is the only implementation of the `CommitId` pattern in the repository | Content |
 | **P1** | Nothing in Presentation references a linked font, an external stylesheet, a gradient or an illustration asset. Neither `--font-sans` nor `--font-mono` names a webfont, and no rule is an `@font-face` | Presentation |
-| **P2** | The rendered page is legible in greyscale, in two parts. **(a)** Every foreground colour resolved against the background it is rendered on meets WCAG AA — 4.5:1, or 3:1 at `--step-2` and above. `--rule` is **exempt, by name**: record separation is carried by `--space-1`, so a divider reinforces and never signals. **(b)** No meaning is carried by hue alone, which obliges the `link` primitive to declare a `text-decoration`, or a font weight distinct from body text. Part (b) is what makes this say greyscale rather than contrast: `--link` against `--fg` is 2.60:1, so a link is not separable from body text by luminance at all | Presentation |
+| **P2** | The rendered page is legible in greyscale, in two parts. **(a)** Every foreground colour resolved against the background it is rendered on meets WCAG AA — 4.5:1, or 3:1 at `--step-2` and above. `--rule` is **exempt, by name**: record separation is carried by `--space-1`, so a divider reinforces and never signals. **(b)** No meaning is carried by hue alone, which obliges the `link` primitive to declare a `text-decoration`, or a font weight distinct from body text. Part (b) is what makes this say greyscale rather than contrast: `--link` against `--fg` is 3.22:1, below the 4.5:1 body-text threshold, so a link is not reliably separable from body text by luminance alone | Presentation |
 | **P3** | Nothing animates under `prefers-reduced-motion: reduce` | Presentation |
 | **P4** | Focus order matches visual order and every interactive element is keyboard-reachable | Presentation |
 | **P5** | No `StylesheetText` contains a `</style` sequence in any case — the package emits it unescaped inside a `<style>` element and throws on one | Presentation |
