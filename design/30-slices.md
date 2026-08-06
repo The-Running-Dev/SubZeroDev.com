@@ -5,38 +5,53 @@ document and the contract disagree, one of them is a defect; say which rather th
 
 ## What can be sliced, and what cannot
 
-**Superseded 2026-08-06 and annotated in place, not re-sliced.**
-[`20-contract.md`](20-contract.md) § `U1` recorded a verified fact rather than a risk: at
-`subzerodev-platform-ui-landing-page@0.2.0` the external package **could not** accept a
-caller-supplied body, and **could not** omit its entry script when one was given. That released at
-`0.3.0`, and `U3`, `U4` and `U7` are answered with it, so the contract now writes Adapter's
-`LandingPageConfig`, its route declarations and their metadata, Artifact's server configuration, and
-the two `assert*` signatures `V3` and `V6` previously lacked.
+**Everything on the render and publication path can now be sliced.** The three contract items that
+blocked it are answered: [`U1`](20-contract.md#u1--the-package-cannot-accept-a-caller-supplied-body)
+released at `0.3.0`, [`U2`](20-contract.md#u2--presentations-token-set-and-primitives) supplied
+Presentation's token set on 2026-08-06, and [`U7`](20-contract.md#u7--which-server-serves-the-container-tree)
+settled the container's server. Every signature `S4`–`S10` below needs is written in the contract.
 
-**Nothing blocks the render path any longer.**
-[`U2`](20-contract.md#u2--presentations-token-set-and-primitives) — Presentation's token set, its
-primitives and the per-route stylesheet assembly — was answered by the owner and written into the
-contract on 2026-08-06, so `palette`, `primitives`, `themeColor`, `iconDataUri` and `stylesheetFor`
-are all specified. What is still unwritten is owner-supplied copy: each route's title and description,
-the page prose, and whether a social image asset exists
-([`U6`](20-contract.md#u6--whether-a-social-image-asset-exists)).
+**What is not a block, and is not treated as one.** Three things are still outstanding and each is
+carried as a `Depends on:` line rather than as a barrier, following the precedent `S2` set when it
+waited on the owner's `line` and `stage` values:
 
-`/slices` may not introduce a signature the contract does not carry. That rule is why the three units
-below stop where they do; it no longer stops the publication work, which now stops on owner-supplied
-copy alone. The entries under [*Blocked*](#blocked) are corrected in place — deciding what
-slice the released work becomes is `/slices`', and this pass does not make it.
+- **Owner-supplied copy** — the manifesto prose, the miss page's copy, each route's title and
+  description, whether *Effortless Action* appears and in which draft
+  ([`10-design.md`](10-design.md) *Open questions* 5), and whether the page links to project source
+  ([*Open questions*](10-design.md#open-questions) 4). An implementing agent that reaches a sentence
+  the owner has not supplied **stops and asks; it does not write brand voice.**
+- **[`U6`](20-contract.md#u6--whether-a-social-image-asset-exists)** — whether a social image asset
+  exists. It determines whether three metadata fields are declared at all, so it is `S6`'s to wait on.
+- **Two mechanism choices** this document has recorded as needing a decision-log entry
+  *before* implementation since it was first written: the browser driver for `V2`, and the image
+  build-and-push mechanism. Each is now the first acceptance criterion of the slice that needs it, so
+  the decision is a deliverable rather than a note.
 
-Three units remain fully specified, independently valuable, and deliverable now. They are below.
+**The earlier deferral is discharged.** A previous revision declined to slice `projectTotal`,
+`countByStage`, `ecosystemTree`, `contaminationForest` and `sinceYear` because "their sole consumer is
+Composition, which is blocked. Writing them now produces a layer with nothing to verify it against."
+Composition is no longer blocked, so all five arrive in `S5` **with** that consumer, which is what the
+deferral was waiting for. `resolvedHomes` was the exception and shipped in `S3`.
 
-**Verticality under `U1`.** A static site with no runtime has two observable ends: a served document
-and a CI outcome. Served documents are blocked, so each slice below ends at an observable CI outcome —
-a job that is green on correct input and red, for a named reason, on incorrect input. That is the
-whole of the design's *Control flow* § 1 that is reachable, and each slice leaves the repository
-runnable in that sense. Where a slice stops short of a served page, it is because the page is blocked,
-not because the slice is a layer.
+Ten units are fully specified, independently valuable, and deliverable. `S1`–`S3` are done.
 
-**Numbering.** `S1`–`S3` are fixed. The blocked work takes `S4` onward when the contract can carry it;
-nothing below is renumbered to make room.
+**Verticality.** A static site with no runtime has two observable ends: a served document and a CI
+outcome. `S1`–`S3` ended at a CI outcome because a served document was blocked. `S4` and `S5` end at a
+CI outcome for a different reason — **size, not blockage** — and the distinction matters, because the
+old justification no longer applies and reusing it would hide a judgement call. Each of them still
+produces a *page*, not a layer: `composeMiss()` and `composeApex(inventory)` each return a complete
+document body and the stylesheet it requires. From `S6` on, every slice ends at an emitted or served
+document.
+
+**Ordering, and the one place it is not ideal.** The design names its own largest bet plainly — *"the
+package hands the generated HTML to a bundler, and what a bundler adds to a document is its business,
+not this design's"* — and that bet is exercised in `S6`, the third new slice rather than the first.
+It cannot move earlier: the package cannot be handed a body until there is a body, and `A4` requires
+**both** routes to be declared at once, so both compositions must exist before anything is emitted.
+`S4` and `S5` are the shortest path to that point, and neither adds a layer to get there.
+
+**Numbering.** `S1`–`S3` are fixed and closed; their criteria are ticked checkboxes on merged issues
+and are reproduced here verbatim. `S4`–`S10` are allocated by this pass. Nothing is renumbered.
 
 ---
 
@@ -145,13 +160,269 @@ undecided. Publishing anything, or stating any live URL.
 
 ---
 
-## Not sliced, and why
+## S4 — The visual language and the miss page
 
-`projectTotal`, `countByStage`, `ecosystemTree`, `contaminationForest` and `sinceYear` are fully
-specified in the contract and are deliberately **not** sliced. Their sole consumer is Composition,
-which is blocked. Writing them now produces a layer with nothing to verify it against, which is the
-failure this document's slicing rule exists to prevent. `resolvedHomes` is the exception and is in S3
-because the link check consumes it. The rest arrive with the page.
+Delivers: The site gets its look — a dark, typographic token set and six layout primitives — and its
+first complete page, the one a visitor sees when they ask for something that is not there. Each page
+from here on carries only the style rules its own markup actually uses, worked out from the markup
+rather than declared alongside it, so a page can neither silently lose its styling nor accumulate
+rules for markup it no longer has.
+
+Touches: Presentation — `HexColor`, `DataUri`, `ClassName`, `ColorToken`, `Palette`, `PrimitiveName`,
+`Primitive`, `PrimitiveSet`, `StylesheetText`, `BodyHtml`, `palette`, `primitives`, `themeColor`,
+`iconDataUri`, `stylesheetFor`. Composition — `ComposedRoute`, `composeMiss`. Verification —
+`assertStyleAgreement`, and the `ClassWithoutRule` and `SelectorWithoutUser` codes. CI — the existing
+typecheck-and-test job now covers two new modules.
+
+Depends on: S1, and on owner-supplied copy for the miss page. The brief requires it be on-voice and
+the non-goals rule out the excuse generator named in `Idea.md`; what it actually says is brand
+material. An implementing agent that reaches a sentence the owner has not supplied stops and asks.
+
+Acceptance:
+  - S4.1 `palette` has exactly the five `ColorToken` keys, each value matches `/^#[0-9A-F]{6}$/`, and each equals the value the contract's token-block table records for it — asserted key by key.
+  - S4.2 `themeColor === palette.bg`, and Presentation's source carries no six-digit hex literal outside the `palette` declaration, so one colour has exactly one spelling.
+  - S4.3 `primitives` has exactly the six `PrimitiveName` keys; every `className` matches `/^[a-z][a-z0-9-]*$/`, and no two primitives share one.
+  - S4.4 Every selector in every primitive's `rules` contains that primitive's own `className`, asserted by a check demonstrated red by a temporary rule whose selector omits it — verified and reverted before merge.
+  - S4.5 `stylesheetFor` on a body carrying no primitive class returns the token block alone: each custom property named in the contract's token-block table declared on `:root` and no others, plus one further `:root` rule applying `--bg` and `--fg`. Its five colour values are emitted from `palette` rather than written a second time, asserted by changing a `palette` value in a fixture and observing the block change with it.
+  - S4.6 `stylesheetFor` on a body carrying two primitives' class names returns the token block followed by exactly those two primitives' `rules` in `PrimitiveName` declaration order; a body carrying a class that belongs to no primitive contributes nothing (`P6`).
+  - S4.7 No `StylesheetText` returned by any of these functions contains `</style` in any case, asserted over `composeMiss()`'s stylesheet and over a fixture body referencing all six primitives (`P5`).
+  - S4.8 The stylesheet for a body referencing all six primitives contains no `@font-face`, no gradient function, no illustration asset and no `url(` naming a scheme other than `data:`, and neither `--font-sans` nor `--font-mono` names a webfont (`P1`).
+  - S4.9 Exactly one primitive's `rules` reference `--font-mono`, and no token-block rule does (`P7`).
+  - S4.10 `iconDataUri` begins with `data:` and decodes to SVG whose only colour literals are `palette.fg` and `palette.bg`, by interpolation rather than transcription.
+  - S4.11 `assertStyleAgreement` returns `{ ok: true }` for `composeMiss()`; a fixture body carrying a class with no rule returns `ClassWithoutRule` naming that class; a fixture stylesheet carrying a class selector with no user returns `SelectorWithoutUser`; a fixture with four unmatched classes returns four errors in one `Result`.
+  - S4.12 `assertStyleAgreement` returns `{ ok: true }` for the token block alone against a body carrying no class — the `:root` rules raise no `SelectorWithoutUser`, per the 2026-08-06 narrowing of `X4` to class selectors.
+  - S4.13 `composeMiss()` takes no argument, returns byte-identical `bodyHtml` and `stylesheet` on repeated calls, and its `bodyHtml` contains no `<form>`, no `<script>`, no `<iframe>` and no `on*` attribute (`X3`).
+  - S4.14 Presentation imports `Branded` from Content and nothing else from this repository, and Composition imports only Content and Presentation — both asserted by the import-graph check S1.10 introduced and demonstrated red by a temporary import, verified and reverted before merge.
+
+Out of scope: `composeApex` and the five Content derivations it consumes — S5. Any check of `P2`, `P3`
+or `P4`: those stay Presentation's to maintain, and the Verification surface they would be checked
+through does not exist — that is [`U9`](20-contract.md#u9--accessibility-has-no-verification-surface)
+and it is under [*Blocked*](#blocked). Writing one here would introduce a signature the contract does
+not carry, which this document may not do. The document shell, the head metadata, and anything
+emitted to disk — S6.
+
+---
+
+## S5 — The apex composition
+
+Delivers: The page this whole repository exists for — the manifesto, the ecosystem list grouped by
+lifecycle stage, the contamination chain that shows which project escaped out of which, and the
+footer — becomes real composed HTML. Every number on it is computed from the committed inventory
+rather than typed, so the page cannot come to contradict the data it describes.
+
+Touches: Content — `primarySlogan`, `apexFooterQuote`, `projectTotal`, `countByStage`,
+`ecosystemTree`, `contaminationForest`, `sinceYear`. Composition — `composeApex`. CI — the existing
+typecheck-and-test job.
+
+Depends on: S4, and on owner-supplied copy — the manifesto prose, whether *Effortless Action* appears
+and in which draft (`10-design.md` *Open questions* 5), and whether the page links to project source,
+which turns on repository visibility (*Open questions* 4). `Idea.md` lines 540–604 are an unresolved
+transcript and none of the three drafts in them may be treated as settled copy.
+
+Acceptance:
+  - S5.1 `sinceYear(inventory)` equals the minimum `year` in the inventory (`C10`), asserted over the committed inventory and over a fixture whose minimum year is not the first record.
+  - S5.2 `projectTotal(inventory)` equals the number of projects in it, and `countByStage(inventory)` returns one entry per `Stage` in `stageOrder` order whose counts sum to `projectTotal` (`C12`).
+  - S5.3 `ecosystemTree(inventory)` returns one group per `Stage` in `stageOrder` order including groups with no projects; within a group projects ascend by `id`; every project appears exactly once across all groups (`C11`).
+  - S5.4 `contaminationForest(inventory)` roots every project carrying no `escapedFrom`, contains every project exactly once, and over the committed inventory yields at least one node at depth 2 or greater — the chain S2.7 put in the data.
+  - S5.5 `composeApex(inventory)` returns a `ComposedRoute` whose `bodyHtml` contains every project `name` in the committed inventory, the text of `primarySlogan`, and the text of `apexFooterQuote`.
+  - S5.6 `composeApex` returns byte-identical `bodyHtml` for the same inventory on repeated calls, so the built-output assertions in S6 can name what is on the page.
+  - S5.7 Composing an inventory with one project removed changes the rendered total, that project's stage count, and the ecosystem grouping — asserted by comparing two compositions, so no figure on the page can be a typed literal (`X1`).
+  - S5.8 A fixture project whose `name`, `line` and `question` each contain `<`, `>`, `&`, `"` and `'` composes to a `bodyHtml` in which none of the five reaches text position unescaped (`X5`).
+  - S5.9 `assertStyleAgreement` returns `{ ok: true }` for `composeApex(inventory)` over the committed inventory.
+  - S5.10 `composeApex`'s `bodyHtml` contains no `<form>`, no `<script>`, no `<iframe>` and no `on*` attribute (`X3`).
+
+Out of scope: The head metadata, the route declarations and the package — S6. Adding
+`SubZeroDev.Platform.UI.LandingPage` as a dependency: nothing in this slice is emitted, so nothing in
+it needs the package. Any accessibility check, for the reason S4 states. Reading `projects` from
+Composition — `C14` closes that set and Composition is not in it; `composeApex` takes the `Inventory`
+as a parameter and its tests supply it.
+
+---
+
+## S6 — The emitted document
+
+Delivers: For the first time this repository produces actual HTML files. The landing-page package is
+added at an exact version, the two routes are declared with their titles, descriptions and social
+metadata, and running the build writes one document for the apex and one for the 404 page — each
+carrying the whole page in the response body, the stylesheet inline and the icon embedded, with no
+script and no linked asset of any kind. CI fails the build if anything the bundler adds breaks that.
+
+**This is the slice that exercises the design's largest bet.** Every argument downstream assumes a
+bundler hands back a self-contained document, and nothing has ever run it.
+
+Touches: Content — `parseCommitId`. Adapter — `RoutePath`, `origin`, `apexPath`, `missPath`, the two
+route declarations and the default `config`. Verification — `assertSelfContained`,
+`assertContentPresent`, and the `ScriptElementPresent`, `LinkedStylesheetPresent`,
+`ExternalAssetReference`, `ManifestoAbsent` and `ProjectNameAbsent` codes. Dependencies —
+`subzerodev-platform-ui-landing-page` pinned at `0.3.0` exactly, with the lockfile. CI — a `build`
+job.
+
+Depends on: S5, and on owner-supplied copy — each route's `title` and `description` and the Open Graph
+title and description — and on [`U6`](20-contract.md#u6--whether-a-social-image-asset-exists), which
+decides whether `socialImageUrl`, `openGraph.imageUrl` and the `twitter` block are declared at all.
+A slice transcribes these values; it does not invent them.
+
+Acceptance:
+  - S6.1 `package.json` names `subzerodev-platform-ui-landing-page` at `0.3.0` with no range prefix, `package-lock.json` resolves exactly that version, and a test asserts both — so a clean install resolving anything else fails.
+  - S6.2 `parseCommitId` returns a `CommitId` for a forty-character lowercase hex string and `null` for a 39-character, a 41-character, an uppercase and a non-hex value; a check over the repository finds no second implementation of the forty-hex pattern (`C15`).
+  - S6.3 `config.routes` has exactly two entries — the first at `apexPath` carrying `composeApex(inventory)`, the second at `missPath` carrying `composeMiss()` — each taking `body` and `stylesheet` from its own `ComposedRoute` (`A4`).
+  - S6.4 Each route's `metadata.canonicalUrl` and `metadata.openGraph.url` equal `origin` concatenated with that route's `path`, `metadata.openGraph.type` is `"website"`, and the origin string appears exactly once in Adapter's source (`A1`).
+  - S6.5 `metadata.icons` has exactly one entry whose `href` is Presentation's `iconDataUri`, and `metadata.themeColor` is Presentation's `themeColor` — both imported; no hex literal and no `data:` literal appears anywhere in Adapter's source (`A2`, `A7`).
+  - S6.6 Neither route declares `entry`, `hydrate` or `noScript`, and `config` declares no `styles`, no `publicDir` and no `allow` (`A6`).
+  - S6.7 Adapter imports exactly Composition, the external package, Content's `projects`, `validateInventory`, `BuildContext` and `parseCommitId`, and Presentation's `themeColor` and `iconDataUri` — asserted by the import-graph check and demonstrated red by a temporary import of a Content derivation, verified and reverted before merge (`A3`).
+  - S6.8 Run against a deliberately malformed fixture inventory, the build reports every `ContentError` rather than the first, exits non-zero, and leaves the output directory with no document in it (`A5`).
+  - S6.9 Running the build emits a document for the apex and one at `404/index.html`, and `assertSelfContained` returns `{ ok: true }` for both (`V13`).
+  - S6.10 `assertSelfContained` returns `ScriptElementPresent` for a document carrying a `<script>`, `LinkedStylesheetPresent` for one carrying a `<link rel="stylesheet">`, and `ExternalAssetReference` for one carrying an `https:` asset URL; a document carrying all three returns three errors in one `Result`.
+  - S6.11 `assertContentPresent(apexHtml, manifestoSentences, inventory)` returns `{ ok: true }` for the emitted apex; a manifesto sentence absent from the document returns `ManifestoAbsent`, and an inventory carrying a project whose `name` is absent returns `ProjectNameAbsent` (`V3`).
+  - S6.12 The emitted apex document contains its title, description, canonical URL, Open Graph fields and the icon `href` — asserted against the emitted HTML, never against `config`.
+  - S6.13 Nothing imports Composition except Adapter, and no repository module under `src` imports Verification — both asserted by the import-graph check (`X2`).
+  - S6.14 A `build` CI job runs the package build and every offline assertion above sequentially in one job over one working directory; it is green on this slice's head commit and demonstrated red by a temporary `LandingPageEntryRoute` declaration that emits a script element — verified and reverted before merge.
+
+Out of scope: The build marker, the root `404.html` and the server configuration — all Artifact's, all
+S7's. The browser request capture, which is the second half of the self-contained check and needs a
+driver decision — S8. Any image, any deploy, any live URL. `metadata.noScript`, which
+[`U5`](20-contract.md#u5--noscript-is-withdrawn-pending-an-owner-edit-to-the-brief) withdrew and which
+the package would append **inside the body**, putting a false sentence in the page's prose.
+
+---
+
+## S7 — The publishable tree
+
+Delivers: The emitted documents become a tree that can actually be published. Every document gains a
+machine-readable stamp of the exact commit it was built from — which is what later lets a deployment
+be proved rather than assumed — the 404 document is copied to the root filename hosting conventions
+expect, and the container's server configuration is written beside the tree rather than into it, so
+the file the server reads is never a file the server serves.
+
+Touches: Artifact — `EmittedDocument`, `ArtifactInput`, `ArtifactReport`, `ArtifactErrorCode`,
+`ArtifactError`, `missEmittedEntry`, `missRootEntry`, `serverConfigFilename`, `buildMarkerPrefix`,
+`buildMarkerSuffix`, `buildMarker`, `serverConfig`, `injectBuildMarker`, `finalizeArtifact`.
+Verification — `readBuildMarker`, `assertEveryDocumentMarked`, `assertRootMissDocument`, and the
+`MarkerAbsent`, `MarkerDuplicate`, `MarkerMismatch` and `RootMissDocumentAbsent` codes. CI — the
+`build` job extended.
+
+Depends on: S6.
+
+Acceptance:
+  - S7.1 `buildMarker(commit)` equals `buildMarkerPrefix + commit + buildMarkerSuffix` exactly, and both constants equal the literals the contract names.
+  - S7.2 `injectBuildMarker(html, commit)` inserts the marker immediately before the first `</head>` and nowhere else; a document with no `</head>` returns `MarkerInsertionPointMissing`; a document already carrying a marker returns `MarkerAlreadyPresent` and gains no second one.
+  - S7.3 `finalizeArtifact` validates `input.commit` before anything else: a non-forty-hex value returns `CommitIdMalformed` with `entry: null`, and no file in the tree is modified.
+  - S7.4 `finalizeArtifact` over a tree containing no `.html` document returns `OutputTreeMissing` with `entry: null`; over a tree with documents but no `404/index.html` it returns `MissDocumentMissing` with `entry` equal to `missEmittedEntry`.
+  - S7.5 After `finalizeArtifact` succeeds, `missRootEntry` and `missEmittedEntry` are byte-identical in the finished tree (`R2`) — which holds because the copy precedes the injection, asserted by both carrying the same marker.
+  - S7.6 `ArtifactReport.markedEntries` names every `.html` document in the finished tree including the root copy, and `readBuildMarker` returns the input commit for each of them (`R1`).
+  - S7.7 `serverConfig()` returns text that resolves an unknown path to `missRootEntry` with status 404, names no path the build does not emit, and sets no cookie, no application-chosen cache-control directive, and no tracking or rewrite header (`R4`) — asserted against the returned string with no container, filesystem or network involved.
+  - S7.8 `ArtifactReport.serverConfigPath` is outside `outputDir`, and after `finalizeArtifact` no file named `serverConfigFilename` exists anywhere inside the output tree (`R6`).
+  - S7.9 `assertEveryDocumentMarked(documents, commit)` returns `{ ok: true }` for the finished tree; a document with no marker returns `MarkerAbsent`, one carrying two returns `MarkerDuplicate`, one carrying a different valid commit returns `MarkerMismatch`, and a tree carrying all three faults returns three errors in one `Result` (`V1`).
+  - S7.10 `assertRootMissDocument(documents)` returns `{ ok: true }` for the finished tree and `RootMissDocumentAbsent` for a tree with `missRootEntry` removed.
+  - S7.11 `missEmittedEntry` is checked against the emitted tree rather than assumed: a test derives the package's emitted path for Adapter's `missPath` from the build output and asserts it equals `missEmittedEntry` (`R5`).
+  - S7.12 Artifact imports exactly `CommitId`, `parseCommitId` and `Result` from Content and nothing else from this repository, asserted by the import-graph check and demonstrated red by a temporary import — verified and reverted before merge.
+  - S7.13 The `build` job runs the package build, `finalizeArtifact` and the offline assertions sequentially in one job over one working directory; it is green on this slice's head commit and demonstrated red by a temporary change that skips the marker injection — verified and reverted before merge.
+  - S7.14 Every document in the tree, taken before and after `finalizeArtifact`, differs by exactly the marker string and nothing else — asserted by removing `buildMarker(commit)` from each finished document and comparing the result byte for byte against its pre-Artifact form (`R3`).
+
+Out of scope: Any check that a running server behaves as `serverConfig()` describes — this slice
+asserts the text, and S9 asserts the behaviour. The browser request capture. The image. Anything
+published, and any live URL.
+
+---
+
+## S8 — The browser request capture
+
+Delivers: A real browser loads the built page and CI records every request it makes. The promise this
+whole design was written around — that a visitor's browser fetches the document and nothing else —
+stops being an argument about source code and becomes an observation, which is the only form of it the
+brief accepts.
+
+Touches: Verification — `assertNoAdditionalRequests`, `RequestRecord`, and the `UnexpectedRequest`
+code. CI — the `build` job extended with a browser step.
+
+Depends on: S7, **and on a decision-log entry naming the browser driver and whether it loads the
+document over `file://` or a local static server.** This document has listed that choice as needing a
+decision before implementation since it was first written, and it is still open. It is the first
+acceptance criterion below rather than a precondition stated in prose, so the slice cannot proceed
+past it by accident.
+
+Acceptance:
+  - S8.1 The browser driver and its load mechanism are recorded in `90-decisions.md` before any code is written, naming the rejected alternatives, why each was rejected, and the reversibility. An implementing agent that reaches this with no owner ruling stops and asks.
+  - S8.2 Loading the emitted apex document under the chosen driver produces exactly one `RequestRecord` — the navigation document, with `initiatedByTester` true — and no other record (`V2`).
+  - S8.3 Loading the emitted miss document under the same driver produces the same single record.
+  - S8.4 `assertNoAdditionalRequests(records)` returns `{ ok: true }` for both captures; a capture carrying one additional record returns `UnexpectedRequest` naming that record's `url`; a capture carrying three additional records returns three errors in one `Result`.
+  - S8.5 Whether a document with no declared icon triggers an automatic `/favicon.ico` request is verified against the chosen driver and recorded in `90-decisions.md` — closing [issue #17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17), and settling whether the declared icon is a `V2` requirement or a brand choice.
+  - S8.6 A temporary route change that links an external stylesheet turns the capture red with `UnexpectedRequest`, and the source-level `assertSelfContained` from S6 goes red on the same change — both halves of the self-contained check demonstrated, verified and reverted before merge.
+
+Out of scope: `P4`'s keyboard traversal and focus order, which needs the same driver and has no
+Verification surface — that is `U9` and it is under *Blocked*, and picking a driver here does not
+release it. `P2` and `P3`. Anything published.
+
+---
+
+## S9 — The container image and its in-CI gate
+
+Delivers: The release artifact — a container image serving the built tree — is built, run and
+interrogated inside CI before anything could publish it. CI checks that the image serves byte for byte
+what the build emitted, that an unknown path answers with a real 404 carrying the 404 page rather than
+a 200 that merely looks right, and that the image's tag is the commit it was built from. An image that
+fails any of those is never pushed, so no compose stack can pull a broken one.
+
+Touches: Verification — `assertServedBytesMatchEmitted`, `assertUnknownPathResponse`,
+`assertImageIdentity`, `ServedResponse`, and the `ServedBytesMismatch`, `UnknownPathStatusWrong`,
+`UnknownPathBodyWrong` and `ImageTagCommitMismatch` codes. Packaging — a container definition over
+`nginx:alpine` consuming Artifact's finished tree and the emitted server configuration. CI — an
+`image-gate` job.
+
+Depends on: S7, **and on a decision-log entry naming the image build and push mechanism**, with the
+registry write scoped to the publication job alone. That choice has been listed as needing a decision
+before implementation since this document was first written and is still open. S8 is not a
+dependency: the gate is hermetic and the capture is a different observation.
+
+Acceptance:
+  - S9.1 The image build and push mechanism is recorded in `90-decisions.md` before any code is written, naming the rejected alternatives and stating that no step in this slice writes to a registry. An implementing agent that reaches this with no owner ruling stops and asks.
+  - S9.2 The image is built over `nginx:alpine` from Artifact's finished tree and the emitted `serverConfigFilename`, and is tagged with the full forty-character commit id.
+  - S9.3 `assertImageIdentity(imageTag, servedMarker, commit)` returns `{ ok: true }` for the built image; a tag that is not the commit returns `ImageTagCommitMismatch`; a served marker that is a different valid commit returns `MarkerMismatch`, and it is not retryable here because the image is already built (`V10`).
+  - S9.4 With the image running, `assertServedBytesMatchEmitted(served, emitted)` returns `{ ok: true }` for `/` against the emitted apex document, and returns `ServedBytesMismatch` when a single byte of the emitted document is altered (`V11`).
+  - S9.5 With the image running, `assertUnknownPathResponse(response, emittedMissDocument)` returns `{ ok: true }` for a unique unknown path; a 200 carrying the miss document returns `UnknownPathStatusWrong`; a 404 carrying the miss document wrapped in any other markup returns `UnknownPathBodyWrong`, because the body must equal the emitted document rather than contain it (`V12`, container half).
+  - S9.6 The served response for an unknown path carries no cookie, no application-chosen cache-control directive and no tracking or rewrite header, asserted over its headers — `R4` observed rather than argued from `serverConfig()`'s text.
+  - S9.7 An `image-gate` CI job builds the image, runs it, performs S9.3–S9.6 and pushes nothing; it is green on this slice's head commit and demonstrated red by a temporary server-configuration change that answers an unknown path with 200 — verified and reverted before merge (`V9`).
+  - S9.8 No step in this slice authenticates to a registry or writes to one, asserted by the absence of a registry credential from the workflow and by the job's own step list.
+
+Out of scope: Pushing the image anywhere. The attestation gate and the deployment — S10. Byte identity
+against the Pages target, which does not exist until S10. Anything about a compose stack: the design
+guarantees a published image is correct and stops there, and *Open questions* 7 and 8 are undecided.
+
+---
+
+## S10 — Publication
+
+Delivers: The site goes live, and this is the first slice permitted to say so. A human approves the
+release against one exact commit, the workflow confirms that commit is still the branch head, then
+deploys to Pages and pushes the gated image inside a single critical section, then polls the served
+site until it returns that exact commit's marker and checks that an unknown path answers 404. Only
+that read-back licenses a live URL — a green build and a merged pull request license nothing.
+
+Touches: Verification — `deploymentPollRetry`, `pollForCommit`, `assertAttestation`,
+`assertDeploymentCandidateCurrent`, `ReadBackResult`, `Attestation`, and the `PollExhausted`,
+`AttestationAbsent`, `AttestationCommitMismatch` and `StaleDeploymentCandidate` codes. CI — an
+`attestation` job targeting a protected GitHub Environment with required reviewers, and a `publish`
+job. Repository configuration — Pages, and the environment's reviewer list.
+
+Depends on: S8, S9.
+
+Acceptance:
+  - S10.1 `deploymentPollRetry` equals `{ attempts: 60, backoff: "fixed", initialDelayMs: 5000, maxDelayMs: 5000, attemptTimeoutMs: 10000 }`, asserted field by field.
+  - S10.2 Against a local stub serving a document carrying the expected marker, `pollForCommit` returns `{ ok: true }` with `polls: 1`; against a stub carrying a different valid commit for two polls and the expected one on the third, `{ ok: true }` with `polls: 3`; against a stub that never carries it, `PollExhausted` after `attempts` polls.
+  - S10.3 `assertAttestation(null, commit)` returns `AttestationAbsent`; an `Attestation` whose `commit` differs from the deploying commit returns `AttestationCommitMismatch`; a matching one returns `{ ok: true }` (`V5`).
+  - S10.4 `assertDeploymentCandidateCurrent(commit, branchHead)` returns `{ ok: true }` when the two are equal and `StaleDeploymentCandidate` when they differ (`V6`).
+  - S10.5 The `attestation` job targets a protected GitHub Environment with required reviewers, runs only on a push to the default branch, and builds its `Attestation` from the run's approval record for `approver` and the run's `head_sha` for `commit` — so an approval cannot be replayed onto another run.
+  - S10.6 `publish` is a single job holding a single concurrency group that does not cancel in progress, and the branch-head check, the Pages deploy, the registry push and the read-back are all inside it (`V7`).
+  - S10.7 The image gated in S9 is carried into `publish` and pushed without being rebuilt, with its digest asserted equal on both sides of the job boundary — the gated image is the pushed image (`V9`).
+  - S10.8 After the deploy, `pollForCommit` against the served apex returns `{ ok: true }` for the exact commit, and `assertUnknownPathResponse` against a unique unknown path on the served site returns `{ ok: true }` (`V12`, Pages half).
+  - S10.9 No live URL appears in any job output, summary, comment or report before S10.8 passes, and no image tag appears in any of them before the push reports success and the tag resolves in the registry (`V8`, `V14`).
+  - S10.10 A run whose commit is no longer the deployment-branch head stops before publishing and reports a clean stop rather than a failure, demonstrated against `assertDeploymentCandidateCurrent` and by the workflow's own conditional.
+  - S10.11 The full ordering holds end to end, demonstrated by one workflow run: content validation → render → package build → Artifact → offline verification → image build → in-CI image gate → networked link check and truth attestation → branch-head check → Pages deploy and registry push → exact-marker and unknown-path read-back (`V7`).
+
+Out of scope: Any claim about a compose stack pulling the image, which *Open questions* 7 and 8 leave
+undecided and the brief puts outside this work. A scheduled post-deploy link re-check — *Open
+question* 6. Domain, DNS, TLS and hosting configuration, which the brief's non-goals put out of scope
+permanently.
 
 ---
 
@@ -160,55 +431,46 @@ because the link check consumes it. The rest arrive with the page.
 Nothing below is a slice. Each names what is missing and the condition that releases it. No slice
 number is allocated until the contract can carry the work.
 
-### Was blocked by `U1` — released at `0.3.0`; and by `U2` — answered 2026-08-06
+### Accessibility has no Verification surface — [`U9`](20-contract.md#u9--accessibility-has-no-verification-surface)
 
-- Presentation's token set and primitives, and invariants `P1`–`P7`. With `U2` answered, `P1` and
-  `P5`–`P7` are blocked by nothing. `P2`–`P4` still need
-  [`U9`](20-contract.md#u9--accessibility-has-no-verification-surface) — the unwritten Verification
-  surface they would be checked *through*; the token set they are maintained against now exists.
-- Composition's two route entries, all page prose, and invariants `X1`–`X3`.
-- Adapter's `LandingPageConfig`, the route declarations and their metadata, and invariants `A1`–`A7`.
-  The `origin` constant is written in the contract but has no consumer until then.
-- `readBuildMarker` and the marker format, and invariant `V1`.
-- `pollForCommit`, the deployment critical section and the read-back, and invariants `V6`–`V8`.
-- `assertNoAdditionalRequests`'s CI wiring and invariant `V2` — the browser capture needs a built page
-  to load.
-- The built-output content assertions and invariant `V3`.
-- The `/404` route and the root `404.html` artifact.
-- Deployment itself, and with it every *Definition of done* bullet that names the deployed site.
-- Pinning the package version — `U4`, answered 2026-08-06: `0.3.0`, exactly, with a lockfile. The
-  dependency is not yet added, because no slice has needed it.
-- Whether a social image asset exists — `U6`, settled with the metadata block.
+`P2` (greyscale legibility), `P3` (`prefers-reduced-motion`) and `P4` (focus order and keyboard
+reachability) are invariants with nothing callable behind them. No `VerificationErrorCode` names any
+of them and no function in *Public signatures* checks one, so a slice asserting them would have to
+introduce a signature the contract does not carry — which this document may not do.
 
-**Released 2026-08-06.** `SubZeroDev.Platform.UI.LandingPage@0.3.0` satisfies all three requirements
-enumerated in [`20-contract.md`](20-contract.md) § `U1` — two required, one preferred — verified
-against the published source. `U4` pins it exactly.
+All three are `00-brief.md` *Definition of done* bullets, so this is a gap between the brief and the
+contract rather than a deferral. `U9` states what would settle each; the shared fork is whether the
+check is static over `StylesheetText` or a computed-style check in a browser, and the design's own
+precedent for `V2` and `V13` — *"Source inspection cannot prove runtime behaviour… Both are
+required"* — makes that a decision rather than an implementer's choice.
 
-> **What the list above now means — corrected by `/reconcile`, not re-sliced.** Every entry needing a
-> package capability is released, and `U2` — the last thing blocking an emitted document — was
-> answered and written on 2026-08-06. **Nothing above is blocked.** The social-image entry (`U6`), the
-> route titles and descriptions and the page prose are owner-supplied copy, which is a different thing
-> from a block.
->
-> Fully specified and blocked by nothing, belonging to no slice: Presentation's whole surface;
-> Composition's `composeApex` and `composeMiss`, whose prose is copy rather than interface; Adapter's
-> route declarations and default export, less the copy fields; `parseCommitId` and `C15`; the marker
-> format and its constants — `buildMarkerPrefix`, `buildMarkerSuffix`, `buildMarker`,
-> `injectBuildMarker`, `readBuildMarker`; `finalizeArtifact` and `serverConfig`; and the five Content
-> derivations listed under [*Not sliced, and why*](#not-sliced-and-why), whose sole consumer remains
-> Composition. What that work becomes is a slicing decision these notes do not make.
+**Not blocked by this:** anything that emits or serves a document. `P2`–`P4` stay Presentation's to
+maintain, and S4 ships them maintained and unchecked, which S4's *Out of scope* states plainly.
+Choosing a browser driver in S8 does not release this — S8 buys a driver, not a surface.
 
-### Was blocked by `U3` — answered 2026-08-06
+### A scheduled post-deploy link re-check — `10-design.md` *Open question* 6
 
-`assertAttestation`'s CI wiring and invariant `V5`. The `Attestation` type and the function signature
-were written; the storage mechanism and how the function obtains a record were not.
+Undecided. It is the only way a dead outbound link is noticed after deploy, it costs a workflow, and
+it is the sole thing that would make this repository observe the others — adjacent to a brief
+non-goal without obviously being inside it. S3 checks links before deployment and nothing checks them
+after, which is the honest limit of the chosen release boundary.
 
-**Released 2026-08-06.** A protected GitHub Environment with required reviewers, per
-[`20-contract.md`](20-contract.md) § `U3`. The function reads the run's approval record and takes the
-commit from the run's `head_sha`; the type carries `commit` and `approver`, and the first parameter is
-`Attestation | null` so `AttestationAbsent` has a producer.
+### Whether the compose file lives in this repository — `10-design.md` *Open question* 8
 
-### The publication CI — was blocked by `U2`, answered 2026-08-06
+Undecided, and the two answers are different artifacts: a compose file here documents how to run the
+image, while one in the homelab repository is the deployment. S9 and S10 need neither. This is named
+so that a later slice does not decide it by writing one.
+
+### An owner edit to the brief — [`U5`](20-contract.md#u5--noscript-is-withdrawn-pending-an-owner-edit-to-the-brief)
+
+Not a slice and not work for an agent. The brief's *Definition of done* still requires `<noscript>`
+content, adjudicated on 2026-08-05 as the defect. Until the owner strikes that clause, the brief and
+the contract disagree on a released requirement, and S6 ships a document that deliberately does not
+satisfy it.
+
+---
+
+## The publication CI
 
 The job graph below is derived from [`10-design.md`](10-design.md)'s ordering invariant `V7` and its
 *Concurrency and ordering* section. It is recorded here so the shape is not re-derived per slice; it is
@@ -220,19 +482,13 @@ build ──┬──► image-gate ──┐
         └──► link-check ──┘
 ```
 
-| Job | Discharges | Runs on | Blocked by |
+| Job | Discharges | Runs on | Delivered by |
 |---|---|---|---|
-| `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `V1`, `V2`, `V3`, `V13`, `X4` | push + all PRs | — |
-| `image-gate` — build, run and gate the image before any push | `V10`, `V11`, `V12` (container half) | push + all PRs | — |
-| `link-check` — **already implemented** | `V4` | push + same-repo PRs | — |
-| `attestation` — human gate bound to the commit | `V5` | master push | — |
-| `publish` — branch-head check, deploy and push, read-back | `V6`–`V9`, `V12` (Pages half), `V14` | master push | — |
-
-`V3` and `V6` had no callable Verification surface when this table was written. Both gained one on
-2026-08-06 — `assertContentPresent` and `assertDeploymentCandidateCurrent`, per
-[`20-contract.md`](20-contract.md) § *Public signatures* — so no job in this table now names a check
-that nothing can perform. `attestation` is blocked by nothing and has no standalone value: it gates
-`publish`, which needs an emitted document.
+| `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `V1`, `V2`, `V3`, `V13`, `X4` | push + all PRs | S6, S7, S8 |
+| `image-gate` — build, run and gate the image before any push | `V10`, `V11`, `V12` (container half) | push + all PRs | S9 |
+| `link-check` — **already implemented** | `V4` | push + same-repo PRs | S3 |
+| `attestation` — human gate bound to the commit | `V5` | master push | S10 |
+| `publish` — branch-head check, deploy and push, read-back | `V6`–`V9`, `V12` (Pages half), `V14` | master push | S10 |
 
 Three constraints follow from the design rather than from preference. A slice that re-decides any of
 them fails silently:
@@ -249,21 +505,14 @@ them fails silently:
    pushed image*; a staging tag would be a registry write before the branch-head check, which the
    design forbids. That leaves saving and reloading it, with the digest asserted across the boundary.
 
-Four choices are open and each needs a decision-log entry before implementation, not an implementer's
-call: the browser driver for `V2` and whether it loads over `file://` or a local static server; the base
-image and file server (`U7`, which also determines Artifact's third duty); the image build and push
-mechanism, with registry write scoped to `publish` alone; and the attestation mechanism (`U3`).
-
-**Released by:** `U1`, `U2`, `U3`, `U4` and `U7` are all answered as of 2026-08-06 — `0.3.0`,
-Presentation's token set, a protected GitHub Environment, an exact pin and `nginx:alpine` — and the
-contract text each gated is written. No job in this table is blocked by an unresolved contract item.
-Of the four choices this section names as needing a decision-log entry before implementation, two are
-now made (`U7` and `U3`); the browser driver for `V2` and the image build-and-push mechanism are still
-open.
+**Two of the four choices this section named are made.** `U7` settled the base image and file server,
+and `U3` settled the attestation mechanism. The browser driver for `V2` and the image build-and-push
+mechanism are still open, and are now the first acceptance criterion of S8 and S9 respectively rather
+than a warning in prose.
 
 ---
 
 ## Next
 
-Run `/track` in a fresh session to open the issues and milestone for `S1`–`S3`. This document opens
-none.
+Run `/track` in a fresh session to open the issues and milestone for `S4`–`S10`. This document opens
+none. `S1`–`S3` already have issues and are closed.
