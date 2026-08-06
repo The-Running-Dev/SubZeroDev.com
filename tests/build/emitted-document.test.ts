@@ -44,17 +44,21 @@ describe("S6.9 — the build emits a document for the apex and one at 404/index.
 // assertContentPresent: a drift between the two is a red build naming the
 // missing sentence, not a silent pass.
 const manifestoSentences = [
-  "SubZeroDev wasn't built from a business plan.",
-  "None of our products were.",
-  "We don't force ideas into existence.",
-  "We follow curiosity.",
-  "One problem becomes a solution.",
-  "One solution becomes infrastructure.",
-  "Infrastructure becomes a platform.",
-  "Sometimes it becomes an entirely different product.",
-  "We don't chase outcomes.",
+  "SubZeroDev was always meant to be a business.",
+  "We just never decided what kind.",
+  "There was no master plan.",
+  "No product roadmap.",
+  "We built things because they were useful, interesting, or both.",
+  "One problem became a solution.",
+  "One solution became infrastructure.",
+  "Infrastructure became a platform.",
+  "Some things became products.",
+  "Others escaped and became entirely different things.",
+  "We don't force ideas to fit the business.",
+  "We let the business follow the ideas.",
   "We do the next interesting thing well.",
-  "The rest tends to happen on its own.",
+  "Then we see what happened.",
+  "The absence of a plan is the plan.",
 ] as const;
 
 describe("S6.11 — assertContentPresent holds for the emitted apex", () => {

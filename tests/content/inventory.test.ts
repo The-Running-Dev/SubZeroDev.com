@@ -203,6 +203,27 @@ describe("S5.5 — composeApex(inventory)'s bodyHtml over the committed inventor
   });
 });
 
+// The apex nav derives its Blog and Portfolio links by looking up the id
+// strings `publishing` and `portfolio` (apex.ts). Composition is total and
+// cannot fail, so a renamed or removed record drops the link silently. These
+// are the assertions that go red instead — see 90-decisions.md, 2026-08-07.
+describe("the apex nav's two derived links still resolve against the committed inventory", () => {
+  it.each(["publishing", "portfolio"])("a project with id %s exists and has a resolvable home", (id) => {
+    const project = projects.find((p) => p.id === id);
+    expect(project, `no project carries the id "${id}" that apex.ts looks up`).toBeDefined();
+    expect(project?.home.kind, `project "${id}" must have a home the nav can link to`).not.toBe(
+      "none",
+    );
+  });
+
+  it("composeApex over the committed inventory renders all three outbound links", () => {
+    const { bodyHtml } = composeApex(committed);
+    for (const label of ["Blog", "Projects", "Portfolio"]) {
+      expect(bodyHtml, `the nav lost its ${label} link`).toContain(`>${label}</a>`);
+    }
+  });
+});
+
 describe("S5.9 — assertStyleAgreement holds for composeApex(inventory) over the committed inventory", () => {
   it("returns ok: true", () => {
     const { bodyHtml, stylesheet } = composeApex(committed);

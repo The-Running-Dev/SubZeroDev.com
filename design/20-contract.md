@@ -175,7 +175,9 @@ export type PrimitiveName =
   | "entry"
   | "meta"
   | "rule"
-  | "link";
+  | "link"
+  | "row"
+  | "bar";
 
 export type Primitive = {
   readonly className: ClassName;
@@ -190,12 +192,36 @@ export type PrimitiveSet = { readonly [N in PrimitiveName]: Primitive };
 | `HexColor` | Matches `/^#[0-9A-F]{6}$/`. Six digits, uppercase, no shorthand and no alpha — so one colour has exactly one spelling and two references to it cannot compare unequal |
 | `DataUri` | Begins with `data:`. It is what makes `A2` a property of the value rather than a promise about it |
 | `ClassName` | Matches `/^[a-z][a-z0-9-]*$/` |
-| `Primitive.rules` | CSS text. Every selector in it is rooted at that primitive's own `className` — the bare class selector, or that selector carrying a pseudo-class, a pseudo-element or a descendant combinator. A rule that could match without that class belongs in the token block, not in a primitive, because `stylesheetFor` emits a primitive's rules only when its class is present. Rules may sit inside an `@media` block; `P3`'s `prefers-reduced-motion` rules are the case that needs one. Contains no `</style` sequence (`P5`) |
+| `Primitive.rules` | CSS text. Every selector in it **begins with** that primitive's own class selector, and each selector in a selector list is anchored independently. What follows the anchor is unconstrained — any pseudo-class, pseudo-element, combinator or universal selector — because the property that has to hold is that no rule can match an element the class is absent from, and the anchor alone establishes it. A rule that could match without the class belongs in the token block, not in a primitive, because `stylesheetFor` emits a primitive's rules only when its class is present. Rules may sit inside an `@media` block; `row`'s single-column wrap and `P3`'s `prefers-reduced-motion` rules are the cases that need one. Contains no `</style` sequence (`P5`) |
 
-`PrimitiveName` is **closed at six**. Composition references a primitive through `primitives`, so a
-seventh is a contract amendment rather than a class someone adds to markup. `rule` and `link` appear
-in both `ColorToken` and `PrimitiveName` and are different things in each — a colour custom property
-in the first, a class in the second.
+`PrimitiveName` is **closed at eight** as of the 2026-08-07 amendment adding `bar`, which followed the
+same day's amendment adding `row`; see [`90-decisions.md`](90-decisions.md). Composition references a
+primitive through `primitives`, so a ninth is a further contract amendment rather than a class someone
+adds to markup. `rule` and `link` appear in both `ColorToken` and `PrimitiveName` and are different
+things in each — a colour custom property in the first, a class in the second.
+
+`row` lays its direct children out left-to-right, each taking an equal share of the available width,
+wrapping to a single column at the same `720px` breakpoint `page` already uses. Its **one** spacing
+rule is the gap between those columns. It carries no colour rule, no type rule and no spacing inside a
+column — those come from whatever primitive each child already declares.
+
+It is also the only primitive whose rules reach elements it does not name, through a child combinator
+on the universal selector. That is what makes the equal share a property of the row rather than of
+what is put in it: a child needs no cooperating class, so `row` composes with the other six instead of
+constraining what may sit in one.
+
+`bar` lays its direct children left-to-right and pushes them to the **two ends** of its width,
+wrapping to a single column at the same `720px` breakpoint `page` and `row` already use. Like `row` it
+carries one spacing rule — a gap, which in the unwrapped state is a floor rather than the actual
+separation — and no colour rule and no type rule.
+
+**What distinguishes it from `row` is child sizing, and that is the whole of it.** `row` divides a
+width between columns and gives each an equal share; `bar` leaves its children at their content width
+and puts the free space *between* them. A row of two prose columns and a strip with a group at each
+end are different layouts, and neither expresses the other: `row` cannot right-align its second child
+without abandoning the equal share that is its purpose, and `bar` cannot give a column half the width
+without abandoning the free space that is its. `bar` therefore needs **no** rule reaching a child it
+does not name — content sizing is the flex default — which leaves `row` the only primitive that does.
 
 **Presentation imports `Branded` from Content, and nothing else from this repository.** Every type
 above is branded and `Branded` has one home; the 2026-08-05 ruling that put it in Content rejected
@@ -382,6 +408,8 @@ export const primarySlogan: "Well… Why not?";
 
 export const apexFooterQuote: "Trust us… It'll be fine. Or not.";
 
+export const sourceUrl: AbsoluteUrl;
+
 export const projects: readonly Project[];
 
 export function validateInventory(
@@ -423,6 +451,21 @@ implementation of the 40-hex rule; a second one is the drift *Single ownership* 
 
 `stageOrder` is the lifecycle order, length 6, covering `Stage` exactly once.
 
+**`sourceUrl` is the address of the repositories behind the ecosystem**, and is Content's for the
+reason every other URL here is: a URL is data, and Content is where data has a home. It is a constant
+rather than an inventory field because it addresses the **account**, not a project — modelling it as a
+`Project` to reach `Home` would put a row in the ecosystem list and a `stage`, a `line` and a
+`question` on something that is none of those. It is written once and Composition never restates it.
+
+**It is deliberately outside `V4`, and that is a cost rather than an oversight.** `checkLinks` runs
+over `resolvedHomes(inventory)`, and `sourceUrl` produces no `ResolvedHome` — there is no project it
+belongs to, and a synthetic `projectId` to carry it would be a `ProjectId` naming nothing. The brief's
+*Definition of done* requires every outbound **project** link to resolve, and a code-forge account
+page is not one, so this sits outside that clause rather than violating it. Stated plainly: **this is
+the one outbound link on the page that no gate checks.** It was verified `200` by hand on 2026-08-07.
+The alternatives — widening `checkLinks`, or a full site-link type with project-reference resolution —
+were both put and both declined; see [`90-decisions.md`](90-decisions.md), 2026-08-07.
+
 ### Presentation
 
 ```ts
@@ -438,9 +481,9 @@ export function stylesheetFor(body: BodyHtml): StylesheetText;
 ```
 
 **`stylesheetFor` reads the referenced set out of the body rather than being told it.** It collects
-which of the six `primitives` class names occur in `body` **as a class token**, and returns the token
+which `primitives` class names occur in `body` **as a class token**, and returns the token
 block followed by exactly those primitives' `rules`, in `PrimitiveName` declaration order. A class in
-the body that is not one of the six contributes nothing, which is what leaves `X4`'s
+the body that is not one of them contributes nothing, which is what leaves `X4`'s
 `ClassWithoutRule` half with teeth against a class Composition wrote by hand; the
 `SelectorWithoutUser` half becomes structurally true **over the primitives**, because a primitive's
 rules reach the stylesheet only when its class is already in the body. The token block is not covered
@@ -460,7 +503,7 @@ second time.
 
 | Property | Value | |
 |---|---|---|
-| `--font-sans` | a system sans stack | prose |
+| `--font-sans` | a sans stack of locally-resolved faces | prose |
 | `--font-mono` | a system mono stack | `year`, `stage`, `ProjectId` and `escapedFrom` edges — never prose |
 | `--step--1` | `0.8rem` | |
 | `--step-0` | `1rem` | body |
@@ -477,7 +520,7 @@ second time.
 | `--fg` | `palette.fg`, `#F3F1EC` | |
 | `--fg-muted` | `palette["fg-muted"]`, `#9A989F` | |
 | `--rule` | `palette.rule`, `#2B2B31` | exempt from `P2`'s contrast half, by name |
-| `--link` | `palette.link`, `#5B7CFF` | |
+| `--link` | `palette.link`, `#6FD3FF` | |
 
 Both scales are the single 1.25 ratio the ruling settles, a spacing token advancing two steps of it.
 **The step indices are fixed by two statements in that ruling and are not a free choice**: the measure
@@ -487,8 +530,10 @@ is "roughly 65 characters at `--step-0`", which puts `1rem` at index 0, and `P2`
 the same five values, so `--space-1` is the record separation `P2` cites.
 
 The two font properties are named here and their stacks are not, because no assertion turns on which
-system faces they list. What does turn on them is `P1` — neither may reference a webfont or an
-`@font-face` rule — and `P7`, which reserves `--font-mono` to one primitive.
+faces they list. A stack may name a face that is not installed anywhere by default — naming one is a
+preference the browser resolves locally, not a load, so the stack simply falls through to the next
+entry. What does turn on them is `P1` — neither may reference a webfont or an `@font-face` rule —
+and `P7`, which reserves `--font-mono` to one primitive.
 
 `themeColor` **is** `palette.bg`, not a second literal of the same colour, and Adapter reads it from
 here (`A7`). `iconDataUri` is an inline SVG letterform — the glyph `0` — in `--fg` on `--bg`, encoded
@@ -981,8 +1026,8 @@ where a separate module checks it, that is said in the row.
 | **C14** | Nothing imports `projects` except the `validateInventory` call site — Adapter once it exists, and until then the committed-inventory assertion — and Verification's assertions over the inventory. No derivation function, no Composition entry and no Artifact step reads it | Content |
 | **C15** | `parseCommitId` is the only implementation of the `CommitId` pattern in the repository | Content |
 | **P1** | Nothing in Presentation references a linked font, an external stylesheet, a gradient or an illustration asset. Neither `--font-sans` nor `--font-mono` names a webfont, and no rule is an `@font-face` | Presentation |
-| **P2** | The rendered page is legible in greyscale, in two parts. **(a)** Every foreground colour resolved against the background it is rendered on meets WCAG AA — 4.5:1, or 3:1 at `--step-2` and above. `--rule` is **exempt, by name**: record separation is carried by `--space-1`, so a divider reinforces and never signals. **(b)** No meaning is carried by hue alone, which obliges the `link` primitive to declare a `text-decoration`, or a font weight distinct from body text. Part (b) is what makes this say greyscale rather than contrast: `--link` against `--fg` is 3.22:1, below the 4.5:1 body-text threshold, so a link is not reliably separable from body text by luminance alone | Presentation |
-| **P3** | Nothing animates under `prefers-reduced-motion: reduce` | Presentation |
+| **P2** | The rendered page is legible in greyscale, in two parts. **(a)** Every foreground colour resolved against the background it is rendered on meets WCAG AA — 4.5:1, or 3:1 at `--step-2` and above. `--rule` is **exempt, by name**: record separation is carried by `--space-1`, so a divider reinforces and never signals. **(b)** No meaning is carried by hue alone, which obliges the `link` primitive to declare a `text-decoration`, or a font weight distinct from body text. Part (b) is what makes this say greyscale rather than contrast: `--link` against `--fg` is 1.50:1, far below the 4.5:1 body-text threshold, so a link is not reliably separable from body text by luminance alone. The margin against `--bg` is not what is at issue — `--link` clears (a) there at 11.17:1 — which is why (b) is a separate half rather than a consequence of (a) | Presentation |
+| **P3** | Nothing **moves** under `prefers-reduced-motion: reduce`: no transform, translation, scale, rotation, position change or scroll behaviour is animated or transitioned. A transition of a non-positional property — a colour change on hover or focus is the case in the primitive set — is not motion and is permitted. The preference addresses vestibular motion rather than change as such, which is why this names motion and not animation. **`00-brief.md` § *Definition of done* states the broader form and outranks this document**; the disagreement is known and unreconciled — see [`90-decisions.md`](90-decisions.md), 2026-08-07 | Presentation |
 | **P4** | Focus order matches visual order and every interactive element is keyboard-reachable | Presentation |
 | **P5** | No `StylesheetText` contains a `</style` sequence in any case — the package emits it unescaped inside a `<style>` element and throws on one | Presentation |
 | **P6** | A route's stylesheet is the token block followed by the `rules` of exactly those primitives whose `className` occurs in that route's `bodyHtml`, and nothing else. `stylesheetFor` derives the set from the body, so no caller states it | Presentation |
@@ -991,7 +1036,7 @@ where a separate module checks it, that is said in the row.
 | **X2** | Composition imports only Content and Presentation, and nothing imports Composition except Adapter | Composition |
 | **X3** | The page contains no form, no analytics, no consent surface and no third-party script | Composition |
 | **X4** | For each `ComposedRoute`, every class referenced in `bodyHtml` has a matching selector in `stylesheet`, and every **class** selector in `stylesheet` has a user in `bodyHtml` — checked by `assertStyleAgreement`. The token block's `:root` rules fall outside both halves and need no exemption clause: they carry no class selector, and `Primitive.rules` roots every other rule at its own `className` | Composition |
-| **X5** | Every Content value interpolated into `bodyHtml` — `name`, `line`, a present `question` — is HTML-escaped in text position; `<`, `>`, `&`, `"` and `'` never reach the document unescaped from a content value. Asserted with a fixture project carrying all five | Composition |
+| **X5** | Every Content value interpolated into `bodyHtml` is HTML-escaped, in attribute position as well as in text position; `<`, `>`, `&`, `"` and `'` never reach the document unescaped from a content value. The rule is over every interpolated value, not over a named list of fields. The attribute half is not implied by the text half — `"` and `'` are inert in text and are exactly what closes an attribute early — and a `ResolvedHome.url` carried in an `href` is the case the apex composition has. Asserted with a fixture project carrying all five characters, in both positions | Composition |
 | **A1** | Every URL in route metadata is built from `origin`; no origin string is written twice. Each route's `canonicalUrl` and `openGraph.url` equal `origin` concatenated with that route's `path` | Adapter |
 | **A2** | Every entry in `metadata.icons` carries a `DataUri` as its `href`; no icon is a linked asset | Adapter |
 | **A3** | Adapter obtains everything renderable from Composition; it imports Content only for `projects`, `validateInventory`, `BuildContext` and `parseCommitId`, and Presentation only for `themeColor` and `iconDataUri` — never a derivation function, a copy constant, a primitive or the stylesheet. Both import lists are enumerated, and nothing renderable is on either | Adapter |
@@ -1310,3 +1355,27 @@ and stay in the invariant table; what is unwritten is the surface that would che
 this is a contract gap rather than a design one. [`30-slices.md`](30-slices.md) § *Blocked* listed
 `P1`–`P5` as "blocked by `U2` alone", which this narrows; `/reconcile` corrected that entry on
 2026-08-06, so nothing is outstanding there.
+
+### U10 — `P3` is narrowed to motion, pending an owner edit to the brief
+
+`00-brief.md` § *Definition of done* requires that the page "animates nothing under
+`prefers-reduced-motion: reduce`". `P3` as it now stands requires that nothing **moves** — no
+transform, translation, scale, rotation, position change or scroll behaviour animated or transitioned
+— and permits a transition of a non-positional property, the `link` primitive's
+`transition: color 120ms ease` being the case in the set.
+
+**Adjudicated 2026-08-07: the narrow form is correct and the brief states the broader one.** The
+preference addresses vestibular motion rather than change as such, which is WCAG 2.3.3's subject; a
+colour change on hover moves nothing. The ruling and its rejected alternatives — adding a
+reduced-motion block to `link` instead, and reporting only — are in
+[`90-decisions.md`](90-decisions.md).
+
+**The brief outranks this document, so until it is edited the two disagree on a released
+requirement.** Remaining: the owner narrows or strikes that clause in `00-brief.md`. A model may
+interrogate that file but not author it, so the edit is not made here.
+
+This is the same shape as [`U5`](#u5--noscript-is-withdrawn-pending-an-owner-edit-to-the-brief), and
+it is numbered for the same reason: a brief conflict recorded only in an append-only log is one
+nobody re-reads. It blocks nothing — `P3` stays Presentation's to maintain, and
+[`U9`](#u9--accessibility-has-no-verification-surface) still owns the question of what would check
+it.

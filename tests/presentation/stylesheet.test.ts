@@ -4,8 +4,8 @@ import { palette, primitives, stylesheetFor } from "../../src/presentation";
 import type { HexColor, PrimitiveName } from "../../src/presentation";
 import { bodyHtml } from "./fixtures";
 
-const ALL_SIX = bodyHtml(
-  '<div class="page"><div class="stack"><div class="entry"><span class="meta"></span><hr class="rule" /><a class="link">x</a></div></div></div>',
+const ALL_EIGHT = bodyHtml(
+  '<div class="page"><nav class="bar"></nav><div class="row"><div class="stack"><div class="entry"><span class="meta"></span><hr class="rule" /><a class="link">x</a></div></div></div></div>',
 );
 
 // The contract's token-block table: property name and expected literal value
@@ -83,7 +83,7 @@ describe("S4.6 — stylesheetFor on a two-primitive body returns the token block
     expect(sheet).toContain(primitives.page.rules);
     expect(sheet).toContain(primitives.link.rules);
     expect(sheet.indexOf(primitives.page.rules)).toBeLessThan(sheet.indexOf(primitives.link.rules));
-    for (const name of ["stack", "entry", "meta", "rule"] as PrimitiveName[]) {
+    for (const name of ["stack", "entry", "meta", "rule", "row", "bar"] as PrimitiveName[]) {
       expect(sheet).not.toContain(primitives[name].rules);
     }
   });
@@ -101,13 +101,13 @@ describe("S4.7 — no StylesheetText contains </style in any case", () => {
     expect(composeMiss().stylesheet.toLowerCase()).not.toContain("</style");
   });
 
-  it("a fixture body referencing all six primitives carries none", () => {
-    expect(stylesheetFor(ALL_SIX).toLowerCase()).not.toContain("</style");
+  it("a fixture body referencing all eight primitives carries none", () => {
+    expect(stylesheetFor(ALL_EIGHT).toLowerCase()).not.toContain("</style");
   });
 });
 
-describe("S4.8 — the stylesheet for a body referencing all six primitives carries no forbidden construct", () => {
-  const sheet = stylesheetFor(ALL_SIX);
+describe("S4.8 — the stylesheet for a body referencing all eight primitives carries no forbidden construct", () => {
+  const sheet = stylesheetFor(ALL_EIGHT);
 
   it("no @font-face", () => {
     expect(sheet).not.toMatch(/@font-face/i);

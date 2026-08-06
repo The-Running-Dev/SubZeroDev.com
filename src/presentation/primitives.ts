@@ -1,4 +1,4 @@
-// Presentation — the six layout primitives (contract's `primitives`).
+// Presentation — the eight layout primitives (contract's `primitives`).
 //
 // Every selector in a primitive's `rules` is rooted at that primitive's own
 // `className` (P6/S4.4): a selector that could match without the class
@@ -8,6 +8,11 @@
 // `meta` is the one primitive whose rules reference `--font-mono` (P7) — the
 // monospace scale is reserved for the labels the token table names: year,
 // stage, ProjectId and escapedFrom edges, never prose.
+//
+// `row` and `bar` are the two horizontal primitives and are not variants of
+// one another: `row` divides a width into equal columns, `bar` leaves its
+// children at content width and puts the free space between them. `row` is
+// the only primitive whose rules reach a child it does not name.
 
 import type { ClassName, PrimitiveSet } from "./types";
 
@@ -31,7 +36,7 @@ export const primitives: PrimitiveSet = {
 }
 
 .page > .stack {
-  gap: clamp(1.5rem, 3vw, 2.5rem);
+  gap: clamp(1.1rem, 2.2vw, 1.9rem);
 }
 
 .page header {
@@ -108,7 +113,7 @@ export const primitives: PrimitiveSet = {
   }
 
   .page > .stack {
-    gap: 1.5rem;
+    gap: 1.1rem;
   }
 }`,
   },
@@ -117,11 +122,11 @@ export const primitives: PrimitiveSet = {
     rules: `.stack {
   display: flex;
   flex-direction: column;
-  gap: clamp(0.75rem, 1.5vw, var(--space-1));
+  gap: clamp(0.55rem, 1.1vw, var(--space-0));
 }
 
 .stack > .stack {
-  margin-top: clamp(0.6rem, 1.2vw, 1.1rem);
+  margin-top: clamp(0.5rem, 1vw, 0.9rem);
 }`,
   },
   entry: {
@@ -129,18 +134,18 @@ export const primitives: PrimitiveSet = {
     rules: `.entry {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 0 0 clamp(1rem, 2vw, 1.5rem);
+  gap: 0.3rem;
+  padding: 0 0 clamp(0.75rem, 1.5vw, 1.1rem);
 }
 
 .entry + .entry {
-  padding-top: clamp(1rem, 2vw, 1.5rem);
+  padding-top: clamp(0.75rem, 1.5vw, 1.1rem);
   border-top: 1px solid var(--rule);
 }
 
 .entry .stack {
-  margin-top: clamp(0.6rem, 1.2vw, 1rem);
-  padding-left: clamp(0.75rem, 2vw, 1.5rem);
+  margin-top: clamp(0.5rem, 1vw, 0.8rem);
+  padding-left: clamp(0.6rem, 1.6vw, 1.1rem);
   border-left: 1px solid var(--rule);
 }`,
   },
@@ -179,6 +184,46 @@ export const primitives: PrimitiveSet = {
 .link:hover,
 .link:focus-visible {
   color: var(--fg);
+}`,
+  },
+  row: {
+    className: className("row"),
+    rules: `.row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: clamp(1.1rem, 2.4vw, var(--space-2));
+}
+
+.row > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .row {
+    flex-direction: column;
+  }
+}`,
+  },
+  bar: {
+    className: className("bar"),
+    // Children keep their content width — that is the flex default, and it is
+    // the whole of what separates this from `row`. The gap is a floor while
+    // unwrapped, since `space-between` supplies the actual separation.
+    rules: `.bar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: clamp(0.5rem, 1.5vw, var(--space-0));
+}
+
+@media (max-width: 720px) {
+  .bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }`,
   },
 };
