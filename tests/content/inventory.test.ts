@@ -5,8 +5,17 @@
 
 import { describe, expect, it } from "vitest";
 
-import { projects, validateInventory } from "../../src/content";
-import type { BuildContext, CommitId, Project, Year } from "../../src/content";
+import { composeApex } from "../../src/composition";
+import {
+  contaminationForest,
+  primarySlogan,
+  projects,
+  sinceYear,
+  apexFooterQuote,
+  validateInventory,
+} from "../../src/content";
+import type { BuildContext, CommitId, Inventory, Project, Year } from "../../src/content";
+import { assertStyleAgreement } from "../../src/verification";
 
 const context: BuildContext = {
   commit: "0".repeat(40) as CommitId,
@@ -115,5 +124,88 @@ describe("S2.7 — the escapedFrom chain is at least two hops deep", () => {
       return parent?.escapedFrom !== undefined;
     });
     expect(chained).toBe(true);
+  });
+});
+
+// The committed-inventory cases for S5.1, S5.4, S5.5 and S5.9 — `projects`
+// may be imported only here and at Verification's inventory assertion (C14).
+const committed: Inventory = (() => {
+  const result = validateInventory(projects, context);
+  if (!result.ok) throw new Error("committed inventory failed to validate");
+  return result.value;
+})();
+
+describe("S5.1 — sinceYear over the committed inventory", () => {
+  it("equals the minimum year in the committed inventory", () => {
+    const min = Math.min(...projects.map((p) => p.year));
+    expect(sinceYear(committed)).toBe(min);
+  });
+});
+
+describe("S5.4 — contaminationForest over the committed inventory", () => {
+  it("contains every project exactly once", () => {
+    const forest = contaminationForest(committed);
+    const ids: string[] = [];
+    const walk = (nodes: typeof forest) => {
+      for (const node of nodes) {
+        ids.push(node.project.id);
+        walk(node.escapes);
+      }
+    };
+    walk(forest);
+    expect(ids.sort()).toEqual(committed.map((p) => p.id).slice().sort());
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("yields at least one node at depth 2 or greater — the chain S2.7 put in the data", () => {
+    const forest = contaminationForest(committed);
+    let maxDepth = -1;
+    const walk = (nodes: typeof forest, depth: number) => {
+      for (const node of nodes) {
+        maxDepth = Math.max(maxDepth, depth);
+        walk(node.escapes, depth + 1);
+      }
+    };
+    walk(forest, 0);
+    expect(maxDepth).toBeGreaterThanOrEqual(2);
+  });
+});
+
+// `name` values containing `<`, `>`, `&`, `"` or `'` are HTML-escaped by X5
+// and therefore will not appear as a raw substring — the same accepted
+// consequence 90-decisions.md records for `assertContentPresent`'s literal
+// match (2026-08-06, "Four orphan error codes get producers"), extended here
+// to the two quote characters X5 also names. "Ogre's Kitchen" is the one
+// committed name this affects.
+const ESCAPE_SOURCE = /[<>&"']/g;
+const ESCAPE_TABLE: Record<string, string> = {
+  "<": "&lt;",
+  ">": "&gt;",
+  "&": "&amp;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+const htmlEscape = (s: string): string => s.replace(ESCAPE_SOURCE, (c) => ESCAPE_TABLE[c]!);
+
+describe("S5.5 — composeApex(inventory)'s bodyHtml over the committed inventory", () => {
+  const { bodyHtml } = composeApex(committed);
+
+  it.each(projects.map((p) => p.name))("contains project name %s (escaped where X5 requires it)", (name) => {
+    expect(bodyHtml).toContain(htmlEscape(name));
+  });
+
+  it("contains the text of primarySlogan", () => {
+    expect(bodyHtml).toContain(primarySlogan);
+  });
+
+  it("contains the text of apexFooterQuote", () => {
+    expect(bodyHtml).toContain(apexFooterQuote);
+  });
+});
+
+describe("S5.9 — assertStyleAgreement holds for composeApex(inventory) over the committed inventory", () => {
+  it("returns ok: true", () => {
+    const { bodyHtml, stylesheet } = composeApex(committed);
+    expect(assertStyleAgreement(bodyHtml, stylesheet)).toEqual({ ok: true, value: null });
   });
 });

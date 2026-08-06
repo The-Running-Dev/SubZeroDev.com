@@ -1,6 +1,5 @@
-// Composition — public surface delivered by S4.
-//
-// `composeApex` arrives with S5; only what S4 delivers is re-exported here.
+// Composition — public surface delivered by S4 and S5.
 
 export type { ComposedRoute } from "./types";
+export { composeApex } from "./apex";
 export { composeMiss } from "./miss";

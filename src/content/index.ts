@@ -1,13 +1,14 @@
-// Content — public surface delivered by S1, S2 and S3.
-//
-// The copy constants and the remaining derivation functions arrive in later
-// slices; only what S1, S2 and S3 deliver is re-exported here.
+// Content — public surface delivered by S1 through S5.
 
 export type {
   AbsoluteUrl,
   Branded,
   BuildContext,
   CommitId,
+  ContaminationForest,
+  ContaminationNode,
+  EcosystemGroup,
+  EcosystemTree,
   Genre,
   Home,
   Inventory,
@@ -17,6 +18,7 @@ export type {
   Result,
   RootRelativePath,
   Stage,
+  StageCount,
   Year,
 } from "./types";
 export type { ContentError, ContentErrorCode } from "./errors";
@@ -24,3 +26,11 @@ export { stageOrder } from "./stage-order";
 export { validateInventory } from "./validate";
 export { resolvedHomes } from "./resolved-homes";
 export { projects } from "./projects";
+export { primarySlogan, apexFooterQuote } from "./copy";
+export {
+  contaminationForest,
+  countByStage,
+  ecosystemTree,
+  projectTotal,
+  sinceYear,
+} from "./derivations";
