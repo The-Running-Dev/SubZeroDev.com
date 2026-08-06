@@ -20,6 +20,7 @@ const contentDir = resolve(here, "../../src/content");
 const presentationDir = resolve(here, "../../src/presentation");
 const compositionDir = resolve(here, "../../src/composition");
 const verificationDir = resolve(here, "../../src/verification");
+const artifactDir = resolve(here, "../../src/artifact");
 const repoRoot = resolve(here, "../..");
 
 describe("S1.10 — Content imports no other repository module (invariant C1)", () => {
@@ -310,6 +311,64 @@ describe("S6.7 — Adapter imports exactly Composition, the external package, Co
     const imports = importedNamesBySpecifier('import { checkLinks } from "../src/verification";');
     const allowedSpecifiers = new Set([...ALLOWED_ANY_NAMES, ...Object.keys(ALLOWED_NAMES)]);
     expect([...imports.keys()].some((s) => !allowedSpecifiers.has(s))).toBe(true);
+  });
+});
+
+describe("S7.12 — Artifact imports exactly CommitId, parseCommitId and Result from Content, and nothing else from this repository", () => {
+  it("no file under src/artifact imports anything but CommitId, parseCommitId or Result from Content, or escapes to another module", () => {
+    const files = listTsFiles(artifactDir);
+    expect(files.length).toBeGreaterThan(0);
+    const violations = foreignImportsNamedOutside(artifactDir, readEntries(files), contentDir, [
+      "CommitId",
+      "parseCommitId",
+      "Result",
+    ]);
+    expect(violations).toEqual([]);
+  });
+
+  it("the check has teeth: an extra Content import is flagged", () => {
+    const violations = foreignImportsNamedOutside(
+      artifactDir,
+      [{ file: resolve(artifactDir, "types.ts"), source: 'import type { CommitId, ProjectId } from "../content";' }],
+      contentDir,
+      ["CommitId", "parseCommitId", "Result"],
+    );
+    expect(violations).toHaveLength(1);
+  });
+
+  it("the check has teeth: a namespace import of Content is flagged", () => {
+    const violations = foreignImportsNamedOutside(
+      artifactDir,
+      [{ file: resolve(artifactDir, "types.ts"), source: 'import * as content from "../content";' }],
+      contentDir,
+      ["CommitId", "parseCommitId", "Result"],
+    );
+    expect(violations).toHaveLength(1);
+  });
+
+  it("the check has teeth: an import escaping to a third module is flagged", () => {
+    const violations = foreignImportsNamedOutside(
+      artifactDir,
+      [{ file: resolve(artifactDir, "types.ts"), source: 'import { checkLinks } from "../verification";' }],
+      contentDir,
+      ["CommitId", "parseCommitId", "Result"],
+    );
+    expect(violations).toHaveLength(1);
+  });
+
+  it("an import of only the three allowed names from Content is not flagged", () => {
+    const violations = foreignImportsNamedOutside(
+      artifactDir,
+      [
+        {
+          file: resolve(artifactDir, "types.ts"),
+          source: 'import type { CommitId, Result } from "../content";\nimport { parseCommitId } from "../content";',
+        },
+      ],
+      contentDir,
+      ["CommitId", "parseCommitId", "Result"],
+    );
+    expect(violations).toEqual([]);
   });
 });
 
