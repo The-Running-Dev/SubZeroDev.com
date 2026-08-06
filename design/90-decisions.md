@@ -10,6 +10,30 @@ and [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-0
 
 ---
 
+### 2026-08-06 — S6's route titles and descriptions start as placeholder copy
+Context: S6 requires each route's `title`, `description` and Open Graph title/description as
+owner-supplied copy, transcribed rather than invented (`20-contract.md`). Final copy was not ready
+when `/slice S6` was scheduled to start.
+Chosen: `/slice S6` proceeds using placeholder copy for both routes' titles and descriptions, on the
+owner's explicit instruction, with the real copy to replace it in a follow-up once written.
+Rejected: Waiting for final copy before starting S6 — the recommended default, declined by the owner
+to avoid blocking the slice on content that is independent of the render-path work S6 actually
+exercises.
+Reversibility: cheap — a copy swap, not a structural change
+
+### 2026-08-06 — U6 answered: no social image asset
+Context: `U6` in `20-contract.md` was unblocked but unanswered — whether a social image exists,
+which decides if `socialImageUrl`, `openGraph.imageUrl` and the `twitter` block are declared at all.
+S6 cannot transcribe metadata it does not know the shape of.
+Chosen: No social image asset exists. `socialImageUrl` and `openGraph.imageUrl` are both omitted, and
+the whole `twitter` block is omitted with them. Written into `20-contract.md`'s `U6` entry and its two
+forward references.
+Rejected: n/a — this is an owner content decision, not a design fork; the contract already described
+both branches, so answering only means picking the branch that is now true.
+Reversibility: cheap — adding an image later is additive, not a rewrite
+
+---
+
 ### 2026-08-06 — Two module edges the design denied: Presentation → Content, Adapter → Presentation
 Context: `/reconcile`. Writing `U2` into the contract added `A7` and widened `A3`, leaving
 `10-design.md` saying Adapter "reads nothing from Presentation" — the divergence the `U2` entry below
