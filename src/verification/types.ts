@@ -25,3 +25,8 @@ export type RequestRecord = {
   readonly resourceType: string;
   readonly initiatedByTester: boolean;
 };
+
+export type ServedResponse = {
+  readonly status: number;
+  readonly body: string;
+};

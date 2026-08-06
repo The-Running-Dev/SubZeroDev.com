@@ -8,7 +8,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check-links": "vitest run --config vitest.link-check.config.ts",
-    "build": "subzerodev-platform-ui-landing-page build"
+    "build": "subzerodev-platform-ui-landing-page build",
+    "image-gate": "vitest run --config vitest.image-gate.config.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
