@@ -12,6 +12,32 @@ became [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 
 ---
 
+### 2026-08-07 — `AgentKit`'s `home.kind` moves to `"none"` until the subdomain serves real content
+Context: PR #38's S3.7 live link check (`tests/verification/live/link-check.test.ts`) failed on
+`agentkit.subzerodev.com` — the previous entry below already recorded this as a deliberate deferral
+when the domain did not resolve at all (`getaddrinfo ENOTFOUND`, checked 2026-08-07). The owner then
+fixed DNS; re-checked the same day, `agentkit.subzerodev.com` resolves against public DNS (8.8.8.8) and
+answers over HTTPS, but with a bare `404` — `checkLinks` (`src/verification/check-links.ts:58-59`)
+requires status 200–399, so S3.7 stays red on `isOkStatus`, no longer on `LinkUnreachable`. Separately,
+the local dev machine's own resolver (Pi-hole) had not yet picked up the record at check time, which
+is unrelated to CI (GitHub's runners use their own DNS) and not the reason for this change.
+Chosen, on the owner's ruling: `home.kind: "own"` becomes `home.kind: "none"` for `AgentKit` in
+`src/content/projects.ts`, the same shape every other project without a live home already uses. This
+was the second rejected alternative in the entry below, now taken up because the DNS half of the
+original blocker is resolved and only the "nothing is served there yet" half remains.
+`tests/content/inventory.test.ts`'s S2.3 moves with it — `agentkit.subzerodev.com` drops out of
+`VERIFIED_SUBDOMAINS` and the own-home count returns to twelve, reversing the thirteen the entry below
+recorded the same day.
+Rejected: **Waiting for content to be deployed to `agentkit.subzerodev.com` before touching the
+inventory** — leaves PR #38 blocked on infrastructure work outside this repository with no committed
+fallback; declined by the owner in favour of unblocking now. **Overriding branch protection to merge
+PR #38 with S3.7 red** — bypasses the gate rather than satisfying it, and leaves a live inventory entry
+claiming a home that returns 404.
+Reversibility: cheap — one project record's `home` field; reverts to `kind: "own"` with the URL restored
+once the subdomain actually serves content.
+
+---
+
 ### 2026-08-07 — `inventory.test.ts` follows the code's `AgentKit` over `Idea.md`/`30-slices.md`'s `Automation`, unreconciled
 Context: `8be5903` (PR #38's base commit, nominally "Header and footer navigation") also rewrote most of
 `src/content/projects.ts`, removing the `Automation` project (`home.kind: "own"`,
