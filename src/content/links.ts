@@ -13,4 +13,21 @@
 
 import type { AbsoluteUrl } from "./types";
 
-export const sourceUrl = "https://github.com/The-Running-Dev?tab=repositories" as AbsoluteUrl;
+// `sourceUrl` produces no `ResolvedHome`, so `checkLinks` never reaches it (see
+// the module comment above). This is the one check that stands in its place:
+// a malformed or non-https literal throws at import time instead of reaching
+// the rendered page unnoticed.
+function absoluteHttpsUrl(value: string): AbsoluteUrl {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`sourceUrl "${value}" is not a valid URL.`);
+  }
+  if (url.protocol !== "https:") {
+    throw new Error(`sourceUrl "${value}" is not an https absolute URL.`);
+  }
+  return value as AbsoluteUrl;
+}
+
+export const sourceUrl = absoluteHttpsUrl("https://github.com/The-Running-Dev?tab=repositories");
