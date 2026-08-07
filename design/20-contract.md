@@ -1008,6 +1008,7 @@ export type VerificationErrorCode =
   | "ClassWithoutRule"
   | "SelectorWithoutUser"
   | "RootMissDocumentAbsent"
+  | "MissEntryStillPresent"
   | "UnknownPathStatusWrong"
   | "UnknownPathBodyWrong"
   | "ServedBytesMismatch"
@@ -1040,7 +1041,7 @@ export type VerificationError = {
 | `UnexpectedRequest` | The browser capture recorded a load-triggered request other than the navigation document | No | Fail the gate, deploy nothing |
 | `ScriptElementPresent` | An emitted document contains a script element that is not the single permitted `application/ld+json` block — a missing or different `type`, a `src` attribute, a second such block, or the permitted block's own content containing a `</script` sequence in any case (`V13`, `X6`) | No | Fail the build |
 | `LinkedStylesheetPresent` | An emitted document links a stylesheet rather than inlining it | No | Fail the build |
-| `ExternalAssetReference` | An emitted document references an asset by URL other than a data URI or an outbound link | No | Fail the build |
+| `ExternalAssetReference` | An emitted document references an asset by URL other than a data URI. Two things are not asset references and do not raise it: an outbound link, and the document's own `<link rel="canonical">`. The second is an exemption `A1` forces rather than a relaxation — `metadata.canonicalUrl` is required of every route, and it names the address of the document already loaded, so no browser fetches it. Without the exemption `V13` and `A1` would contradict each other on every document this design emits | No | Fail the build |
 | `ClassWithoutRule` | A class in a route's body has no selector in that route's stylesheet | No | Fail the build. **Never a warning** |
 | `SelectorWithoutUser` | A **class** selector in a route's stylesheet matches nothing in that route's body. The token block's `:root` rules carry no class selector and cannot raise it (`X4`) | No | Fail the build |
 | `RootMissDocumentAbsent` | `missRootEntry` is absent from the finished tree | No | Fail the build |

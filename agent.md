@@ -43,6 +43,16 @@ and preferences belong in `AGENTS.md`.
   description, every example, the projection or serialised form, the generated
   representation, command help, the test list, and the troubleshooting page. The pair of
   documents where one is an implementation-of the other is where drift concentrates.
+- **An amendment made after its slice has merged has no carrier, and nothing goes red.** One
+  adjudication produced six rulings; three of them belonged to slices that had already shipped, so no
+  slice picked them up and no issue was opened. They survived two further slices and a merge to the
+  default branch. The suite still reported the identical test and file counts the decision entry
+  itself had recorded *before* the amendments — proof that no test was added and therefore that
+  nothing could have failed. Two of the three were then defects live on both published targets, and
+  one test actively asserted the wrong side of one. The entry was honest at the time ("none of which
+  has an implementation yet"); **honesty in the log is not a carrier.** An amendment landing outside
+  an open slice needs a tracked item in the same commit, or it is invisible from the moment it is
+  written.
 - **A stale cross-reference is invisible.** Section numbers cited across documents rot
   silently when a document is restructured. Positional numbering makes this worse: inserting
   a document between existing ones means renumbering everything after it and rewriting every
