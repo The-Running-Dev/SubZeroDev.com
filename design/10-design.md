@@ -377,10 +377,22 @@ bytes against the emitted apex document**, and requests a unique unknown path to
 composition is served **with a 404 status**. Only that complete read-back licenses a claim about the
 preview. A green build or merged pull request does not.
 
-**The head is checked twice, and the second check is the load-bearing one.** The preview publishes
-without waiting for release preparation, but the release still waits for the Pages read-back so `V11`
-has proved byte identity. The attestation then sits between that convergence and the registry push,
-and a human gate has no bound on how long it takes.
+**The two branches never join.** The preview publishes without waiting for release preparation, and
+the release publishes without waiting for the preview. This section required the release to wait for
+the Pages read-back until 2026-08-08, on the reasoning that a release should ship only bytes a preview
+had already proved identical. That reasoning does not survive naming what `V11` compares: **both
+halves compare a served response against the emitted apex document, never against each other**, so the
+image gate establishes the release's byte identity on its own and the Pages read-back adds nothing to
+it. The wait bought a schedule rather than a proof, at the price of stalling every release behind a
+publisher this repository does not run. See [`90-decisions.md`](90-decisions.md), 2026-08-08.
+
+**The cost, stated plainly:** a release can be attested and pushed while the Pages read-back is still
+running, or after it has failed — a preview left unproven beside a proven release. `V8` is what stops
+that becoming a false claim: each read-back licenses a claim about its own target and about nothing
+else.
+
+**The head is checked twice, and the second check is the load-bearing one.** The attestation sits
+between the release checks and the registry push, and a human gate has no bound on how long it takes.
 A branch-head check taken before it proves nothing after it: an approval granted an hour later, on a
 branch that moved in the meantime, would otherwise license a push and a redeploy for a superseded
 commit. The re-check immediately before the push is what closes that window — the check is a
@@ -716,9 +728,10 @@ The ordering invariant forks after the shared build: content validation → rend
 Artifact → offline verification. From there, the **preview branch** performs branch-head check → Pages
 deploy → Pages read-back (exact marker, bytes, unknown path), without waiting on a release gate. In
 parallel, the **release-preparation branch** performs image build → in-CI image gate → networked link
-check. The branches converge before truth attestation, so release publication has both the verified
-preview bytes and the release checks: truth attestation → branch-head re-check → registry push →
-redeploy trigger → endpoint read-back (exact marker, unknown path) → live claim. The workflow enforces
+check, and continues on its own — the branches do not converge: truth attestation → branch-head
+re-check → registry push → redeploy trigger → endpoint read-back (exact marker, unknown path) → live
+claim. The preview branch ends at its own read-back. One concurrency group orders the two publishing
+steps against each other; it does not order either against the other's gates. The workflow enforces
 that graph; the prose report merely reflects it.
 
 The image gate sits **before** the attestation rather than after, because it is hermetic and

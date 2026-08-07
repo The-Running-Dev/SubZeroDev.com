@@ -46,7 +46,8 @@ export type Result<T, E> =
 ```
 
 `Result` carries a non-empty error list. No function in this contract throws, and no error is a
-string.
+string. **One thing that is not a function does**: `sourceUrl`'s module-load guard, the single
+exception, written out where that constant is declared below.
 
 **`Shared` is a grouping, not a seventh module.** Both types live in **Content** and are exported from
 it, which is why `C1` needs no exception: a module that owns them imports nothing to obtain them.
@@ -205,10 +206,19 @@ wrapping to a single column at the same `720px` breakpoint `page` already uses. 
 rule is the gap between those columns. It carries no colour rule, no type rule and no spacing inside a
 column — those come from whatever primitive each child already declares.
 
-It is also the only primitive whose rules reach elements it does not name, through a child combinator
-on the universal selector. That is what makes the equal share a property of the row rather than of
-what is put in it: a child needs no cooperating class, so `row` composes with the other six instead of
+It is also the only primitive that **sizes** a child it does not name, through a child combinator on
+the universal selector. That is what makes the equal share a property of the row rather than of what
+is put in it: a child needs no cooperating class, so `row` composes with the other seven instead of
 constraining what may sit in one.
+
+**The narrower verb is load-bearing.** This read "the only primitive whose rules reach elements it
+does not name" until 2026-08-08, and that was never true of the set: `page` carries typography and
+spacing rules for `header`, `h1`–`h4`, `p`, `section`, `article`, `footer` and `.stack`, and `entry`
+carries rules for a nested `.stack`. Those reach a descendant to style it, which any primitive may do
+within the `Primitive.rules` anchoring constraint. Imposing a *width* on an unnamed child is the thing
+only `row` does, and it is the thing the paragraph was distinguishing. (The count in that sentence was
+stale by the same amendments: it read "the other six", from before `row` and `bar` closed the set at
+eight.)
 
 `bar` lays its direct children left-to-right and pushes them to the **two ends** of its width,
 wrapping to a single column at the same `720px` breakpoint `page` and `row` already use. Like `row` it
@@ -220,7 +230,7 @@ width between columns and gives each an equal share; `bar` leaves its children a
 and puts the free space *between* them. A row of two prose columns and a strip with a group at each
 end are different layouts, and neither expresses the other: `row` cannot right-align its second child
 without abandoning the equal share that is its purpose, and `bar` cannot give a column half the width
-without abandoning the free space that is its. `bar` therefore needs **no** rule reaching a child it
+without abandoning the free space that is its. `bar` therefore needs **no** rule sizing a child it
 does not name — content sizing is the flex default — which leaves `row` the only primitive that does.
 
 **Presentation imports `Branded` from Content, and nothing else from this repository.** Every type
@@ -486,6 +496,17 @@ the one outbound link on the page that no gate checks.** It was verified `200` b
 The alternatives — widening `checkLinks`, or a full site-link type with project-reference resolution —
 were both put and both declined; see [`90-decisions.md`](90-decisions.md), 2026-08-07.
 
+**It is therefore the one value in this contract guarded by a throw, and that is the exception the
+*Types* section points at.** `sourceUrl` is validated where it is declared — parsed through `URL`,
+required to be `https:` — and a literal failing either check raises a bare `Error` at module load.
+Content has no other throwing path and no `ContentErrorCode` covers this: a `Result` returned from a
+module-level constant has no caller, which is the same shape that made `A5`'s handling a process exit
+rather than a returned error. The consequence is stated rather than hidden — a malformed `sourceUrl`
+fails the build through an uncaught exception during Adapter's module evaluation, **not** through
+`A5`'s report-every-error-then-exit path, so it is the one content fault that does not arrive
+alongside the others. The alternative is no check at all on the one outbound link no gate reaches,
+which is worse. Recorded on 2026-08-08; see [`90-decisions.md`](90-decisions.md).
+
 ### Presentation
 
 ```ts
@@ -524,14 +545,14 @@ second time.
 | Property | Value | |
 |---|---|---|
 | `--font-sans` | a sans stack of locally-resolved faces | prose |
-| `--font-mono` | a system mono stack | `year`, `stage`, `ProjectId` and `escapedFrom` edges — never prose |
+| `--font-mono` | a system mono stack | the **`meta` register**: record labels (`year`, `stage`, `ProjectId`, `escapedFrom` edges), section indices, derived counts, the header tagline and the link rows. Reserved to one primitive by `P7`. It is **not** the manifesto or a project's `line` — this row read "never prose" until 2026-08-08, which the composition's tagline, counts and navigation had never satisfied |
 | `--step--1` | `0.8rem` | |
 | `--step-0` | `1rem` | body |
 | `--step-1` | `1.25rem` | |
 | `--step-2` | `1.563rem` | the threshold `P2` names |
 | `--step-3` | `1.953rem` | |
 | `--space-0` | `0.75rem` | |
-| `--space-1` | `1.17rem` | record separation |
+| `--space-1` | `1.17rem` | |
 | `--space-2` | `1.83rem` | |
 | `--space-3` | `2.86rem` | |
 | `--space-4` | `4.47rem` | |
@@ -544,10 +565,21 @@ second time.
 
 Both scales are the single 1.25 ratio the ruling settles, a spacing token advancing two steps of it.
 **The step indices are fixed by two statements in that ruling and are not a free choice**: the measure
-is "roughly 65 characters at `--step-0`", which puts `1rem` at index 0, and `P2` requires 3:1 "at
-`--step-2` and above", which is WCAG's large-text threshold and therefore the `1.563rem` step at a
-16px root. The `0.8rem` step takes `--step--1` as a consequence. The spacing indices run from 0 over
-the same five values, so `--space-1` is the record separation `P2` cites.
+is "roughly 65 characters at `--step-0`", which puts `1rem` at index 0, and `P2` requires 3:1 at
+`1.563rem` and above, which is WCAG's large-text threshold and therefore index 2 at a 16px root. The
+`0.8rem` step takes `--step--1` as a consequence. The spacing indices run from 0 over the same five
+values.
+
+**The block declares the whole scale; a primitive draws on as much of it as it needs, and several
+properties have no user.** `--step-1`, `--step-2`, `--step-3`, `--space-3`, `--space-4` and `--measure`
+are emitted into every document and referenced by no rule, because the primitives express fluid sizing
+and spacing as `clamp()` over the scale's endpoints rather than by naming a single step. That is
+declaration, not drift: the scale is the authored ratio the ruling settles, and a step with no user
+today is the next author's to reach for rather than a value to re-derive. `X4`'s `SelectorWithoutUser`
+half does not reach the token block — it is over class selectors, and the block carries none — so
+nothing here is asserted, and nothing is claimed to be. This paragraph was added on 2026-08-08, after a
+`/reconcile` pass found the annotations in the table above describing users that several of these
+properties did not have.
 
 The two font properties are named here and their stacks are not, because no assertion turns on which
 faces they list. A stack may name a face that is not installed anywhere by default — naming one is a
@@ -1069,7 +1101,9 @@ Adapter declares none of its own either, and **handles** `ContentError`: it is t
 exit non-zero. There is no Adapter-specific failure to name — a malformed inventory is a Content
 fault, and an inventory that validates leaves Adapter nothing that can fail.
 
-**Bare exceptions exist in the system and none of them is ours.** At `0.3.0` the external package
+**Bare exceptions exist in the system and exactly one of them is ours** — `sourceUrl`'s module-load
+guard, written out in *Public signatures* § *Content* and not restated here. Every other one below
+belongs to the external package. At `0.3.0` the external package
 throws `Error` from `defineLandingPage` on an empty route list, and from `assertRoute` on a route
 declaring neither or both of `entry` and `body`, on a `stylesheet` declared beside an `entry`, and on
 a stylesheet containing `</style`. Nothing here catches any of them.
@@ -1104,7 +1138,7 @@ where a separate module checks it, that is said in the row.
 | **C14** | Nothing imports `projects` except the `validateInventory` call site — Adapter once it exists, and until then the committed-inventory assertion — and Verification's assertions over the inventory. No derivation function, no Composition entry and no Artifact step reads it | Content |
 | **C15** | `parseCommitId` is the only implementation of the `CommitId` pattern in the repository | Content |
 | **P1** | Nothing in Presentation references a linked font, an external stylesheet, a gradient or an illustration asset. Neither `--font-sans` nor `--font-mono` names a webfont, and no rule is an `@font-face` | Presentation |
-| **P2** | The rendered page is legible in greyscale, in two parts. **(a)** Every foreground colour resolved against the background it is rendered on meets WCAG AA — 4.5:1, or 3:1 at `--step-2` and above. `--rule` is **exempt, by name**: record separation is carried by `--space-1`, so a divider reinforces and never signals. **(b)** No meaning is carried by hue alone, which obliges the `link` primitive to declare a `text-decoration`, or a font weight distinct from body text. Part (b) is what makes this say greyscale rather than contrast: `--link` against `--fg` is 1.50:1, far below the 4.5:1 body-text threshold, so a link is not reliably separable from body text by luminance alone. The margin against `--bg` is not what is at issue — `--link` clears (a) there at 11.17:1 — which is why (b) is a separate half rather than a consequence of (a) | Presentation |
+| **P2** | The rendered page is legible in greyscale, in two parts. **(a)** Every foreground colour resolved against the background it is rendered on meets WCAG AA — 4.5:1, or 3:1 at `1.563rem` and above, WCAG's large-text threshold and the value `--step-2` names. The threshold is stated as a size rather than as a token because no rule references that token. `--rule` is **exempt, by name**: record separation is carried by the **spacing around a record**, so a divider reinforces and never signals. This clause named `--space-1` as that spacing until 2026-08-08; the `entry` primitive separates records with its own `clamp()` padding, so the exemption rests on the separation existing rather than on which value expresses it. **(b)** No meaning is carried by hue alone, which obliges the `link` primitive to declare a `text-decoration`, or a font weight distinct from body text. Part (b) is what makes this say greyscale rather than contrast: `--link` against `--fg` is 1.50:1, far below the 4.5:1 body-text threshold, so a link is not reliably separable from body text by luminance alone. The margin against `--bg` is not what is at issue — `--link` clears (a) there at 11.17:1 — which is why (b) is a separate half rather than a consequence of (a) | Presentation |
 | **P3** | Nothing **moves** under `prefers-reduced-motion: reduce`: no transform, translation, scale, rotation, position change or scroll behaviour is animated or transitioned. A transition of a non-positional property — a colour change on hover or focus is the case in the primitive set — is not motion and is permitted. The preference addresses vestibular motion rather than change as such, which is why this names motion and not animation. `00-brief.md` § *Definition of done* states this same narrowed form as of its 2026-08-07 amendment, so the two agree — see [`90-decisions.md`](90-decisions.md) and [`U10`](#u10--p3-is-narrowed-to-motion-pending-an-owner-edit-to-the-brief) | Presentation |
 | **P4** | Focus order matches visual order and every interactive element is keyboard-reachable | Presentation |
 | **P5** | No `StylesheetText` contains a `</style` sequence in any case — the package emits it unescaped inside a `<style>` element and throws on one | Presentation |
@@ -1136,7 +1170,7 @@ where a separate module checks it, that is said in the row.
 | **V4** | Every `ResolvedHome` responds 2xx or 3xx before release. The Pages preview does not wait on this networked gate | Verification |
 | **V5** | An `Attestation` is valid for exactly one `CommitId` and is never accepted for another. It gates the **release path only** — the registry push and the redeploy — and not the Pages deploy, which is why the preview's every-commit cadence is real; the cost is recorded in `10-design.md` § *Publication targets* | Verification |
 | **V6** | Publication happens only while this run's commit is the deployment-branch head | Verification |
-| **V7** | After content validation → render → package build → Artifact → offline verification, publication forks. The preview branch performs branch-head check → Pages deploy → Pages read-back (exact marker, bytes, unknown path) without waiting on the image gate, link gate or attestation. In parallel the release-preparation branch performs image build → in-CI image gate → networked link check. Both branches complete before truth attestation → **branch-head re-check** → registry push → redeploy trigger → endpoint read-back (exact marker, unknown path) → live claim. The head is checked **twice** because the attestation before release is a human gate of unbounded duration, and a check taken before it proves nothing after it | Verification |
+| **V7** | After content validation → render → package build → Artifact → offline verification, publication forks. The preview branch performs branch-head check → Pages deploy → Pages read-back (exact marker, bytes, unknown path) without waiting on the image gate, link gate or attestation. In parallel the release-preparation branch performs image build → in-CI image gate → networked link check, and continues on its own through truth attestation → **branch-head re-check** → registry push → redeploy trigger → endpoint read-back (exact marker, unknown path) → live claim. **The two branches never join**, and neither waits on the other: `V11`'s two halves each compare a served response against the emitted apex document rather than against each other, so neither is evidence the other needs. The head is checked **twice** because the attestation before release is a human gate of unbounded duration, and a check taken before it proves nothing after it | Verification |
 | **V8** | No live URL is stated or implied until `pollForCommit` returns `ok` for the exact commit **and** the unknown-path check passes **against the target that claim is about** — Pages for the preview URL, the endpoint for the site. A read-back on one target licenses no claim about the other | Verification |
 | **V9** | No image is pushed to the registry unless the in-CI gate passed for that image | Verification |
 | **V10** | The image tag equals the full commit id, and equals the marker the running image serves | Verification |
