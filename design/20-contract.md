@@ -358,7 +358,27 @@ export type RequestRecord = {
   readonly resourceType: string;
   readonly initiatedByTester: boolean;
 };
+
+export type ModuleName =
+  | "Content"
+  | "Presentation"
+  | "Composition"
+  | "Adapter"
+  | "Artifact"
+  | "Verification";
+
+export type ModuleImport = {
+  readonly from: ModuleName;
+  readonly to: ModuleName;
+  readonly names: readonly string[];
+};
 ```
+
+`ModuleImport` carries the imported binding names because three of the rules it exists to check are
+about *which* names cross an edge, not merely whether the edge exists: `A3` enumerates Adapter's four
+Content imports and two Presentation imports, `C14` closes the set of modules that may import
+`projects`, and Artifact is limited to `CommitId`, `parseCommitId` and `Result`. An edge-only graph
+would pass all three while `Adapter` imported a derivation function.
 
 `attempts >= 1`; `initialDelayMs >= 0`; `maxDelayMs >= initialDelayMs`; `attemptTimeoutMs > 0`.
 `LinkCheckResult.status` is `null` where every attempt failed before a response.
@@ -388,7 +408,7 @@ Five things resemble persistence and are not:
 | Build marker | Injected by Artifact into each emitted document | No existing data. Every artifact is regenerated per commit; an older artifact is replaced, never migrated. |
 | Server configuration | Emitted by Artifact beside the output tree, never into it (`R6`) | Regenerated per build from the same source. Nothing reads a previous build's copy, and it is never published. |
 | Registry tags | The image registry | A commit tag is written once and never rewritten — the image it names is immutable. `latest` moves and is never an identity. No tag is ever migrated; an old tag stays resolvable, which is what makes a rollback expressible. |
-| `Attestation` | A CI approval record, owned by the CI provider | Not read by the build and not read by any later run. An attestation is consumed by exactly one deployment and never re-read. |
+| `Attestation` | A CI approval record, owned by the CI provider | Not read by the build and not read by any later run. An attestation is consumed by exactly one release and never re-read; Pages neither reads nor waits for it. |
 
 `ProjectId` values are never reused and never renumbered, so no rename or remap path exists to
 define.
@@ -542,7 +562,7 @@ as a data URI; being a `DataUri` is what discharges `A2`.
 ### Composition
 
 ```ts
-export function composeApex(inventory: Inventory): ComposedRoute;
+export function composeApex(inventory: Inventory, origin: string): ComposedRoute;
 
 export function composeMiss(): ComposedRoute;
 ```
@@ -564,6 +584,21 @@ carry one.
 validates, imports `projects` or reads the environment. See *Adapter* below and
 [`U8`](#u8--the-validateinventory-call-site-and-load-time-failure).
 
+**`composeApex` also emits the JSON-LD block (`X6`), which is why it gained an `origin` parameter on
+2026-08-07.** The block is in the **body**, not the head, because the package owns the head and its
+metadata set is closed — there is no field for an arbitrary element, the same fact that made the build
+marker Artifact's. `<script>` is flow content and is conforming in `<body>`, so this needs no exception
+to the output-shape rules the design asserts about itself. `composeMiss` emits none: a not-found
+document is not an `Organization`, and `X6` says so rather than leaving it to taste.
+
+`origin` is a **parameter rather than an import** because `X2` confines Composition to Content and
+Presentation, and the site origin is Adapter's (`A1`). Passing it keeps that edge closed. It is typed
+`string` and not `AbsoluteUrl` deliberately: Adapter's `origin` is declared as a string literal so
+`A1` can assert the concatenation, and branding it would ripple through every metadata field for a
+value that never crosses into the package on this path. The brands exist to guard the package
+boundary, and this is not one. What the object's `name` and `description` say is owner-supplied copy,
+transcribed at slice time like every other route string.
+
 ### Adapter
 
 ```ts
@@ -582,8 +617,8 @@ and reads `config`. No repository module imports Adapter — Verification's asse
 `A6` necessarily do, which is the same reading Verification's own boundary rule takes.
 
 `config.routes` is exactly two `LandingPageBodyRoute` values, in this order — the apex at `apexPath`
-carrying `composeApex(inventory)`, and the miss at `missPath` carrying `composeMiss()` — each route's
-`body` and `stylesheet` taken from that route's own `ComposedRoute`.
+carrying `composeApex(inventory, origin)`, and the miss at `missPath` carrying `composeMiss()` — each
+route's `body` and `stylesheet` taken from that route's own `ComposedRoute`.
 
 Five fields are declared **absent**, in four groups, and each absence is load-bearing rather than a
 default:
@@ -675,13 +710,22 @@ extractable from a raw response body by a fixed pattern, with nothing parsed and
 because Artifact runs after the bundler no minifier ever sees it.
 
 **`finalizeArtifact`'s order of operations is part of the contract, not an implementation detail.** It
-validates `input.commit`, copies `missEmittedEntry` to `missRootEntry`, injects the marker into every
-`.html` document in the tree — the copy included — and writes `serverConfig()` last, into
-`serverConfigDir`. Copying before injecting is what makes `R2` hold: both documents are marked in the
-same pass and stay byte-identical. Injecting first and copying after would also work today and would
+validates `input.commit`, confirms `missEmittedEntry` is present (`R5`), copies it to `missRootEntry`,
+injects the marker into every `.html` document in the tree — the copy included — **then removes
+`missEmittedEntry`**, and writes `serverConfig()` last, into `serverConfigDir`. Copying before
+injecting is what makes `R2` hold: both documents are marked in the same pass and are byte-identical at
+the moment the identity is asserted. Injecting first and copying after would also work today and would
 break silently the day a second post-build rewrite is added. The configuration is written last and
 outside `outputDir`, so it is neither a document nor a marking candidate and no ordering question
 about it can arise.
+
+**The removal is why the miss document has exactly one published path.** `404/index.html` is a
+directory index, so a host serves it with a **200** — the miss composition, at a fixed and discoverable
+URL, declaring itself canonical through `A1`. That is a soft 404 by this design's own definition, and
+`V12` never sees it because `V12` requests a *unique unknown* path. Removing the emitted entry after
+the copy is what stops the path existing on either target. The route declaration is unchanged and
+`missPath` still reads `/404/`: what changes is only where the emitted document ends up, which is
+`Artifact`'s business and not the route's.
 
 **`serverConfig` is Artifact's third duty and takes no argument.** It returns the container server's
 configuration text — the format belongs to `nginx`, per [`U7`](#u7--which-server-serves-the-container-tree),
@@ -752,6 +796,10 @@ export function assertRootMissDocument(
   documents: readonly EmittedDocument[],
 ): Result<null, VerificationError>;
 
+export function assertMissEntryRemoved(
+  documents: readonly EmittedDocument[],
+): Result<null, VerificationError>;
+
 export function assertUnknownPathResponse(
   response: ServedResponse,
   emittedMissDocument: string,
@@ -766,6 +814,10 @@ export function assertImageIdentity(
   imageTag: string,
   servedMarker: CommitId,
   commit: CommitId,
+): Result<null, VerificationError>;
+
+export function assertImportGraph(
+  edges: readonly ModuleImport[],
 ): Result<null, VerificationError>;
 ```
 
@@ -802,8 +854,9 @@ signatures that close it are the two added above and `assertAttestation`'s chang
 | `AttestationAbsent` | `assertAttestation`, given `null` | `V5` |
 
 `assertAttestation` takes `Attestation | null` because absence is the condition `AttestationAbsent`
-names, and a parameter that cannot be absent cannot express it. The `publish` job passes what it read
-from the run's approval record, and `null` where there was none.
+names, and a parameter that cannot be absent cannot express it. The `attestation` job passes what it
+read from the run's approval record to `publish-release`, and `null` where there was none. The Pages
+preview does not call this function and does not depend on that job.
 
 `assertContentPresent` takes the `Inventory` rather than a list of names, so a caller cannot satisfy
 `V3` by passing three of fourteen. `manifestoSentences` is non-empty for the same reason: an empty
@@ -817,6 +870,21 @@ able to own one.
 `assertImageIdentity`: the workflow observes the deployment branch's head at the top of the critical
 section and passes it in. Keeping the observation outside the function is what lets `V6` be tested
 without a repository, a token or a network.
+
+**`assertImportGraph` takes the graph as data for the same reason**, and it is the reason this
+signature could be written at all. Reading imports off disk means choosing a scanner — a dependency
+linter, a lint rule, or an AST walk — and that is a new dependency needing its own decision-log entry
+naming what it rejected. Nothing here chooses one: the caller observes the edges and passes them in,
+so the function is pure, total and testable against a literal graph, and the scanner becomes an
+implementation detail of one test rather than a fact in this contract.
+
+It discharges **seven** rules, four of which carry ids — `C1`, `C14`, `X2` and `A3` — and three of
+which had none before 2026-08-07, existing only as prose in this section: Presentation imports
+`Branded` from Content and nothing else from this repository; Artifact imports `CommitId`,
+`parseCommitId` and `Result` and nothing else; and no repository module imports Verification, checked
+over `src` rather than over the whole tree. `V16` is what gives those three a checkable home. That
+they were unnumbered while four neighbours were is the same defect `U9` names for `P2`–`P4`: an
+invariant nothing can call is a habit, and a rule with no id is not even that.
 
 Every `assert*` function reports **all** faults it finds in one `Result`, not the first. A style
 disagreement with four unmatched classes returns four errors.
@@ -893,7 +961,8 @@ export type ArtifactErrorCode =
   | "MissDocumentMissing"
   | "MarkerInsertionPointMissing"
   | "MarkerAlreadyPresent"
-  | "WriteFailed";
+  | "WriteFailed"
+  | "RemoveFailed";
 
 export type ArtifactError = {
   readonly code: ArtifactErrorCode;
@@ -920,6 +989,7 @@ starts from a clean output directory rather than repairing it.
 | `MarkerInsertionPointMissing` | A document contains no `</head>` | the document | Fail the build |
 | `MarkerAlreadyPresent` | A document already carries a build marker before injection | the document | Fail the build. Artifact ran twice, or the package emitted a marker of its own |
 | `WriteFailed` | A copy, a rewrite, or the server-configuration write failed at the filesystem | the document, or `serverConfigFilename` | Fail the build |
+| `RemoveFailed` | Removing `missEmittedEntry` after the copy failed at the filesystem (`R2`) | `missEmittedEntry` | Fail the build. The tree would otherwise publish the miss composition at a 200 path, which is the defect the removal exists to prevent |
 
 ### Verification
 
@@ -946,7 +1016,10 @@ export type VerificationErrorCode =
   | "AttestationAbsent"
   | "ManifestoAbsent"
   | "ProjectNameAbsent"
-  | "StaleDeploymentCandidate";
+  | "StaleDeploymentCandidate"
+  | "ForbiddenModuleImport"
+  | "UnauthorizedInventoryImport"
+  | "UnpermittedImportName";
 
 export type VerificationError = {
   readonly code: VerificationErrorCode;
@@ -965,21 +1038,25 @@ export type VerificationError = {
 | `MarkerMismatch` | The served marker is a valid `CommitId` other than the expected one | Yes, within `deploymentPollRetry` — a cache or an in-flight publish | Keep polling; on exhaustion report `PollExhausted`. From `assertImageIdentity`, not retryable — the image is already built |
 | `PollExhausted` | `deploymentPollRetry` was consumed without an exact marker match | No | Report the deploy failed. **Announce no live URL** |
 | `UnexpectedRequest` | The browser capture recorded a load-triggered request other than the navigation document | No | Fail the gate, deploy nothing |
-| `ScriptElementPresent` | An emitted document contains a `<script>` element | No | Fail the build |
+| `ScriptElementPresent` | An emitted document contains a script element that is not the single permitted `application/ld+json` block — a missing or different `type`, a `src` attribute, a second such block, or the permitted block's own content containing a `</script` sequence in any case (`V13`, `X6`) | No | Fail the build |
 | `LinkedStylesheetPresent` | An emitted document links a stylesheet rather than inlining it | No | Fail the build |
 | `ExternalAssetReference` | An emitted document references an asset by URL other than a data URI or an outbound link | No | Fail the build |
 | `ClassWithoutRule` | A class in a route's body has no selector in that route's stylesheet | No | Fail the build. **Never a warning** |
 | `SelectorWithoutUser` | A **class** selector in a route's stylesheet matches nothing in that route's body. The token block's `:root` rules carry no class selector and cannot raise it (`X4`) | No | Fail the build |
 | `RootMissDocumentAbsent` | `missRootEntry` is absent from the finished tree | No | Fail the build |
+| `MissEntryStillPresent` | `missEmittedEntry` survives into the finished tree, so the miss composition is reachable at `/404/` with a 200 (`R2`) | No | Fail the build. Artifact's removal did not run |
 | `UnknownPathStatusWrong` | A unique unknown path answered with a status other than 404 | No | Fail the gate or report the deploy failed. A 200 here is a soft 404 |
 | `UnknownPathBodyWrong` | A unique unknown path answered 404 with a body other than the emitted miss document | No | Fail the gate or report the deploy failed |
 | `ServedBytesMismatch` | What the running image serves for `/` differs byte for byte from the emitted document | No | Fail the image gate. **Never push** |
 | `ImageTagCommitMismatch` | The image tag is not the full commit id being released | No | Fail the image gate. Never push |
-| `AttestationCommitMismatch` | `Attestation.commit` differs from the commit being deployed | No | Refuse to deploy. An attestation is never reused |
-| `AttestationAbsent` | `assertAttestation` was given `null` — the run carries no approval record | No | Refuse to deploy |
+| `AttestationCommitMismatch` | `Attestation.commit` differs from the commit being released | No | Refuse the release. Pages is unaffected; an attestation is never reused |
+| `AttestationAbsent` | `assertAttestation` was given `null` — the release path carries no approval record | No | Refuse the release. Pages is unaffected |
 | `ManifestoAbsent` | A known manifesto sentence is missing from built HTML with scripting never executed | No | Fail the build |
 | `ProjectNameAbsent` | A project `name` is missing from built HTML with scripting never executed | No | Fail the build |
 | `StaleDeploymentCandidate` | At the critical section's start, this run's commit is no longer the deployment-branch head | No | Stop before publishing. This is a clean stop, not a failure |
+| `ForbiddenModuleImport` | A module imports one the graph does not permit it to — any edge out of Content (`C1`), an edge into Verification (`V16`), or an edge Composition or Adapter is not allowed (`X2`, `A3`) | No | Fail the build. **Never a warning** |
+| `UnauthorizedInventoryImport` | A module other than Adapter or Verification imports `projects` (`C14`) | No | Fail the build. This is the one that would otherwise let a derivation be recomputed off unvalidated records |
+| `UnpermittedImportName` | A permitted edge carries a binding the rule does not allow — Adapter importing a Content derivation or a Presentation primitive (`A3`), Presentation importing anything but `Branded`, Artifact importing beyond `CommitId`, `parseCommitId` and `Result` | No | Fail the build |
 
 ### Composition, Presentation, Adapter
 
@@ -1027,7 +1104,7 @@ where a separate module checks it, that is said in the row.
 | **C15** | `parseCommitId` is the only implementation of the `CommitId` pattern in the repository | Content |
 | **P1** | Nothing in Presentation references a linked font, an external stylesheet, a gradient or an illustration asset. Neither `--font-sans` nor `--font-mono` names a webfont, and no rule is an `@font-face` | Presentation |
 | **P2** | The rendered page is legible in greyscale, in two parts. **(a)** Every foreground colour resolved against the background it is rendered on meets WCAG AA — 4.5:1, or 3:1 at `--step-2` and above. `--rule` is **exempt, by name**: record separation is carried by `--space-1`, so a divider reinforces and never signals. **(b)** No meaning is carried by hue alone, which obliges the `link` primitive to declare a `text-decoration`, or a font weight distinct from body text. Part (b) is what makes this say greyscale rather than contrast: `--link` against `--fg` is 1.50:1, far below the 4.5:1 body-text threshold, so a link is not reliably separable from body text by luminance alone. The margin against `--bg` is not what is at issue — `--link` clears (a) there at 11.17:1 — which is why (b) is a separate half rather than a consequence of (a) | Presentation |
-| **P3** | Nothing **moves** under `prefers-reduced-motion: reduce`: no transform, translation, scale, rotation, position change or scroll behaviour is animated or transitioned. A transition of a non-positional property — a colour change on hover or focus is the case in the primitive set — is not motion and is permitted. The preference addresses vestibular motion rather than change as such, which is why this names motion and not animation. **`00-brief.md` § *Definition of done* states the broader form and outranks this document**; the disagreement is known and unreconciled — see [`90-decisions.md`](90-decisions.md), 2026-08-07 | Presentation |
+| **P3** | Nothing **moves** under `prefers-reduced-motion: reduce`: no transform, translation, scale, rotation, position change or scroll behaviour is animated or transitioned. A transition of a non-positional property — a colour change on hover or focus is the case in the primitive set — is not motion and is permitted. The preference addresses vestibular motion rather than change as such, which is why this names motion and not animation. `00-brief.md` § *Definition of done* states this same narrowed form as of its 2026-08-07 amendment, so the two agree — see [`90-decisions.md`](90-decisions.md) and [`U10`](#u10--p3-is-narrowed-to-motion-pending-an-owner-edit-to-the-brief) | Presentation |
 | **P4** | Focus order matches visual order and every interactive element is keyboard-reachable | Presentation |
 | **P5** | No `StylesheetText` contains a `</style` sequence in any case — the package emits it unescaped inside a `<style>` element and throws on one | Presentation |
 | **P6** | A route's stylesheet is the token block followed by the `rules` of exactly those primitives whose `className` occurs in that route's `bodyHtml`, and nothing else. `stylesheetFor` derives the set from the body, so no caller states it | Presentation |
@@ -1036,7 +1113,9 @@ where a separate module checks it, that is said in the row.
 | **X2** | Composition imports only Content and Presentation, and nothing imports Composition except Adapter | Composition |
 | **X3** | The page contains no form, no analytics, no consent surface and no third-party script | Composition |
 | **X4** | For each `ComposedRoute`, every class referenced in `bodyHtml` has a matching selector in `stylesheet`, and every **class** selector in `stylesheet` has a user in `bodyHtml` — checked by `assertStyleAgreement`. The token block's `:root` rules fall outside both halves and need no exemption clause: they carry no class selector, and `Primitive.rules` roots every other rule at its own `className` | Composition |
-| **X5** | Every Content value interpolated into `bodyHtml` is HTML-escaped, in attribute position as well as in text position; `<`, `>`, `&`, `"` and `'` never reach the document unescaped from a content value. The rule is over every interpolated value, not over a named list of fields. The attribute half is not implied by the text half — `"` and `'` are inert in text and are exactly what closes an attribute early — and a `ResolvedHome.url` carried in an `href` is the case the apex composition has. Asserted with a fixture project carrying all five characters, in both positions | Composition |
+| **X5** | Every Content value interpolated into `bodyHtml` is HTML-escaped, in attribute position as well as in text position; `<`, `>`, `&`, `"` and `'` never reach the document unescaped from a content value. The rule is over every interpolated value, not over a named list of fields. The attribute half is not implied by the text half — `"` and `'` are inert in text and are exactly what closes an attribute early — and a `ResolvedHome.url` carried in an `href` is the case the apex composition has. Asserted with a fixture project carrying all five characters, in both positions. **One exception, and it is not a relaxation**: inside the `application/ld+json` block (`X6`) HTML escaping would corrupt the JSON — `&amp;` in a URL is a different URL — so values there are JSON-string-escaped instead, and `X6`'s `</script` guard is what keeps that safe rather than the escaping | Composition |
+| **X6** | The apex body carries **exactly one** `<script type="application/ld+json">` element and the miss body carries none. It holds a single JSON-LD `Organization` object; every value in it is JSON-string-escaped (`X5`), it contains no `</script` sequence in any case — checked as one of `ScriptElementPresent`'s raising conditions, not a separate code — and any figure in it is a Content derivation rather than a typed literal, exactly as `X1` requires of the visible page. It is the only script element this design permits anywhere | Composition |
+| **X7** | The apex renders only `EcosystemGroup`s carrying at least one project. `C11` keeps every `Stage` in the tree so counts, ordering and totals stay total and testable; a lifecycle stage nothing has reached yet is not rendered as a heading with nothing beneath it. The two are complementary rather than in tension — the derivation is complete, the page is not a list of empties — and this is stated because the design's "never a silently empty section" rule was written for an empty *inventory* and left the empty *group* unnamed | Composition |
 | **A1** | Every URL in route metadata is built from `origin`; no origin string is written twice. Each route's `canonicalUrl` and `openGraph.url` equal `origin` concatenated with that route's `path` | Adapter |
 | **A2** | Every entry in `metadata.icons` carries a `DataUri` as its `href`; no icon is a linked asset | Adapter |
 | **A3** | Adapter obtains everything renderable from Composition; it imports Content only for `projects`, `validateInventory`, `BuildContext` and `parseCommitId`, and Presentation only for `themeColor` and `iconDataUri` — never a derivation function, a copy constant, a primitive or the stylesheet. Both import lists are enumerated, and nothing renderable is on either | Adapter |
@@ -1045,25 +1124,27 @@ where a separate module checks it, that is said in the row.
 | **A6** | Both routes are `LandingPageBodyRoute` values: neither declares `entry`, `hydrate` or `noScript`, and the configuration declares no `styles`, `publicDir` or `allow`. Each route's stylesheet travels in its own `stylesheet` field | Adapter |
 | **A7** | No colour literal and no data URI is written in Adapter. `metadata.themeColor` is Presentation's `themeColor` and every `metadata.icons[].href` is Presentation's `iconDataUri`, by reference — the same rule `A1` applies to `origin`, applied to visual identity | Adapter |
 | **R1** | Every emitted document carries exactly one build marker, and it carries the commit being built | Artifact |
-| **R2** | `missRootEntry` and `missEmittedEntry` are byte-identical in the finished tree | Artifact |
+| **R2** | `missRootEntry` is a byte-identical copy of the document the package emitted at `missEmittedEntry`, asserted at the copy; and `missEmittedEntry` is **absent** from the finished tree, so the miss document has exactly one published path and no host can serve it with a 200 | Artifact |
 | **R3** | Artifact compiles nothing, bundles nothing and resolves no module; the only change it makes to a document is the marker | Artifact |
 | **R4** | The emitted server configuration resolves every unknown path to `missRootEntry` with status 404; sets no cookie, no cache-control directive chosen by application logic, and no tracking or rewrite header; and executes nothing per request. A response header that is an unconfigured byproduct of serving a static file over HTTP — a content-type, a content-length, a last-modified time, an entity tag, the server's own identifying header — is not a violation | Artifact |
-| **R5** | `missEmittedEntry` is the package's emitted entry for Adapter's `missPath` — checked against the emitted tree, never assumed | Artifact |
+| **R5** | `missEmittedEntry` is the package's emitted entry for Adapter's `missPath` — checked against the emitted tree **before `R2`'s removal**, never assumed. A pairing asserted after the file is gone would assert nothing | Artifact |
 | **R6** | The emitted server configuration is written outside `outputDir` and never appears in the published tree, on either target | Artifact |
 | **V1** | No document reaches publication unless it carries the exact commit's marker | Verification |
 | **V2** | Loading a route document triggers zero requests other than the navigation document itself | Verification |
 | **V3** | Every manifesto sentence asserted, and every project `name`, appears in built HTML with scripting never executed | Verification |
-| **V4** | Every `ResolvedHome` responds 2xx or 3xx before deployment | Verification |
-| **V5** | An `Attestation` is valid for exactly one `CommitId` and is never accepted for another | Verification |
+| **V4** | Every `ResolvedHome` responds 2xx or 3xx before release. The Pages preview does not wait on this networked gate | Verification |
+| **V5** | An `Attestation` is valid for exactly one `CommitId` and is never accepted for another. It gates the **release path only** — the registry push and the redeploy — and not the Pages deploy, which is why the preview's every-commit cadence is real; the cost is recorded in `10-design.md` § *Publication targets* | Verification |
 | **V6** | Publication happens only while this run's commit is the deployment-branch head | Verification |
-| **V7** | The ordering holds: content validation → render → package build → Artifact → offline verification → image build → in-CI image gate → networked link check and truth attestation → branch-head check → Pages deploy and registry push → exact-marker and unknown-path read-back → live claim | Verification |
-| **V8** | No live URL is stated or implied until `pollForCommit` returns `ok` for the exact commit **and** the unknown-path check passes | Verification |
+| **V7** | After content validation → render → package build → Artifact → offline verification, publication forks. The preview branch performs branch-head check → Pages deploy → Pages read-back (exact marker, bytes, unknown path) without waiting on the image gate, link gate or attestation. In parallel the release-preparation branch performs image build → in-CI image gate → networked link check. Both branches complete before truth attestation → **branch-head re-check** → registry push → redeploy trigger → endpoint read-back (exact marker, unknown path) → live claim. The head is checked **twice** because the attestation before release is a human gate of unbounded duration, and a check taken before it proves nothing after it | Verification |
+| **V8** | No live URL is stated or implied until `pollForCommit` returns `ok` for the exact commit **and** the unknown-path check passes **against the target that claim is about** — Pages for the preview URL, the endpoint for the site. A read-back on one target licenses no claim about the other | Verification |
 | **V9** | No image is pushed to the registry unless the in-CI gate passed for that image | Verification |
 | **V10** | The image tag equals the full commit id, and equals the marker the running image serves | Verification |
-| **V11** | What the running image serves for `/` is byte-identical to the emitted apex document | Verification |
+| **V11** | What the running image serves for `/`, and what Pages serves for `/`, are **each** byte-identical to the emitted apex document. Both are compared, which is what makes the brief's "asserted rather than assumed" true of the pair rather than of one side of it. The endpoint is deliberately not compared — `V15` covers it with the marker and unknown-path pair instead, because a byte match across a proxy this repository does not own would fail on transport differences that are not divergence | Verification |
 | **V12** | An unknown path returns status 404 carrying the emitted miss document, on **both** targets | Verification |
-| **V13** | No emitted document contains a script element, a linked stylesheet or an external asset reference | Verification |
+| **V13** | No emitted document contains an **executable** script element, a linked stylesheet or an external asset reference. Exactly one script element is permitted in the whole design — the apex's `application/ld+json` block (`X6`), which no browser executes and no browser fetches. Any other `type`, any absent `type`, and any `src` attribute on any script element fails. The rule was a blanket ban on script elements until 2026-08-07; it was narrowed because it forbade a non-executing element on the ground that it forbade execution, which is a check aimed at the wrong property | Verification |
 | **V14** | No image tag is stated or implied until the push for that tag has succeeded and the tag resolves in the registry | Verification |
+| **V15** | After the registry push, the redeploy is triggered and the endpoint serves the pushed commit's marker, with a unique unknown path answering 404 carrying the emitted miss document, before anything claims the site is deployed. **A successful push is not a deployment.** Both checks reuse `pollForCommit` and `assertUnknownPathResponse` against the endpoint; the trigger itself is workflow configuration and has no surface here, on the same footing as the registry push | Verification |
+| **V16** | The module import graph is exactly the one *Public signatures*, `C1`, `C14`, `X2` and `A3` describe — checked by `assertImportGraph` over `src`, with the edges observed by the caller. It is the checkable home for the three import rules carrying no other id: Presentation imports only `Branded`, Artifact imports only `CommitId`, `parseCommitId` and `Result`, and no repository module imports Verification | Verification |
 
 Three things the design states that this contract deliberately does **not** encode as build-time
 checks, because encoding them would duplicate a fact another module owns or claim a check that cannot
@@ -1074,9 +1155,13 @@ be performed:
   attestation and by `V4`, not by a Content assertion.
 - **`genre` and `stage` are true of the project.** Both are authored facts. `Genre` is closed at the
   type level; whether the assigned value is the right one is attestation work.
-- **The deployed compose stack serves the published image.** The design guarantees a published image
-  is correct and stops there. `V9`–`V12` cover the artifact; nothing here observes a delivery
-  environment, and no invariant claims to.
+- **The deployed compose stack *keeps* serving the published image.** This entry read "the deployed
+  compose stack serves the published image" until 2026-08-07, on the reasoning that the design
+  guarantees a published image is correct and stops there. It no longer stops there: the brief's
+  amendment put the redeploy step and its verification endpoint in scope, so `V15` observes the
+  delivery environment once, at release. What remains uncovered is *afterwards* — no invariant observes
+  the stack between releases, so a container stopped, rolled back by hand, or repointed after `V15`
+  passes is not detected. That is the same honest limit `V4` has for a project's site.
 
 ---
 
@@ -1186,7 +1271,7 @@ and which depends on what a primitive is. `stylesheet: StylesheetText` is writte
 **Answered 2026-08-06: a protected GitHub Environment with required reviewers.** Retained so citations
 resolve.
 
-The `publish` job targets the environment; a human approves; the provider records approver and
+The `attestation` job targets the environment before `publish-release`; a human approves; the provider records approver and
 timestamp. `assertAttestation` reads the run's approval record and takes the commit from the run's
 `head_sha`, so the commit is derived rather than stored. An approval cannot be replayed onto another
 run, which satisfies `V5` natively.
@@ -1233,6 +1318,13 @@ The prior drift this entry recorded — `SubZeroDev.Platform` pinning `0.2.0`, t
 but is still live for the other two, and is tracked as issue #4. Neither repository is this one.
 
 ### U5 — `<noscript>` is withdrawn, pending an owner edit to the brief
+
+**Answered 2026-08-07: the brief was amended and this is closed.** Retained under its original heading
+so the citations to it resolve — `30-slices.md` and *Public signatures* § *Adapter* both link this
+anchor. The edit named below as remaining was made: `00-brief.md` § *Definition of done* now reads
+"It carries no `<noscript>` content", carrying the reasoning below. Nothing is outstanding here.
+
+The paragraphs below are retained as the record of what was asked for and why.
 
 The brief's *Definition of done* requires `<noscript>` content asserted against the built HTML, while
 the design requires a document with no script at all. `<noscript>` renders precisely when scripting
@@ -1357,6 +1449,15 @@ this is a contract gap rather than a design one. [`30-slices.md`](30-slices.md) 
 2026-08-06, so nothing is outstanding there.
 
 ### U10 — `P3` is narrowed to motion, pending an owner edit to the brief
+
+**Answered 2026-08-07: the brief was amended and this is closed.** Retained under its original heading
+so the citations to it resolve. The edit named below as remaining was made: `00-brief.md`
+§ *Definition of done* now states the narrowed form — the page "**moves** nothing", with transform,
+translation, scale, rotation, position change and scroll behaviour named, and a transition of a
+non-positional property permitted. `P3` and the brief now state the same rule. Nothing is outstanding
+here; what would *check* `P3` is still [`U9`](#u9--accessibility-has-no-verification-surface)'s.
+
+The paragraphs below are retained as the record of what was asked for and why.
 
 `00-brief.md` § *Definition of done* requires that the page "animates nothing under
 `prefers-reduced-motion: reduce`". `P3` as it now stands requires that nothing **moves** — no

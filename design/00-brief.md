@@ -51,33 +51,61 @@ The binding list. Out of scope for every agent, permanently, until this file cha
 - **No blog, no changelog route, no documentation.** Those live where they already live.
 - **Not the interactive excuse generator.** A 404 route is in scope; the generator named in
   `Idea.md`'s company story is a product in its own right and gets its own repository.
-- **Domain, DNS, TLS and hosting configuration are out of scope.** Settled outside this design and
-  outside every slice under it. No agent touches them and no acceptance criterion requires changing
-  them. Observable behaviour of the deployed target may still be verified, including its response
-  to an unknown path.
+- **Domain, DNS, TLS and the configuration of anything this site is placed behind are out of scope.**
+  Settled outside this design and outside every slice under it. No agent touches them and no
+  acceptance criterion requires changing them. That covers the domain and its DNS records, TLS
+  termination, and any reverse proxy or host the deployment sits behind — an agent may not decide
+  what terminates TLS in front of this site, or configure the thing that does.
+
+  **The deployment artifact this repository publishes is in scope and is this repository's to own**:
+  the Compose file that runs the published image, the CI step that triggers its redeploy, and the
+  endpoint that redeploy is verified against. The boundary is the artifact — this repository declares
+  what it ships, how it is redeployed, and **the one already-existing network its container attaches
+  to, by name**. It declares nothing else about that network: not what else is on it, not what
+  terminates TLS in front of it, and not the configuration of the thing that does. Attaching to a
+  network is not configuring it, and naming one is not deciding what fronts this site — the sentence
+  above still binds, and Q7 stays foreclosed. Observable behaviour of a deployed target may still be
+  verified, including its response to an unknown path.
 
 ## Definition of done
 
-- The site is deployed and serves the page, verified by polling until the response carries the exact
-  commit's build marker and then reading that response — never inferred from a merged pull request.
+- The release site is deployed and serves the page, verified by polling its endpoint until the
+  response carries the exact commit's build marker and then reading that response — never inferred
+  from a merged pull request or a published image.
+- **There are two publication targets and they serve identical bytes.** GitHub Pages is the
+  preview/development publication, deployed every commit without a human approval or truth-attestation
+  gate; a container image is the release. Pages is read back after publication to verify its marker,
+  bytes and unknown-path behaviour, but that verification does not turn it into a release. Byte
+  identity between the targets is asserted rather than assumed, because a preview serving different
+  bytes from the release proves nothing about the release. The release is gated in CI before it is
+  published, and no image tag is announced until the push succeeds and the tag resolves.
 - The runtime-request non-goal above is asserted with a browser network log against the built output
   rather than by source inspection.
 - Every outbound project link resolves, asserted by a networked CI verification step that is
   separate from the network-free build and goes red when one stops.
-- **Every status shown against a project is attested as true for the exact commit on the day it is
-  deployed**, and at that check the page states nothing about a project that its own site
-  contradicts. This is a release assertion, not a claim that a static artifact can observe later
-  changes to other sites.
-- The page carries a title, meta description, canonical URL, Open Graph and X/Twitter metadata, an
-  icon set and `<noscript>` content — asserted against the built HTML.
+- **Every status shown against a project on the release target is attested as true for the exact
+  commit on the day it is released**, and at that check the page states nothing about a project that
+  its own site contradicts. This is a release assertion, not a preview gate and not a claim that a
+  static artifact can observe later changes to other sites. The Pages preview may publish before that
+  attestation because it is development output rather than the release.
+- The page carries a title, meta description, canonical URL, Open Graph and X/Twitter metadata and an
+  icon set — asserted against the built HTML. It carries no `<noscript>` content: that element renders
+  precisely when scripting is off, and on a document that needs no scripting there is no fallback for
+  it to describe.
 - A 404 route exists, is on-voice, and is served for an unknown path at the apex.
-- The page is legible in greyscale, animates nothing under `prefers-reduced-motion: reduce`, and is
-  keyboard-traversable in visual order.
+- The page is legible in greyscale, **moves** nothing under `prefers-reduced-motion: reduce`, and is
+  keyboard-traversable in visual order. Moves means no transform, translation, scale, rotation,
+  position change or scroll behaviour, animated or transitioned. A transition of a non-positional
+  property — a colour change on hover or focus — is not motion and is permitted. The preference
+  addresses vestibular motion rather than change as such.
 - No count, project total or figure anywhere on the page is a typed literal.
 
 ## Environment
 
-Static site. No server, no application runtime, no persisted state and no application concurrency.
+Static site. No application runtime, no persisted state and no application concurrency. The release is
+delivered by a container, and that container is a **delivery wrapper, not a runtime**: it serves a
+read-only tree, executes nothing per request, holds no state, and adds nothing to the bytes it serves.
+A static file server inside it is not an application. Nothing anywhere computes a response.
 CI workflow runs may overlap and must be ordered around publication. Consumes
 `SubZeroDev.Platform.UI.LandingPage` through its custom `defineLandingPage` adapter — not its generic
 README renderer — matching the pattern `SubZeroDev.Platform` proved in its L2 slice.

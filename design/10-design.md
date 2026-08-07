@@ -25,19 +25,24 @@ document shell and the `<head>`. This repository still owns no build system. It 
 and one post-build step over the emitted artifact. That distinction is the subject of *Module
 boundaries* and the first two entries in *Alternatives considered*.
 
-**The same output is published twice.** GitHub Pages is the permanent preview target, deployed on
-every commit. A container image published from this repository is the release, delivered by a compose
-stack. Both serve the *same* emitted tree, byte for byte — that identity is asserted, not assumed,
-because a preview that serves different bytes from the release proves nothing about the release.
+**The same output is published twice.** GitHub Pages is the permanent preview/development target,
+deployed on every commit without a human or release gate. A container image published from this
+repository is the release, delivered by a compose stack. Both serve the *same* emitted tree, byte for
+byte — that identity is asserted, not assumed, because a preview that serves different bytes from the
+release proves nothing about the release.
 
-> **Known disagreement with the brief.** `00-brief.md` § *Environment* opens *"Static site. No server,
-> no application runtime, no persisted state and no application concurrency."* A container serving the
-> site runs a static file server, which is an application runtime by that sentence. This design treats
-> the container as a **delivery wrapper** — it executes nothing per request, holds no state, and adds
-> nothing to the bytes it serves — which keeps the sentence's intent while contradicting its letter.
-> The brief also frames *Definition of done* around a single deployed target, and there are now two.
-> The brief outranks this document and is the owner's to author; both clauses are flagged rather than
-> reconciled here.
+> **The disagreement this box recorded is closed, on the owner's ruling of 2026-08-07.** It stood
+> here from 2026-08-05: `00-brief.md` § *Environment* opened *"Static site. No server, no application
+> runtime…"* while a container serving the site runs a static file server, and *Definition of done*
+> was framed around a single deployed target where there are two. Both were flagged rather than
+> reconciled, because the brief outranks this document and a model may not author it.
+>
+> The brief now carries both. *Environment* states the **delivery wrapper** distinction this design
+> had been arguing on its own — the container executes nothing per request, holds no state, and adds
+> nothing to the bytes it serves, so a static file server inside it is not an application — and
+> *Definition of done* names two targets with byte identity asserted between them. Neither this
+> document nor the contract moved; the brief did. See [`90-decisions.md`](90-decisions.md),
+> 2026-08-07.
 
 ---
 
@@ -68,12 +73,22 @@ not** — which is the source of the single largest correctness risk in the desi
 
 `Home` is a closed union of three cases, forced by verified reality rather than by symmetry:
 
-- **`Own`** — an absolute URL to its own subdomain. Twelve projects.
+- **`Own`** — an absolute URL to its own subdomain. The common case; **how many there are is the
+  inventory's to say, not this document's.** A count written here is a second copy of a figure the
+  inventory owns, drifting the moment a project gains or loses a subdomain — the same rule the brief
+  applies to the page, applied to the document describing it.
 - **`Within`** — a parent project `id` plus a path. **Lucifer Chronicles is a series on
   `blog.subzerodev.com`, not a site.** Without this case the page must either lie about it having a
   home or drop it, and it is one of the two most characterful names on the list.
 - **`None`** — no address anywhere. Ogre's Kitchen. A project may legitimately be a name and an
   intention; the page says so rather than hiding it.
+
+**`schemas.subzerodev.com` is not an inventory record**, and that is a ruling rather than an omission.
+`00-brief.md` verifies it does not exist despite being referenced in the ecosystem's own docs. A
+referenced name is not a project: it has no repository, no stage anyone authored and no originating
+question, and a `Home.None` record would put a row on this page asserting that SubZeroDev has a project
+it does not have — which the house rule against being funnier than is true forbids directly. The
+dangling reference is a defect in the documents that carry it, not an entry here.
 
 `Home.Within` is valid only when its parent `id` exists and that parent has `Home.Own`. Its path is
 root-relative within that parent's origin. Resolution through a URL parser must preserve the parent
@@ -106,7 +121,7 @@ as true for the released commit, and the non-goals forbid deriving content from 
 or touching the network at build time. A liveness field satisfies none of that.
 
 A lifecycle stage is a slow, owner-authored fact. It is a claim about the work rather than about a
-host. That makes it maintainable; it does not make it self-verifying. Before publication, the author
+host. That makes it maintainable; it does not make it self-verifying. Before release publication, the author
 attests the complete inventory against the current project sites and source material for that exact
 commit. The networked link check verifies reachability separately. Together they satisfy the
 brief's release-time truth requirement without making the build derive content from another
@@ -143,8 +158,11 @@ Two, and no more. `/` is the document. The miss is the second. A `Route` carries
 
 - its **path**. The package's declared path type admits `/` or a trailing-slash path only, so the
   miss route is declared as `/404/` and the package emits it at `404/index.html`. The conventional
-  root `404.html` is produced afterwards by *Artifact*, not by the route declaration. That is one
-  route with two static entry files, not a third route.
+  root `404.html` is produced afterwards by *Artifact*, not by the route declaration — and *Artifact*
+  then **removes** the emitted `404/index.html`, because a directory index is served with a **200**,
+  which would put the miss composition at a fixed, discoverable, self-declared-canonical URL. That is a
+  soft 404 by this design's own definition, at the one path the unknown-path checks never request. So
+  it is one route with one *published* entry file, relocated, not a third route.
 - its **prerendered body** — the composed document content as HTML, produced here.
 - the **stylesheet** that body requires, as text, emitted into the head as an inline style element.
 - its **static head metadata**: title, description, canonical URL, Open Graph fields, X/Twitter card,
@@ -154,9 +172,17 @@ Two, and no more. `/` is the document. The miss is the second. A `Route` carries
 
 There is deliberately **no `<noscript>` content**. `<noscript>` renders precisely when scripting is
 off; on a document that needs no scripting there is no fallback for it to describe. The brief's
-*Definition of done* still requires it, and the owner has ruled the brief the defect — see
-[`90-decisions.md`](90-decisions.md). Until that clause is struck, the brief and this design disagree
-on a released requirement, and the disagreement is known rather than resolved here.
+*Definition of done* carries that reasoning as of its 2026-08-07 amendment and no longer requires the
+element, so the two documents agree — see [`90-decisions.md`](90-decisions.md) and
+[`20-contract.md`](20-contract.md) § `U5`.
+
+**Nothing bounds the document's size, and that is recorded rather than checked.** Everything this
+design ships is inline by construction — the stylesheet, the icon data URI and the JSON-LD block — so
+page weight is the one property that could degrade without any assertion noticing. It is accepted
+because it cannot degrade quietly: the icon is a single small SVG letterform, the inventory is
+hand-authored, and every byte added is added by someone typing it. There is no size budget and no
+assertion over one. If either the icon set or the inventory ever stops being author-scale, this is the
+first thing that should stop being an accepted risk.
 
 The build marker is **not** part of `Route`. The package's head metadata is a closed set with no
 mechanism for arbitrary elements, so the marker is injected after the build — see *Artifact*.
@@ -170,12 +196,14 @@ Two, and they publish the same tree.
 | Target | GitHub Pages | A container image, delivered by a compose stack |
 | Identity | the commit's build marker | the image tag, which **is** the full commit id |
 | Unknown paths | served by the host's root-`404.html` convention | served by a **server configuration this repository owns** |
-| Gate | marker read-back against the served site | the image is run in CI and gated there, before publication |
-| Cadence | every commit | every release |
+| Publication checks | post-publication marker, byte and unknown-path read-back. **No human approval, truth attestation, image gate or link gate precedes the Pages publish** | the image is run in CI and gated before publication, outbound links are checked, then the truth attestation, then the endpoint is read back after redeploy |
+| Cadence | every commit, and genuinely so — nothing human is in front of it | every release |
 
 **The two targets serve identical bytes.** Both are built from one emitted tree; neither transforms
-it. That is asserted by comparing what the running image serves against the corresponding emitted
-file, and it is the only thing that makes a preview evidence about a release.
+it. That is asserted by comparing what **each** serves for `/` against the corresponding emitted file
+— the running image at the CI gate, and Pages at its read-back — and it is the only thing that makes a
+preview evidence about a release. Comparing one side and arguing the other from shared construction
+was the earlier form, and it left the target the brief's clause is half about unchecked.
 
 **Image identity is commit identity.** The image is tagged with the full commit id — the same value
 the build marker carries — so there is exactly one answer to what is deployed, and the marker inside a
@@ -237,7 +265,8 @@ one path from data to markup. Exposes the adapter configuration the package's CL
 **Artifact** — owns everything that turns the package's emitted output into a publishable tree,
 performed as file operations after the build:
 
-1. producing the conventional root `404.html` from the miss route's emitted document,
+1. producing the conventional root `404.html` from the miss route's emitted document, and removing
+   that emitted document afterwards so the miss composition has exactly one published path,
 2. injecting the full commit id into every emitted document, in a non-visual, machine-readable
    position, extractable from a raw response body without parsing or executing anything, and
 3. the **server configuration the container needs** to serve that tree — principally, resolving an
@@ -328,17 +357,35 @@ The only content write path. Author edits a `Project` record, a stage, or copy �
 build recomputes Content's derivations → Composition renders the body and the stylesheet → Adapter
 declares the routes carrying them → the package CLI emits the documents → **Artifact** produces root
 `404.html`, injects the commit marker and emits the server configuration → offline Verification
-asserts against the finished output, not intent → a separate networked CI stage checks outbound links
-and records the author's commit-bound truth attestation → publish. The publication job cannot start
-until that human gate records that every stage and project statement was checked against the current
-project sites and source material.
+asserts against the finished output, not intent. The flow then forks. Pages publishes and is read back
+as preview/development output immediately from that finished build. In parallel, the image gate and
+the separate networked outbound-link check prepare the release path; only that path proceeds through
+the author's commit-bound truth attestation and into release publication.
+
+**The attestation gates the release, not the preview.** Pages exists specifically for preview and
+development publishing, so no human approval, truth attestation, image gate or outbound-link gate is
+placed in front of it. A gate asked for on every stylesheet typo becomes a reflex and makes the
+every-commit preview cadence untrue. The cost is explicit: **the Pages URL is public and may serve
+project statuses no human attested for that commit.** The brief now excludes that development target
+from its release-time truth assertion. Post-publication marker, byte and unknown-path read-back still
+prove what the preview serves; they do not make it a release.
 
 Publication and read-back share one critical section. Immediately before publishing, the workflow
 confirms that its commit is still the current deployment-branch head; an obsolete run stops. It then
-deploys to Pages and polls `/` until the served build marker equals that commit, reads the served
-content, and requests a unique unknown path to verify the 404 composition is served **with a 404
-status**. Only that complete read-back licenses the live claim. A green build or merged pull request
-does not.
+deploys to Pages, polls `/` until the served build marker equals that commit, **compares the served
+bytes against the emitted apex document**, and requests a unique unknown path to verify the 404
+composition is served **with a 404 status**. Only that complete read-back licenses a claim about the
+preview. A green build or merged pull request does not.
+
+**The head is checked twice, and the second check is the load-bearing one.** The preview publishes
+without waiting for release preparation, but the release still waits for the Pages read-back so `V11`
+has proved byte identity. The attestation then sits between that convergence and the registry push,
+and a human gate has no bound on how long it takes.
+A branch-head check taken before it proves nothing after it: an approval granted an hour later, on a
+branch that moved in the meantime, would otherwise license a push and a redeploy for a superseded
+commit. The re-check immediately before the push is what closes that window — the check is a
+comparison at an instant, never a lock, so the only remedy for a long gap is to check again at the end
+of it.
 
 ### 2. A release is cut, and the image is published
 
@@ -356,16 +403,33 @@ no compose stack can pull a broken one. The gate is hermetic: it needs no deploy
 network path into the delivery environment, and it runs identically for anyone who builds the image
 themselves.
 
-**What happens after the push is outside this design.** Whether a compose stack pulls the new tag, and
-when, is delivery configuration the brief puts out of scope. This design guarantees that a published
-image is correct, not that anything has deployed it.
+**After the push, the redeploy is triggered and read back.** This is the half the brief's 2026-08-07
+amendment moved into this repository, and an earlier revision of this section wrongly still placed it
+outside: the publish job requests the stack's redeploy, then polls the endpoint until the served build
+marker equals the commit just pushed and a unique unknown path answers 404 carrying the miss
+composition. Those are the same two assertions the image gate already ran, now against the delivered
+instance rather than a CI approximation. **Only that read-back licenses a live claim about the site.**
+A pushed image is not a deployed one, on exactly the rule that governs the Pages URL.
+
+**The Compose file names `latest`, and the endpoint supplies the identity.** It pulls
+`ghcr.io/the-running-dev/subzerodev-com:latest` with `pull_policy: always`, so the committed file is
+static across releases and names no commit — a commit-pinned file would have to be rewritten and
+committed per release, which permanently lags the release it deploys by one commit. What is deployed is
+therefore established by reading the marker back, never by reading the tag. The commit tag stays the
+immutable identity in the registry and is what a rollback names.
+
+**What the stack declares about the network is one name.** It attaches to an already-existing network
+and declares nothing else about it. What terminates TLS in front of it, and the configuration of the
+thing that does, remain out of scope — see the brief's non-goal as amended, which admits the
+attachment and re-states that exclusion in the same breath.
 
 ### 3. Visitor requests `/`
 
 Pages edge, or the container's file server → prerendered HTML → the manifesto and the ecosystem list
 are **present in the response body**, readable with scripting disabled and by a crawler. The
-stylesheet is inline and the icons are data URIs, and there is no script or linked runtime asset, so
-loading the document triggers no additional request. Nothing is client-computed, so there is no client
+stylesheet is inline and the icons are data URIs, and the only script element is an inert
+`application/ld+json` block that no browser executes and none fetches, so loading the document
+triggers no additional request. Nothing is client-computed, so there is no client
 state to be wrong. The path is the same on both targets because the bytes are the same.
 
 ### 4. Visitor requests an unknown path
@@ -377,9 +441,12 @@ configuration resolves the unknown path to the same file. Either way: the same s
 the miss handled in the genre `Idea.md` assigns it — static, prerendered, no generator — returned with
 a **404 status**.
 
-The design does not change hosting configuration. The Pages behaviour is verified by the deployment
-read-back and fails if the settled target does not provide it; the container behaviour is verified by
-the in-CI image gate and fails before the image is published.
+The design changes nothing about the network in front of either target. It does own the container's
+own server configuration — that is Artifact's third item — and, as of the brief's 2026-08-07
+amendment, the Compose file that runs the image; the boundary is the artifact, not the host. The
+Pages behaviour is verified by the deployment read-back and fails if the settled target does not
+provide it; the container behaviour is verified by the in-CI image gate and fails before the image is
+published.
 
 ---
 
@@ -414,10 +481,12 @@ preload hint, a linked stylesheet, a rewritten asset URL. This is the failure mo
 assumed away: the package hands the generated HTML to a bundler, and what a bundler adds to a
 document is its business, not this design's.
 
-**Detected by:** an assertion over the built output that no script element, no stylesheet link and no
-external asset reference survives, followed by a browser network capture that allows the navigation
-document and rejects every additional load-triggered request. **Both are required.** Source
-inspection cannot prove runtime behaviour, and a network capture alone does not name what leaked.
+**Detected by:** an assertion over the built output that no **executable** script element, no
+stylesheet link and no external asset reference survives — the single `application/ld+json` block is
+the one permitted element and any other `type`, any missing `type` and any `src` fails — followed by a
+browser network capture that allows the navigation document and rejects every additional load-triggered
+request. **Both are required.** Source inspection cannot prove runtime behaviour, and a network capture
+alone does not name what leaked.
 
 **Response:** build failure before publication.
 
@@ -498,13 +567,39 @@ governs the live URL: an artifact is not published until it has been read back.
 an incomplete manifest is not resolvable by tag, so a partial push does not produce a pullable broken
 image. The next attempt re-pushes; nothing is repaired by hand.
 
+### The redeploy does not happen, or the endpoint does not serve the new commit
+
+**What fails:** the image is pushed and the stack does not take it — the trigger never reached the
+stack, the stack pulled and the container did not restart, the pull got a cached `latest`, or the
+container came up and the endpoint still answers with the previous commit's marker. Every one of these
+looks like a successful release from inside CI, because the push succeeded.
+
+**Detected by:** polling the endpoint until the served build marker equals the commit just pushed, and
+requesting a unique unknown path for a 404 carrying the miss composition. This is the same pair the
+image gate ran, and it is deliberately run twice: the gate proves the artifact is correct and this
+proves the delivery took it. A marker that never changes is indistinguishable from a trigger that was
+never delivered, and neither is distinguishable from success without this read-back.
+
+**Response:** the release is reported failed and **no live claim is made about the site**. The image
+stays pushed and correct — it was gated before publication — so this failure is a delivery failure, not
+an artifact failure, and re-running the trigger is the remedy rather than rebuilding.
+
+**State left behind:** unknown until read-back, and the two targets can disagree: Pages may be serving
+the new commit while the endpoint serves the previous one. That is a real and reachable state, and it
+is why the live claim is bound to the endpoint rather than to the preview.
+
+**Not covered:** whether the stack stays on that commit afterwards. Nothing here observes the delivery
+environment after the read-back returns, on the same honest limit that applies to a project's site
+dying after deploy.
+
 ### A project's site dies after deploy
 
 **What fails:** an outbound link 404s. The page is stale, not wrong — it never claimed the site was
 up.
 
 **Detected by:** a link check over every `Home.Own` URL and every resolved `Home.Within` path. In CI
-it runs after the network-free build and gates deployment, not artifact construction. It proves the
+it runs after the network-free build and gates the release, not artifact construction or the Pages
+preview. It proves the
 address still answers and no more: a redirect is a pass and is not followed, and the check does not
 run on a fork pull request, where the hostnames it would reach are the pull request's to choose. The
 first limit is written in [`20-contract.md`](20-contract.md) § *Error semantics*; the second is
@@ -529,8 +624,19 @@ the marker comparison.
 promotes a whole artifact atomically; a failed publication may leave the previous artifact, the new
 artifact or a partial upload. No live claim is made for the failed commit.
 
-**Out of scope:** domain, DNS, TLS and hosting configuration, per the brief. This design assumes a
-publishable target and asserts nothing about how the address reaches it.
+**Known limit, recorded rather than fixed:** the read-back proves *what is served*, not *that this run
+put it there*. A workflow re-run on a commit already deployed satisfies the marker comparison on its
+first poll, so a publication step that silently did nothing reports success. "An old CDN response
+cannot satisfy the marker comparison" is true across commits and false on a re-run of one. Making the
+marker identify the deployment rather than the commit would mean a per-run value inside the artifact,
+and the two targets would then carry different bytes — which `V11` exists to forbid. The honest
+statement is the narrower one, and it is why a re-run is not evidence.
+
+**Out of scope:** the domain, its DNS records, TLS termination, and any reverse proxy or host the
+deployment sits behind, per the brief as amended 2026-08-07. This design assumes a publishable target
+and asserts nothing about how the address reaches it. The deployment artifact itself — the Compose
+file, its redeploy step and the endpoint that redeploy is verified against — is in scope; see *Open
+questions* 7 and 8.
 
 ### Malformed or empty content
 
@@ -544,6 +650,13 @@ in one pass rather than the first.
 **Response:** **build failure — never a silently empty section and never a default stage.** An
 inventory that reduces to nothing is a fault in the inventory, not a page with no projects on it. A
 degraded page is worse than no page, because it looks deliberate.
+
+**An empty *stage group* is a different thing and is not a fault.** The derivation carries one group
+per `Stage` including empty ones, so counts and ordering stay total; the composition renders only the
+groups with members. A lifecycle stage nothing has reached yet is a true fact about the work, not a
+malformed inventory, and it appears as an absence rather than as a heading with nothing beneath it.
+This rule was unwritten until 2026-08-07 — the sentence above was about an empty inventory and had been
+read as covering both.
 
 ### The package is unavailable or drifts
 
@@ -577,22 +690,36 @@ not separate jobs exchanging an uploaded artifact, because a job boundary is whe
 tree would become invisible. Nothing else in the repository writes to the output tree, and each build
 starts from a clean one.
 
-Link checks are read-only and their result is collected before publication. Publication is protected
+Link checks are read-only and their result is collected before release publication; the Pages preview
+does not wait on them. Publication is protected
 by one concurrency group covering the branch-head check, publish operation and exact-commit
 read-back as a single critical section. A run that is no longer the deployment-branch head stops
 before publishing, preventing an older queued run from overwriting a newer commit.
 
 **Two publication targets do not mean two critical sections.** Both are governed by the same group,
 because the failure they must not permit is the same one: an older run overwriting a newer commit.
-Pages has one mutable location and the registry has one mutable tag — `latest` — and a run that has
-lost the branch-head check must move neither. The commit-tagged image is immutable by construction
-and could safely be pushed by any run, but it is not treated as an exception, because a rule with one
-carve-out is a rule the next author will find a second carve-out in.
+There are three mutable locations and not two — Pages has one, the registry has one mutable tag
+(`latest`), and the deployed stack is the third, since a redeploy trigger fired by a stale run pulls
+whatever `latest` then names. A run that has lost the branch-head check must move none of them. The
+commit-tagged image is immutable by construction and could safely be pushed by any run, but it is not
+treated as an exception, because a rule with one carve-out is a rule the next author will find a
+second carve-out in.
 
-The ordering invariant is: content validation → render → package build → Artifact → offline
-verification → image build → in-CI image gate → networked link check and truth attestation →
-branch-head check → Pages deploy and registry push → exact-marker and unknown-path read-back → live
-claim. The workflow enforces that sequence; the prose report merely reflects it.
+**The redeploy trigger is inside the critical section, and the endpoint read-back extends it.** That
+is the section's most expensive property: it is now held across a network round trip into a delivery
+environment this repository does not run, bounded only by the poll's own retry budget. The alternative
+— releasing the group at the push and reading back outside it — permits precisely the interleaving the
+group exists to forbid, because two runs would then be able to trigger redeploys in one order and read
+back in the other.
+
+The ordering invariant forks after the shared build: content validation → render → package build →
+Artifact → offline verification. From there, the **preview branch** performs branch-head check → Pages
+deploy → Pages read-back (exact marker, bytes, unknown path), without waiting on a release gate. In
+parallel, the **release-preparation branch** performs image build → in-CI image gate → networked link
+check. The branches converge before truth attestation, so release publication has both the verified
+preview bytes and the release checks: truth attestation → branch-head re-check → registry push →
+redeploy trigger → endpoint read-back (exact marker, unknown path) → live claim. The workflow enforces
+that graph; the prose report merely reflects it.
 
 The image gate sits **before** the attestation rather than after, because it is hermetic and
 deterministic: it costs nothing to run, needs no human and no network, and a failure there means the
@@ -670,8 +797,9 @@ the package's source.
 
 ### Two publication targets, with Pages permanent rather than transitional
 
-**Chosen:** GitHub Pages is the permanent preview, deployed every commit; the container image is the
-release. Both serve one tree, and byte identity between them is asserted.
+**Chosen:** GitHub Pages is the permanent preview/development publication, deployed every commit with
+no human or release gate; the container image is the release. Both serve one tree, and byte identity
+between them is asserted by post-publication read-back.
 
 **Rejected — Pages as scaffolding until the container works, then removed.** The cheaper design: one
 target, one gate, no identity assertion. Rejected because it discards a per-commit URL that costs
@@ -688,21 +816,30 @@ two answers to that is worse than two targets.
 because there are two. If the preview is ever allowed to drift from the release, it becomes worse
 than having no preview, because it will be trusted.
 
-### The image is gated in CI before publication, not after deployment
+### The image is gated in CI before publication, and the deployment is read back after
 
 **Chosen:** CI runs the image it built, polls its marker, checks the unknown-path status and body, and
-compares served bytes against the emitted tree. Only a passing gate licenses the registry push.
+compares served bytes against the emitted tree. Only a passing gate licenses the registry push. **Then
+the redeploy is triggered and the endpoint is read back for the same commit** — both gates, in that
+order.
 
-**Rejected — gating against the deployed compose instance.** It proves the actual delivered thing
-rather than a CI approximation, which is a real advantage and the reason it was considered. Rejected
-because it requires a network path from CI into the delivery environment, couples the release gate to
-infrastructure the brief puts out of scope, and inverts the ordering that matters: a broken image
-would already be published and pullable by the time anything noticed.
+**Rejected — gating against the deployed compose instance *instead*.** It proves the actual delivered
+thing rather than a CI approximation, which is a real advantage and the reason it was considered.
+Rejected because it inverts the ordering that matters: a broken image would already be published and
+pullable by the time anything noticed. **That is now the whole of the argument.** This rejection used
+to rest on a second reason as well — that it requires a network path from CI into the delivery
+environment, coupling the release gate to infrastructure the brief puts out of scope — and that reason
+is gone. The brief's 2026-08-07 amendment puts the redeploy step and the endpoint it is verified
+against in this repository, so the path is authorized. It is the ordering that keeps this rejected, not
+the reachability.
 
-**Rejected — both gates.** The most rigorous option, and it closes the genuine gap between *the image
-is correct* and *the site is serving it*. Rejected for now because the second gate needs the network
-path the previous option was rejected for. It is the right thing to add if the compose stack ever
-becomes reachable from CI, and nothing here forecloses it.
+**Adopted 2026-08-07 — both gates**, which this section previously rejected. It is the most rigorous
+option and it closes the genuine gap between *the image is correct* and *the site is serving it*. The
+stated reason for rejecting it was that the second gate needs the network path the option above was
+rejected for; when that premise was amended away, the rejection had nothing left holding it up. The
+first gate stays hermetic and unchanged — it still needs no deployed instance and still runs
+identically for anyone who builds the image themselves — and the second is what licenses the live
+claim.
 
 **Rejected — publishing on a green build with no image gate at all.** The convention, and it means the
 first thing to run the image is the compose stack.
@@ -756,6 +893,34 @@ a project `id` *"the anchor fragment"*. **A single row of links on the one docum
 chrome this paragraph rejects is the kind that only a multi-route site can have. See
 [`90-decisions.md`](90-decisions.md), 2026-08-07.
 
+### One inert script element, rather than none at all
+
+**Chosen:** the apex body carries a single `<script type="application/ld+json">` block holding an
+`Organization` object. Every other script element stays forbidden, and the self-containment assertion
+narrows from *no script element* to *no executable script element*.
+
+**Rejected — the blanket ban, which is what this design shipped until 2026-08-07.** It is simpler,
+trivially checkable, and impossible to erode, which is a real argument and the reason it was written
+that way. Rejected because it forbade a non-executing element on the ground that it forbids execution:
+JSON-LD runs nothing and fetches nothing, so it satisfies the brief's runtime non-goal completely and
+was excluded only by the *shape* of the check. On a page whose stated audiences are recruiters and
+search results, the cost of that accident is the one machine-readable statement of what this
+organisation is.
+
+**Rejected — putting it in the head.** Where it conventionally belongs, and impossible here: the
+package owns the `<head>` and its metadata set is closed, the same fact that sent the build marker to
+*Artifact*. Asking for a third package capability to place an element the body accepts would be a
+release wait for nothing.
+
+**Rejected — permitting the element and emitting nothing.** Keeps the option without spending it, and
+produces a permission with no user — which is the shape this design elsewhere calls an inert
+declaration and refuses.
+
+**The cost, stated plainly:** the assertion is now a rule about `type` attributes rather than about
+element names, and a rule with one carve-out is a rule the next author looks for a second carve-out in.
+`X6` bounds it to exactly one element in exactly one composition, which is the narrowest form that
+still admits the block.
+
 ### A fixed slogan, rather than rotation
 
 **Chosen:** one primary slogan and one footer quote, each a named constant. `Idea.md` already
@@ -798,19 +963,51 @@ and renumbering would rot those citations silently. An answered question keeps i
 6. **Should a scheduled link check run?** It is the only way a dead outbound link is noticed after
    deploy. It costs a workflow and it is the sole thing that would make this repository observe the
    others — adjacent to a brief non-goal, though not obviously inside it.
-7. **Where does the compose stack terminate TLS, and does anything in it need to be true for the
-   container to be correct?** Considered and deliberately left open a second time: a first answer
-   named Nginx Proxy Manager, but that names TLS termination — exactly what `00-brief.md`'s non-goal
-   ("Domain, DNS, TLS and hosting configuration are out of scope... permanently") excludes. See
+7. **Where does the compose stack terminate TLS?** **Not an open question — foreclosed.** It is not
+   waiting on information; `00-brief.md`'s non-goal excludes it by name, and the brief's amendment of
+   2026-08-07 kept it excluded while admitting the artifact around it: *"an agent may not decide what
+   terminates TLS in front of this site, or configure the thing that does."* A first answer named
+   Nginx Proxy Manager and was walked back for exactly that reason. Retained under its stable number,
+   restated so the next session reads it as closed rather than as an invitation. See
    `design/90-decisions.md`, 2026-08-07 — "The Q7 answer below is walked back: TLS termination stays
    undecided".
+
+   The second half this question used to carry — *does anything in the stack need to be true for the
+   container to be correct?* — **is answered, and by this design rather than by the stack: no.** The
+   image gate in *Control flow* is hermetic. It runs the image it built, polls its marker, checks the
+   unknown-path status and body, and compares served bytes against the emitted tree, needing no
+   deployed instance and no network path into the delivery environment. Correctness of the container
+   is therefore established without reference to whatever fronts it.
+
+   **That is not the same as the live claim, and the distinction sharpened on 2026-08-07.** Since the
+   brief's amendment put the redeploy step and its verification endpoint in scope, the claim that *the
+   site is serving this commit* does depend on reaching the delivery environment — see *Control flow*
+   2 and the redeploy failure mode. The container being correct needs nothing from the stack; the
+   deployment being real needs the endpoint to answer. Q7 is untouched by that: an endpoint read-back
+   asserts what is served, and decides nothing about what terminates TLS in front of it.
 8. ~~**Does the compose file live in this repository?**~~ **Answered 2026-08-07: yes, and it is the
    deployment, not documentation of one.** Mirrors `SubZeroDev.Blog`'s split — a local-build Compose
    file plus a separate deployment Compose file pulling the published GHCR image, imported as the
-   Portainer stack. Q7 is unaffected — the compose file's location and the mechanism that redeploys
-   it are answered here; what terminates TLS in front of it is not. See `design/90-decisions.md`,
-   2026-08-07 — "The deployment Compose file and Portainer GitOps redeploy are in scope for this
-   repository", and the walk-back entry cited in Q7 above.
+   Portainer stack. See `design/90-decisions.md`, 2026-08-07 — "The deployment Compose file and
+   Portainer GitOps redeploy are in scope for this repository".
+
+   **Its footing changed the same day, and that is the part worth reading.** As first written this
+   answer stood against a non-goal that put *hosting configuration* out of scope and said no agent
+   touches it — the same clause that walked Q7 back, and one this answer wrote past rather than
+   changed. The brief was amended instead, on the owner's ruling: the boundary now falls at the
+   artifact, so the Compose file, the redeploy step and the endpoint it is verified against are in
+   scope, while the network in front of them is not. Q8 now rests on the brief rather than in tension
+   with it. See `design/90-decisions.md`, 2026-08-07 — "The brief's hosting non-goal is amended to
+   draw its boundary at the deployment artifact".
+
+   **Two things this answer left unstated were settled on 2026-08-07**, both raised by a red-team pass
+   that found the file unwritable as specified. The stack **attaches to one already-existing network by
+   name** and declares nothing else about it — the brief was amended to admit that, because a service
+   publishing no port and joining no network is not a deployment, and the wording as it stood admitted
+   neither. And the file **pulls `latest` with `pull_policy: always`** rather than a commit tag, so what
+   is deployed is established by the endpoint read-back and never by reading the file. See
+   `design/90-decisions.md`, 2026-08-07 — "The deployment artifact's network attachment and image
+   reference are settled".
 
 Further unresolved items were raised downstream and are owned by
 [`20-contract.md`](20-contract.md) rather than restated here: whether a social image asset exists
