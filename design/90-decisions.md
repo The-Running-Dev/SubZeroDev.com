@@ -12,6 +12,41 @@ became [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 
 ---
 
+### 2026-08-07 — The deployment Compose file and Portainer GitOps redeploy are in scope for this repository
+Context: `10-design.md`'s *Open questions* 7 and 8 had stood unanswered since the S9/S10 design pass —
+whether this repository owns the compose stack that runs the published GHCR image, and where it
+terminates TLS — deliberately left open because the container was new to the brief and its DNS/TLS
+non-goal predates it. The owner asked how to deploy via Portainer Compose GitOps, pointing at
+`SubZeroDev.Blog`'s `blog-mcp` tool as the existing pattern to follow.
+Chosen, on the owner's ruling, both questions together: **Q8 — yes**, the compose file lives in this
+repository, and it is the deployment itself rather than documentation of one, mirroring
+`SubZeroDev.Blog`'s split — `docker-compose.yml` at the repository root pulls the published
+`ghcr.io/the-running-dev/...` image (`pull_policy: always`) for Portainer to import as a stack, while
+`site/` or an equivalent local-build form (not yet written) stays separate, the way
+`tools/blog-mcp/docker-compose.yml` does there. **Q7 — Nginx Proxy Manager**, on a shared Docker
+network (`proxy-net` in the blog-mcp precedent), the stack's service forwarding to NPM by container
+name and port; this repository does not configure NPM itself, only joins its network, the same
+boundary `blog-mcp`'s README draws.
+Recorded with it, as the concrete mechanism this ruling implies but does not yet implement: CI calls a
+Portainer stack **redeploy webhook** (a secret URL) after a successful GHCR push, then verifies the
+redeploy actually landed — polling a health endpoint for the expected commit SHA rather than trusting
+the webhook's 200 as proof — the same two-step `blog-mcp-image.yml` uses (`Redeploy blog-mcp stack` +
+`Verify deployed build and MCP catalog` steps). Nothing per this entry is implemented: no root
+`docker-compose.yml` exists yet, `ci.yml`'s `publish` job calls no webhook, and there is no
+`/healthz`-equivalent endpoint this static nginx image serves to poll against — that last gap is new
+work this entry surfaces rather than resolves.
+Rejected: **A separate homelab/infra repository owning the stack** — the closer analogue to how some
+of the owner's other Docker services are run, and it would have kept this repository's non-goal
+narrower; declined by the owner in favour of following the `blog-mcp` precedent directly. **Leaving
+both questions open and implementing ad hoc** — the process this repository's `AGENTS.md` forbids:
+non-goals are binding and a design fork gets asked, not assumed, before code follows it.
+Reversibility: cheap for the ruling itself — two sentences and a citation. Expensive for what it now
+authorizes once written: a new root Compose file, a `publish`-job CI step, a redeploy-verification
+script and endpoint, and `30-slices.md`'s S9/S10 out-of-scope clauses narrowing to match, none of which
+exist yet.
+
+---
+
 ### 2026-08-07 — The default branch is renamed `master` → `main`
 Context: The owner asked to change `master` to `main` everywhere. The rename touches shared,
 hard-to-reverse state — GitHub's default branch, its branch protection, and `.github/workflows/ci.yml`'s

@@ -798,16 +798,15 @@ and renumbering would rot those citations silently. An answered question keeps i
 6. **Should a scheduled link check run?** It is the only way a dead outbound link is noticed after
    deploy. It costs a workflow and it is the sole thing that would make this repository observe the
    others — adjacent to a brief non-goal, though not obviously inside it.
-7. **Where does the compose stack terminate TLS, and does anything in it need to be true for the
-   container to be correct?** This design guarantees a published image is correct and stops there —
-   whether a stack pulls it, behind what proxy, on what hostname, is delivery configuration the
-   brief's DNS/TLS non-goal covers. I am asking only because the container is new to the brief and
-   that non-goal was written when there was one static target. If the answer is "nothing", this
-   closes with no work.
-8. **Does the compose file live in this repository?** The brief says this repository publishes the
-   image; it does not say whether it also owns the stack that runs it. A compose file here is
-   documentation of how to run the image; a compose file in the homelab repository is the deployment.
-   They are different things and only one of them is this repository's.
+7. ~~**Where does the compose stack terminate TLS, and does anything in it need to be true for the
+   container to be correct?**~~ **Answered 2026-08-07: Nginx Proxy Manager, on a shared Docker
+   network, same pattern as `SubZeroDev.Blog`'s `blog-bot` service.** See
+   `design/90-decisions.md`, 2026-08-07 — "The deployment Compose file and Portainer GitOps redeploy
+   are in scope for this repository". Retained so the citation resolves.
+8. ~~**Does the compose file live in this repository?**~~ **Answered 2026-08-07: yes, and it is the
+   deployment, not documentation of one.** Mirrors `SubZeroDev.Blog`'s split — a local-build Compose
+   file plus a separate deployment Compose file pulling the published GHCR image, imported as the
+   Portainer stack. See the same 2026-08-07 decision-log entry cited above.
 
 Further unresolved items were raised downstream and are owned by
 [`20-contract.md`](20-contract.md) rather than restated here: whether a social image asset exists
