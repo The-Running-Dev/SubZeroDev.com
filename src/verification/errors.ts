@@ -18,6 +18,7 @@ export type VerificationErrorCode =
   | "ClassWithoutRule"
   | "SelectorWithoutUser"
   | "RootMissDocumentAbsent"
+  | "MissEntryStillPresent"
   | "UnknownPathStatusWrong"
   | "UnknownPathBodyWrong"
   | "ServedBytesMismatch"

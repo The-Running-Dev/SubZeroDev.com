@@ -15,7 +15,11 @@ export { assertStyleAgreement } from "./style-agreement";
 export { assertSelfContained } from "./self-contained";
 export { assertContentPresent } from "./content-present";
 export { readBuildMarker } from "./build-marker";
-export { assertEveryDocumentMarked, assertRootMissDocument } from "./document-marking";
+export {
+  assertEveryDocumentMarked,
+  assertRootMissDocument,
+  assertMissEntryRemoved,
+} from "./document-marking";
 export { assertNoAdditionalRequests } from "./request-capture";
 export { assertUnknownPathResponse, assertServedBytesMatchEmitted } from "./served-response";
 export { assertImageIdentity } from "./image-identity";

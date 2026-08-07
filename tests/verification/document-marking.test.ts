@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { buildMarker, missRootEntry } from "../../src/artifact";
+import { buildMarker, missEmittedEntry, missRootEntry } from "../../src/artifact";
 import type { EmittedDocument } from "../../src/artifact";
 import type { CommitId } from "../../src/content";
 import {
   assertEveryDocumentMarked,
+  assertMissEntryRemoved,
   assertRootMissDocument,
   readBuildMarker,
 } from "../../src/verification";
@@ -106,5 +107,31 @@ describe("S7.10 — assertRootMissDocument", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0].code).toBe("RootMissDocumentAbsent");
+  });
+});
+
+describe("R2 — assertMissEntryRemoved", () => {
+  it("returns ok: true when missEmittedEntry is absent", () => {
+    const documents = [doc("index.html", "..."), doc(missRootEntry, "...")];
+    expect(assertMissEntryRemoved(documents)).toEqual({ ok: true, value: null });
+  });
+
+  it("returns MissEntryStillPresent when missEmittedEntry survives", () => {
+    const documents = [
+      doc("index.html", "..."),
+      doc(missRootEntry, "..."),
+      doc(missEmittedEntry, "..."),
+    ];
+    const result = assertMissEntryRemoved(documents);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toEqual([
+      {
+        code: "MissEntryStillPresent",
+        detail: `"${missEmittedEntry}" survives into the finished tree, so the miss composition is reachable at a 200.`,
+        observed: missEmittedEntry,
+        expected: null,
+      },
+    ]);
   });
 });

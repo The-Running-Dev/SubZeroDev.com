@@ -11,7 +11,8 @@ export type ArtifactErrorCode =
   | "MissDocumentMissing"
   | "MarkerInsertionPointMissing"
   | "MarkerAlreadyPresent"
-  | "WriteFailed";
+  | "WriteFailed"
+  | "RemoveFailed";
 
 export type ArtifactError = {
   readonly code: ArtifactErrorCode;

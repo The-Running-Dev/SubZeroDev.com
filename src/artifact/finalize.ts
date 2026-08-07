@@ -1,15 +1,20 @@
 // Artifact — `finalizeArtifact` (contract's Artifact § Public signatures).
 //
 // Order of operations is part of the contract, not an implementation detail:
-// validate `input.commit`, copy `missEmittedEntry` to `missRootEntry`, inject
-// the marker into every `.html` document in the tree — the copy included —
-// then write `serverConfig()` last, outside `outputDir`. Copying before
-// injecting is what makes R2 hold: both documents are marked in the same pass
-// from identical pre-marker content and stay byte-identical.
+// validate `input.commit`, copy `missEmittedEntry` to `missRootEntry`, remove
+// `missEmittedEntry`, inject the marker into every `.html` document in the
+// tree — the copy included — then write `serverConfig()` last, outside
+// `outputDir`. Copying before injecting is what makes R2 hold: both documents
+// are marked in the same pass from identical pre-marker content and stay
+// byte-identical. Removing between the copy and the injection pass is what
+// makes R2's other half hold: the miss composition has exactly one surviving
+// path, and `allEntries` below is built from `emittedEntries` filtered of the
+// removed entry rather than the raw listing, so nothing tries to mark a file
+// that is no longer there.
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, rmdir, writeFile } from "node:fs/promises";
 import { lstatSync, readdirSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 
 import { parseCommitId } from "../content";
 import type { Result } from "../content";
@@ -97,7 +102,32 @@ export async function finalizeArtifact(
     );
   }
 
-  const allEntries = [...emittedEntries, missRootEntry];
+  try {
+    const missEmittedPath = toPath(input.outputDir, missEmittedEntry);
+    await rm(missEmittedPath);
+
+    // A left-behind empty directory still answers `/404/` — nginx's
+    // `try_files $uri $uri/` matches the directory and, with no index inside
+    // it and autoindex off, serves a 403 rather than falling through to the
+    // miss document at 404. Removing the file alone is not enough to make
+    // R2's "no host can serve it with a 200" hold in spirit at a genuinely
+    // unknown status, so the now-empty directory is removed too.
+    const parentDir = dirname(missEmittedPath);
+    if (parentDir !== input.outputDir && (await readdir(parentDir)).length === 0) {
+      await rmdir(parentDir);
+    }
+  } catch (cause) {
+    return fail(
+      "RemoveFailed",
+      missEmittedEntry,
+      `failed to remove "${missEmittedEntry}" after copying it to "${missRootEntry}": ${String(cause)}`,
+    );
+  }
+
+  const allEntries = [
+    ...emittedEntries.filter((entry) => entry !== missEmittedEntry),
+    missRootEntry,
+  ];
   const markedEntries: string[] = [];
 
   for (const entry of allEntries) {
