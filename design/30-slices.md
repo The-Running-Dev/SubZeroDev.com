@@ -411,7 +411,7 @@ Acceptance:
   - S10.2 Against a local stub serving a document carrying the expected marker, `pollForCommit` returns `{ ok: true }` with `polls: 1`; against a stub carrying a different valid commit for two polls and the expected one on the third, `{ ok: true }` with `polls: 3`; against a stub that never carries it, `PollExhausted` after `attempts` polls.
   - S10.3 `assertAttestation(null, commit)` returns `AttestationAbsent`; an `Attestation` whose `commit` differs from the deploying commit returns `AttestationCommitMismatch`; a matching one returns `{ ok: true }` (`V5`).
   - S10.4 `assertDeploymentCandidateCurrent(commit, branchHead)` returns `{ ok: true }` when the two are equal and `StaleDeploymentCandidate` when they differ (`V6`).
-  - S10.5 The `attestation` job targets a protected GitHub Environment with required reviewers, runs only on a push to `master` (the default branch), and builds its `Attestation` from the run's approval record for `approver` and the run's `head_sha` for `commit` — so an approval cannot be replayed onto another run.
+  - S10.5 The `attestation` job targets a protected GitHub Environment with required reviewers, runs only on a push to `main` (the default branch), and builds its `Attestation` from the run's approval record for `approver` and the run's `head_sha` for `commit` — so an approval cannot be replayed onto another run.
   - S10.6 `publish` is a single job holding a single concurrency group that does not cancel in progress, and the branch-head check, the Pages deploy, the registry push and the read-back are all inside it (`V7`).
   - S10.7 The image gated in S9 is carried into `publish` and pushed without being rebuilt, with its digest asserted equal on both sides of the job boundary — the gated image is the pushed image (`V9`).
   - S10.8 After the deploy, `pollForCommit` against the served apex returns `{ ok: true }` for the exact commit, and `assertUnknownPathResponse` against a unique unknown path on the served site returns `{ ok: true }` (`V12`, Pages half).
@@ -487,8 +487,8 @@ build ──┬──► image-gate ──┐
 | `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `V1`, `V2`, `V3`, `V13`, `X4` | push + all PRs | S6, S7, S8 |
 | `image-gate` — build, run and gate the image before any push | `V10`, `V11`, `V12` (container half) | push + all PRs | S9 |
 | `link-check` — **already implemented** | `V4` | push + same-repo PRs | S3 |
-| `attestation` — human gate bound to the commit | `V5` | master push | S10 |
-| `publish` — branch-head check, deploy and push, read-back | `V6`–`V9`, `V12` (Pages half), `V14` | master push | S10 |
+| `attestation` — human gate bound to the commit | `V5` | main push | S10 |
+| `publish` — branch-head check, deploy and push, read-back | `V6`–`V9`, `V12` (Pages half), `V14` | main push | S10 |
 
 Three constraints follow from the design rather than from preference. A slice that re-decides any of
 them fails silently:

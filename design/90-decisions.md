@@ -12,6 +12,32 @@ became [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 
 ---
 
+### 2026-08-07 — The default branch is renamed `master` → `main`
+Context: The owner asked to change `master` to `main` everywhere. The rename touches shared,
+hard-to-reverse state — GitHub's default branch, its branch protection, and `.github/workflows/ci.yml`'s
+publish/attestation gates, which read `refs/heads/master` literally (`design/30-slices.md` § S10.5) — so
+scope was confirmed with the owner before anything moved: a full rename (GitHub branch + every current
+reference), not a code-only relabelling that would leave the actual branch name inconsistent with the
+docs.
+Chosen: `gh api -X POST repos/.../branches/master/rename -f new_name=main`, GitHub's supported rename
+path — it moves the default-branch setting, branch protection, and any open pull requests' base ref in
+one step (no PRs were open against `master` at the time; #38 and #40 had already been merged). Local
+`master` and the now-stale `fix/agentkit-home-none` branch (already squash-merged, verified with
+`git diff` showing no remaining content) were deleted locally; `origin/HEAD` was repointed to `main`.
+`.github/workflows/ci.yml`'s four `refs/heads/master` / `commits/master` references and
+`design/30-slices.md`'s S10.5 clause and CI table (two "master push" cells) were updated to `main`.
+Two other hits for "master" survive untouched, correctly: `design/90-decisions.md`'s own historical
+entries (this document is append-only — a past entry's mention of the branch state at the time it was
+written is not rewritten) and `apex.ts` / `emitted-document.test.ts`'s "There was no master plan." —
+manifesto prose, not a branch reference, and owner-authored copy this session does not edit.
+Rejected: **Code/doc references only, branch left as `master`** — offered as the narrower option;
+declined by the owner as leaving the two permanently inconsistent.
+Reversibility: expensive to fully undo (renaming back is symmetric, but every collaborator's local
+clone and any external link or CI badge pointing at `master` would need to catch up a second time);
+cheap for the two doc/workflow edits alone.
+
+---
+
 ### 2026-08-07 — `AgentKit`'s `home.kind` moves to `"none"` until the subdomain serves real content
 Context: PR #38's S3.7 live link check (`tests/verification/live/link-check.test.ts`) failed on
 `agentkit.subzerodev.com` — the previous entry below already recorded this as a deliberate deferral
