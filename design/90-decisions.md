@@ -12,6 +12,304 @@ became [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 
 ---
 
+### 2026-08-07 — Pages is ungated preview/development publishing; truth attestation governs release only
+Context: `/redteam` found a higher-precedence conflict. `00-brief.md` required every displayed project
+status to be attested for the exact commit on the day it was "deployed", without distinguishing the
+two publication targets. `10-design.md` deliberately published Pages before attestation and said the
+requirement held for the release site but not the preview. The brief outranks the design, so that
+distinction had to become the owner's policy or the workflow had to put a human gate in front of every
+Pages publish.
+Chosen, on the owner's explicit ruling: **GitHub Pages is preview/development publishing, not a
+release, and no release gate belongs in front of it.** It publishes every main-branch commit after the
+shared build without waiting for the image gate, outbound-link gate or truth attestation. Its
+post-publication marker, byte and unknown-path read-back remains: those checks prove what the preview
+serves and discharge byte identity, but they are not approval gates and do not license a release
+claim. The container path alone is the release. It still waits for the image gate, outbound-link check,
+commit-bound truth attestation, registry push, redeploy trigger and endpoint read-back.
+The brief is amended to make the release scope explicit. The design and contract's already-chosen
+release-only attestation are retained, their remaining ambiguous "deploy" wording is narrowed, and
+`30-slices.md`'s stale S10 single-job criteria are brought into line with its own publication-CI graph.
+That graph now forks immediately after the shared build: Pages can publish while release preparation
+runs, and the branches converge only before the release attestation.
+Rejected: **Putting truth attestation before Pages** — satisfies the brief's former unqualified wording
+and makes every preview commit spend a human approval, which defeats the preview/development target.
+**Keeping image-gate and link-check as prerequisites for Pages while removing only the human gate** —
+less change to the previous graph, and it still makes development publishing wait on release-only
+concerns. **Removing Pages read-back as well** — the strongest reading of "no gates", rejected because
+then neither a preview claim nor byte identity is verified; a check after publication does not block
+publication and is not the gate being removed.
+Reversibility: cheap in the documents while S10 is unimplemented; expensive after workflow delivery,
+because the job graph, concurrency checks and meaning of the two public URLs depend on the split.
+
+---
+
+### 2026-08-07 — The design and contract are extended past the registry push; the deployment artifact's network attachment and image reference are settled
+Context: `/redteam`, fresh `opus` session — the weak form of the vendor rule, and recorded as such,
+since a different vendor was not available. The pass returned nineteen findings; three were `BLOCKING`
+and all three were the same seam. **The brief's 2026-08-07 amendment put the redeploy step and the
+endpoint it is verified against in this repository, and neither `10-design.md` nor `20-contract.md`
+followed it there.** § *Control flow* 2 still read "What happens after the push is outside this
+design"; `V7`'s ordering ended at the Pages read-back; the contract's closing note to *Invariants*
+still said "nothing here observes a delivery environment, and no invariant claims to". Two further
+findings were that the artifact the brief now demands **cannot be written as specified**: a Compose
+service that publishes no port and joins no network is not a deployment, while the brief said the
+artifact "declares nothing about the network in front of it"; and the image reference had no
+non-degenerate answer, since a commit pin is self-referential and `latest` contradicts "there is
+exactly one answer to what is deployed".
+Chosen, on the owner's ruling, three decisions in one seam. **(1) The design and contract are the
+defect, not the brief.** `10-design.md` gains the redeploy trigger and endpoint read-back in
+§ *Control flow* 2, a *Failure modes* entry for a redeploy that does not happen or an endpoint serving
+the previous commit, an extended ordering invariant, and a third mutable location in § *Concurrency* —
+the deployed stack, since a stale run's trigger pulls whatever `latest` then names. `20-contract.md`
+gains `V15`, extends `V7`, and narrows `V8` so a read-back on one target licenses no claim about the
+other. **(2) The stack attaches to `proxy-net` by name**, restoring the `blog-mcp` shape, and
+`00-brief.md`'s artifact clause is amended to admit exactly that: this repository declares the one
+already-existing network its container attaches to, and nothing else about it — not what else is on
+it, not what terminates TLS, not the configuration of the thing that does. **Q7 stays foreclosed and
+the amended clause says so in the same breath**, because this is the third time this clause has been
+litigated and the second time a network answer has had to be separated from a TLS answer. **(3) The
+Compose file pulls `latest` with `pull_policy: always`**; deployed identity comes from the endpoint
+read-back, never from reading the file.
+Recorded rather than assumed: the redeploy **trigger** gets no contract surface — no signature, no
+error code — because the registry push is the same kind of step and has none either. The read-back
+reuses `pollForCommit` and `assertUnknownPathResponse` unchanged. An earlier draft of this ruling
+proposed new `RedeployFailed` codes and was corrected against that precedent before anything was
+written.
+Verified rather than asserted, because the contract is parsed by tests: `tsc --noEmit` clean and 310
+tests across 31 files green after the edits, the same counts as before them. Not run and not claimed —
+`check-links`, `image-gate`, `attestation-gate`, `deployment-candidate-gate`, `publish-gate`, and
+every gate the new `V15` names, none of which has an implementation yet.
+Rejected: **Narrowing the brief back to exclude the redeploy step and endpoint** — no design or
+contract change needed and the compose-networking problem dissolves with it; declined, because nothing
+in this repository would then ever verify that `subzerodev.com` serves the release. **Recording the
+gap as accepted and dated** — cheapest, and it leaves a brief obligation nothing discharges.
+**Publishing a host port instead of joining a network** — the recommended option, and the one that
+names no infrastructure this repository does not own; declined by the owner in favour of matching the
+existing `blog-mcp` precedent. **Numbering the compose networking as a fresh open question and
+blocking the slice** — leaves the in-scope artifact unwritable. **Pinning the Compose file to the
+commit tag, rewritten and committed per release** — exact identity readable from the file, at the cost
+of an extra commit per release, a permanent one-commit lag, and a CI job writing to the default
+branch. **Passing the commit tag to the stack as a variable** — exact identity with no repository
+commit, rejected because it depends on the stack platform's variable substitution, which is delivery
+configuration this repository does not own and cannot test in CI.
+Reversibility: cheap for the brief clause and the document edits — one non-goal paragraph, one
+contract invariant, four design sections. Expensive for what it authorizes and unchanged from the
+entry it builds on: a `proxy-net` attachment, a redeploy trigger holding a secret, and a critical
+section now held across a network round trip into an environment this repository does not run.
+
+---
+
+### 2026-08-07 — Three remaining red-team findings: the typed count, `schemas`, empty stage groups, and a size budget declined
+Context: the tail of the same `/redteam` pass. Three findings too small to sit in the entry above, and
+one of them was already half-tracked as [#37](https://github.com/The-Running-Dev/SubZeroDev.com/issues/37).
+Chosen. **(1) `10-design.md` stops typing a project count.** § *Data model* defined `Home.Own` as "an
+absolute URL to its own subdomain. Twelve projects." — a figure the inventory owns, restated in the
+document that forbids exactly that restatement on the page (`X1`). The bullet now says the count is the
+inventory's to state. **(2) `schemas.subzerodev.com` is ruled out of the inventory**, explicitly rather
+than by silence. The brief verifies it does not exist while the ecosystem's docs reference it; a
+referenced name has no repository, no authored stage and no originating question, and a `Home.None`
+record would put a row on the page asserting a project that is not one — which the house rule against
+being funnier than is true forbids outright. The dangling reference is a defect in the documents
+carrying it. **(3) An empty `Stage` group renders as an absence, not a heading** — `X7`. `C11` keeps
+every stage in the derivation so counts and ordering stay total; the composition renders only groups
+with members. The design's "never a silently empty section" rule was written about an empty *inventory*
+and had been read as covering both cases, which is why this was unwritten.
+Declined: **a byte-size assertion over the emitted apex.** Everything this design ships is inline by
+construction, so page weight is the one property that could degrade with nothing noticing — but it
+cannot degrade *quietly*: the icon is one small SVG letterform, the inventory is hand-authored, and
+every byte is added by someone typing it. The absence of a budget is now recorded in `10-design.md`
+§ *Data model* so it is not rediscovered as a finding, with the condition that would reopen it — either
+the icon set or the inventory ceasing to be author-scale.
+Not resolved here, and flagged: **#37 looks stale.** It reports `S2.2` and `S2.3` red against a
+thirteen-`own` inventory, and both pass now — AgentKit moved to `home.kind: none` in #40, restoring
+twelve. Whether to close it is the owner's, and this pass changed nothing about it.
+Rejected: **Giving `schemas` a `home: none` record** — it would state the thing the brief verified
+rather than staying silent, at the cost of a page row for what may simply be another repository's
+documentation error. **Folding the typed count and `schemas` into #37** — that issue awaits an owner
+ruling on a different question, the inventory-versus-brief count, and neither of these needed to wait
+on it. **Rendering every stage including empty ones** — arguably on-voice for a page about a method,
+and it produces the headings-with-nothing-beneath shape the design calls looking deliberate.
+**Leaving the empty-group case to the composition slice** — unstated cases are what this design
+elsewhere insists on naming.
+Reversibility: cheap, all four. One bullet, one paragraph, one invariant, one recorded absence.
+
+---
+
+### 2026-08-07 — Six red-team findings resolved: byte identity, import graph, attestation scope, the publish split, `/404/`, and one inert script element
+Context: the same `/redteam` pass as the entry above, adjudicated one finding at a time. Six were
+sustained beyond the deployment seam, and two of them turned out to be one change.
+Chosen, each on the owner's ruling. **(1) Byte identity covers Pages as well as the image.** `V11`
+asserted it image-side only; the Pages apex was checked by `V3` for content presence and never
+compared, so the brief's "asserted rather than assumed" held for one side of a pair. Both are now
+compared against the emitted apex document. The endpoint deliberately is **not** — a byte match across
+a proxy this repository does not own would fail on transport differences that are not divergence, so
+`V15` covers it with the marker and unknown-path pair instead. **(2) The import graph gets a
+Verification surface**, `assertImportGraph` and `V16`, with three new error codes. It takes the edges
+as **data**, in `assertDeploymentCandidateCurrent`'s shape, because reading imports off disk means
+choosing a scanner and that is a new dependency owing its own entry — the caller observes, the function
+compares, and no scanner is named here. Writing it also found that three of the seven import rules had
+**no invariant id at all**, living only as prose in *Public signatures*: Presentation's `Branded`-only
+import, Artifact's three names, and that nothing imports Verification. `V16` is their home. **(3) The
+truth attestation gates the release only.** It stood in front of both targets, which made the
+preview's every-commit cadence untrue and spent the one gate that cannot be re-run cheaply on commits
+changing no project statement. **(4) Publication is therefore two jobs, not one** — a CI environment
+approval gates a job, not a step, so an attestation between the Pages read-back and the registry push
+cannot sit inside a single job. The two share one concurrency group, which makes an interleaving
+across runs reachable, and **the branch-head re-check is what makes the split sound**: the head is now
+checked twice, because a check taken before a human gate of unbounded duration proves nothing after
+it. (3), (4) and the re-check are one change and are reversed together or not at all. **(5) Artifact
+removes `404/index.html` after copying it to `404.html`.** A directory index is served with a 200, so
+the miss composition sat at a fixed, discoverable, self-declared-canonical URL — a soft 404 by this
+design's own definition, at the one path the unknown-path checks never request, since they ask for a
+*unique unknown* path. `R2` and `R5` are reworded around the removal and `MissEntryStillPresent` and
+`RemoveFailed` are added. **(6) `V13` narrows from "no script element" to "no executable script
+element"**, admitting exactly one `application/ld+json` block on the apex (`X6`). The blanket rule
+forbade a non-executing element on the ground that it forbids execution; JSON-LD runs nothing and
+fetches nothing, so it satisfied the runtime non-goal entirely and was excluded by the shape of the
+check rather than by the rule behind it.
+Two consequences that were not obvious and are recorded because a later reader will ask. The block
+sits in the **body**: the package owns the head and its metadata set is closed, which is the same fact
+that made the build marker Artifact's, and `<script>` is conforming flow content in `<body>`. And it
+forced an exception to `X5` — HTML-escaping a value inside JSON corrupts it, `&amp;` in a URL being a
+different URL — so values there are JSON-string-escaped and `X6`'s `</script` guard is what makes that
+safe. `composeApex` gained an `origin` parameter for the block's `url`, passed rather than imported
+because `X2` confines Composition to Content and Presentation and the origin is Adapter's.
+Recorded and **not** fixed: the deployment read-back proves what is served, not that this run put it
+there. A re-run on an already-deployed commit satisfies the marker on its first poll, so a publication
+step that silently did nothing reports success. The fix would be a per-run value inside the artifact,
+and the two targets would then carry different bytes, which `V11` forbids. The narrower claim is the
+true one.
+Verified rather than asserted: `tsc --noEmit` clean and 310 tests across 31 files green after the
+edits. Not run and not claimed — every gate these invariants name, none of which has an
+implementation yet, including the two new call sites `V11` now requires and `assertImportGraph`
+itself.
+Rejected: **Comparing bytes at all three read-backs** — the most rigorous, declined because the
+endpoint sits behind a proxy whose transport this repository does not control. **Leaving the Pages side
+argued from shared construction** — the state found. **Numbering the import graph as a fresh
+`U11`** — the recommended option, consistent with how `U9` handled the identical shape; declined by
+the owner in favour of writing the surface now, which the data-shaped signature made possible without
+choosing a scanner. **Leaving the import rules review-enforced.** **Gating the attestation on whether
+the commit touched Content** — cheapest in human attention and it gates on the wrong thing, since the
+statuses are claims about other people's sites and go stale with no commit at all. **Keeping one
+`publish` job and putting the attestation back in front of both** — reverses (3) rather than the job
+constraint. **Pages deploying from an ungrouped job** — simplest graph, abandons the claim that the
+preview is protected from an older run. **Keeping `/404/` and asserting it answers 404 on both
+targets** — Pages may not permit a file it emits to answer 404, so it may not be achievable there.
+**Keeping `/404/` and accepting the soft 404.** **Leaving `V13` blanket and shipping no structured
+data** — the recommended option, on the ground that a narrower rule is one an author argues around;
+declined. **Narrowing `V13` and emitting nothing yet** — a permission with no user.
+Reversibility: cheap for (1), (5) and (6) — one invariant each, no source file moved. Expensive for
+(3) and (4) together: the job split, the shared group and the second head check are load-bearing on
+each other, and unpicking one without the others reintroduces either the reflex-approval problem or an
+unsound interleaving.
+
+---
+
+### 2026-08-07 — The `U5` and `U10` brief conflicts are closed in the contract, and the design's stale `<noscript>` paragraph with them
+Context: The entry below closed four brief-versus-design conflicts and named its own loose end:
+"`20-contract.md`'s `U5` and `U10` both still read 'pending an owner edit to the brief' and are stale
+as of this entry", deferred because `## Unresolved` is `/contract`'s section. A `/redteam` pass found
+the staleness had spread further than that note recorded — four statements, not two.
+`10-design.md` § *Route* still said the brief "still requires" `<noscript>` and that "the brief and
+this design disagree on a released requirement"; the `P3` invariant row still said the brief "states
+the broader form and outranks this document; the disagreement is known and unreconciled". Both were
+false the moment the brief was amended.
+Chosen: close all four in place. `U5` and `U10` keep their original headings verbatim — including the
+now-inaccurate "pending an owner edit to the brief" — and gain an **Answered** paragraph in the
+`U1`/`U3`/`U7` pattern, because three documents cite those anchors and a retitle would rot every one
+of them silently. `30-slices.md`'s forward reference to the stale text is corrected in the same pass.
+Rejected: **Retitling `U5` and `U10` to read as answered** — more honest at the heading level, and it
+breaks `#u5--noscript-is-withdrawn-pending-an-owner-edit-to-the-brief` in three places; the contract's
+own rule that numbers are stable exists for this reason and headings are what the anchors are built
+from. **Leaving it for a separate `/contract` run** — the deferral the entry below chose; declined
+because the same deferral had already let two stale statements become four.
+Reversibility: cheap. No invariant, signature or source file moved.
+
+---
+
+### 2026-08-07 — Four brief clauses the design contradicted are amended; `U5` and `U10` close
+Context: `/design`, in the same session as the hosting-non-goal amendment below and on the authority
+that entry records. With the brief's authorship notice overridden, the standing pile of brief-versus-
+design conflicts could be closed for the first time. Four clauses, in two classes. **Already
+adjudicated, unedited only because a model could not touch the file:** `<noscript>`, ruled the brief's
+defect on 2026-08-05 (`U5`), and the broad "animates nothing under `prefers-reduced-motion: reduce`"
+form, narrowed to motion in the contract on 2026-08-07 (`U10`). **Never ruled on at all, flagged only
+in `10-design.md`'s preamble since 2026-08-05:** § *Environment*'s "No server, no application runtime"
+against a container release, and § *Definition of done*'s single-target framing against two targets.
+The second class is the one that had gone longest without a decision, precisely because a preamble is
+not a list anyone checks — the reasoning `U10`'s own entry gives.
+Chosen, on the owner's ruling, all four: **the brief moves in every case; neither the design nor the
+contract does.** (1) The `<noscript>` requirement is struck and the bullet now states why the element
+has no role on a document that needs no scripting — the exact edit `U5` named as remaining. (2) The
+motion bullet is rewritten in `P3`'s narrowed wording, naming transform, translation, scale, rotation,
+position change and scroll behaviour, and permitting a transition of a non-positional property. (3)
+§ *Environment* carries the delivery-wrapper distinction `10-design.md` had been arguing unaided: the
+container serves a read-only tree, executes nothing per request, holds no state, adds nothing to the
+bytes, and a static file server inside it is not an application. (4) § *Definition of done* gains a
+bullet naming two publication targets with byte identity asserted between them, and states which
+verification governs which. `U5` and `U10` are answered by (1) and (2); `10-design.md`'s known-
+disagreement box is closed; `30-slices.md`'s `U5` *Blocked* entry is released.
+Verified rather than asserted, because four brief edits could plausibly have moved a gate: `tsc
+--noEmit` clean and 310 tests across 31 files green afterwards. Not run and not claimed —
+`check-links`, `image-gate`, `attestation-gate`, `deployment-candidate-gate`, `publish-gate`, all of
+which need the network or a built tree.
+Rejected: **Numbering the two unruled clauses `U11`/`U12` and leaving the brief alone** — the
+recommended-in-the-alternative option and the more conservative one, on `U10`'s reasoning that a
+conflict in a checked list beats one in a preamble; declined by the owner in favour of closing them
+outright, which makes the checklist position unnecessary rather than better-placed. **Editing only
+`U5`'s clause and leaving `U10`'s** — offered on the grounds that `P3`'s narrowing was the more
+contestable of the two rulings and ratifying it into the brief forecloses revisiting it; declined.
+**Leaving all four as recorded conflicts** — the state that had held for two days, and the one where
+`S6` knowingly ships against a *Definition of done* bullet it fails.
+Left undone deliberately, and it is the one loose end: `20-contract.md`'s `U5` and `U10` both still
+read "pending an owner edit to the brief" and are stale as of this entry. `## Unresolved` is that
+document's section and the numbering is `/contract`'s to apply — the precedent `U10`'s own entry set —
+so this command reports them rather than closing them.
+Reversibility: cheap — four clauses in one file, one design-doc box, one slices entry. Nothing was
+built against any of the four, and no test or source file moved.
+
+---
+
+### 2026-08-07 — The brief's hosting non-goal is amended to draw its boundary at the deployment artifact
+Context: `/design`. The Q7 walk-back entry below established that no agent and no decision-log entry
+may narrow a binding non-goal by writing past it, and applied that to the TLS half only — it stated
+"Q8 is unaffected and stands" without testing Q8 against the same clause. Tested here, Q8 fails it
+harder than Q7 did. Q7's answer was a *statement about* where TLS terminates; Q8's answer authorizes
+agents to **write** hosting configuration — a root `docker-compose.yml` Portainer imports as a stack,
+a redeploy-webhook step in `ci.yml`'s `publish` job, and a health endpoint to poll — against a
+non-goal whose second sentence reads *"No agent touches them and no acceptance criterion requires
+changing them."* Verified before raising it, and it is what made either resolution cheap: nothing had
+been built against Q8. No `docker-compose.yml` exists in the tree and `.github/workflows/` contains no
+webhook or Portainer reference, the same position Q7 was in when it was walked back.
+Chosen, on the owner's ruling and at the owner's explicit direction to make the edit: **the brief
+moves, not Q8.** `00-brief.md`'s non-goal is amended so the boundary falls at the artifact this
+repository publishes rather than around the whole of hosting. In scope and this repository's to own:
+the Compose file that runs the published image, the CI step that triggers its redeploy, and the
+endpoint that redeploy is verified against. Still out, and still binding on every agent: the domain,
+its DNS records, TLS termination, and any reverse proxy or host the deployment sits behind — the
+amended clause names TLS explicitly, so **Q7 is unaffected and stays foreclosed**. `10-design.md`'s
+Q8 is updated to record that its footing changed: it now rests on the brief rather than in tension
+with it. `30-slices.md` needs no edit — S9 and S10 already read Q8 as standing and neither builds a
+compose file.
+Recorded with it, because the brief says a model may not author it: the owner overrode that notice
+directly in session, and the decision is the owner's. The brief's own provenance notice already
+states *"The wording throughout is a model's; the decisions and the source material are mine"*, which
+is the condition this edit meets — a model's wording carrying the owner's decision.
+Rejected: **Walking Q8 back to undecided** — the recommended resolution, and the consistent one: it
+is what Q7 got, on the same reasoning, hours earlier, and it cost nothing because nothing was built;
+declined by the owner, who wants this repository to own its Portainer deployment and chose to change
+the rule openly rather than park the work. **Ruling that "hosting configuration" never covered a
+Compose file this repository ships** — no brief edit needed, and defensible on the words; rejected
+because it resolves a conflict by reinterpreting a clause rather than by changing it, which leaves
+the next reviewer free to reinterpret it back, and this is the second time this exact clause has been
+litigated. **Leaving Q8 standing with the conflict merely recorded** — the state found, and the one
+this command exists to end.
+Reversibility: cheap for the brief edit itself — one non-goal bullet and two design-doc paragraphs.
+Expensive for what it now authorizes, unchanged from the entry below: a root Compose file, a
+`publish`-job CI step, a redeploy-verification script and a health endpoint, none of which exist yet.
+
+---
+
 ### 2026-08-07 — The Q7 answer below is walked back: TLS termination stays undecided
 Context: The entry immediately below ("The deployment Compose file and Portainer GitOps redeploy are
 in scope for this repository") answered `10-design.md`'s *Open questions* 7 and 8 together and merged

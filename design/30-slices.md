@@ -124,10 +124,10 @@ Rendering. Checking that any URL responds — that is S3.
 
 ## S3 — Outbound link verification
 
-Delivers: Every address the site will send a visitor to is checked by CI before anything could be
-deployed, and the check goes red when one of them stops answering. It runs on the network, after the
+Delivers: Every address the release will send a visitor to is checked by CI before the release can be
+published, and the check goes red when one of them stops answering. It runs on the network, after the
 network-free build, so the build never reaches another site and no content the site shows is derived
-from what a check found.
+from what a check found. The Pages preview is development output and does not wait on this gate.
 
 Touches: Content — `ResolvedHome`, `resolvedHomes`. Verification — `RetryPolicy`, `linkCheckRetry`,
 `LinkCheckResult`, `checkLinks`, `VerificationError`, and the `LinkUnreachable` and `LinkNotOk` codes.
@@ -384,48 +384,48 @@ Acceptance:
   - S9.7 An `image-gate` CI job builds the image, runs it, performs S9.3–S9.6 and pushes nothing; it is green on this slice's head commit and demonstrated red by a temporary server-configuration change that answers an unknown path with 200 — verified and reverted before merge (`V9`).
   - S9.8 No step in this slice authenticates to a registry or writes to one, asserted by the absence of a registry credential from the workflow and by the job's own step list.
 
-Out of scope: Pushing the image anywhere. The attestation gate and the deployment — S10. Byte identity
-against the Pages target, which does not exist until S10. Anything about a compose stack: the design
-guarantees a published image is correct and stops there. *Open question* 8 now answers that a compose
-file belongs to this repository, but this slice builds no compose file and pushes nothing regardless
-(S9.8) — that stays a future slice's. *Open question* 7 (TLS termination) is still undecided.
+Out of scope: Pushing the image anywhere. The Pages preview, attestation gate and release deployment —
+S10. Byte identity against the Pages target, which does not exist until S10. Anything about a compose
+stack: S9 guarantees the image is correct and stops there; S10 owns the deployment artifact, trigger
+and endpoint read-back. *Open question* 7 (TLS termination) stays foreclosed.
 
 ---
 
 ## S10 — Publication
 
-Delivers: The site goes live, and this is the first slice permitted to say so. A human approves the
-release against one exact commit, the workflow confirms that commit is still the branch head, then
-deploys to Pages and pushes the gated image inside a single critical section, then polls the served
-site until it returns that exact commit's marker and checks that an unknown path answers 404. Only
-that read-back licenses a live URL — a green build and a merged pull request license nothing.
+Delivers: Preview/development publishing and release publishing become two explicit paths. Pages
+publishes every main-branch commit after the shared build, with no human approval, image gate, link
+gate or truth attestation in front of it, then is read back for marker, byte and unknown-path identity.
+Separately, a human approves the release against one exact commit; the gated image is pushed, the
+Compose stack is redeployed, and the endpoint is read back before the site is called live. A preview
+claim and a release claim are licensed independently by the read-back of the target each names.
 
 Touches: Verification — `deploymentPollRetry`, `pollForCommit`, `assertAttestation`,
 `assertDeploymentCandidateCurrent`, `ReadBackResult`, `Attestation`, and the `PollExhausted`,
-`AttestationAbsent`, `AttestationCommitMismatch` and `StaleDeploymentCandidate` codes. CI — an
-`attestation` job targeting a protected GitHub Environment with required reviewers, and a `publish`
-job. Repository configuration — Pages, and the environment's reviewer list.
+`AttestationAbsent`, `AttestationCommitMismatch` and `StaleDeploymentCandidate` codes. CI —
+`publish-preview`, `attestation` and `publish-release` jobs. Deployment artifact — the Compose file,
+redeploy trigger and endpoint read-back. Repository configuration — Pages and the environment's
+reviewer list.
 
 Depends on: S8, S9.
 
 Acceptance:
   - S10.1 `deploymentPollRetry` equals `{ attempts: 60, backoff: "fixed", initialDelayMs: 5000, maxDelayMs: 5000, attemptTimeoutMs: 10000 }`, asserted field by field.
   - S10.2 Against a local stub serving a document carrying the expected marker, `pollForCommit` returns `{ ok: true }` with `polls: 1`; against a stub carrying a different valid commit for two polls and the expected one on the third, `{ ok: true }` with `polls: 3`; against a stub that never carries it, `PollExhausted` after `attempts` polls.
-  - S10.3 `assertAttestation(null, commit)` returns `AttestationAbsent`; an `Attestation` whose `commit` differs from the deploying commit returns `AttestationCommitMismatch`; a matching one returns `{ ok: true }` (`V5`).
+  - S10.3 `assertAttestation(null, commit)` returns `AttestationAbsent`; an `Attestation` whose `commit` differs from the releasing commit returns `AttestationCommitMismatch`; a matching one returns `{ ok: true }` (`V5`). Pages does not call this function.
   - S10.4 `assertDeploymentCandidateCurrent(commit, branchHead)` returns `{ ok: true }` when the two are equal and `StaleDeploymentCandidate` when they differ (`V6`).
   - S10.5 The `attestation` job targets a protected GitHub Environment with required reviewers, runs only on a push to `main` (the default branch), and builds its `Attestation` from the run's approval record for `approver` and the run's `head_sha` for `commit` — so an approval cannot be replayed onto another run.
-  - S10.6 `publish` is a single job holding a single concurrency group that does not cancel in progress, and the branch-head check, the Pages deploy, the registry push and the read-back are all inside it (`V7`).
-  - S10.7 The image gated in S9 is carried into `publish` and pushed without being rebuilt, with its digest asserted equal on both sides of the job boundary — the gated image is the pushed image (`V9`).
-  - S10.8 After the deploy, `pollForCommit` against the served apex returns `{ ok: true }` for the exact commit, and `assertUnknownPathResponse` against a unique unknown path on the served site returns `{ ok: true }` (`V12`, Pages half).
-  - S10.9 No live URL appears in any job output, summary, comment or report before S10.8 passes, and no image tag appears in any of them before the push reports success and the tag resolves in the registry (`V8`, `V14`).
-  - S10.10 A run whose commit is no longer the deployment-branch head stops before publishing and reports a clean stop rather than a failure, demonstrated against `assertDeploymentCandidateCurrent` and by the workflow's own conditional.
-  - S10.11 The full ordering holds end to end, demonstrated by one workflow run: content validation → render → package build → Artifact → offline verification → image build → in-CI image gate → networked link check and truth attestation → branch-head check → Pages deploy and registry push → exact-marker and unknown-path read-back (`V7`).
+  - S10.6 `publish-preview` and `publish-release` are separate jobs sharing one concurrency group that does not cancel in progress. `publish-preview` depends only on the shared build, checks the branch head, deploys Pages and reads Pages back; it does not depend on `image-gate`, `link-check` or `attestation`. `publish-release` re-checks the branch head after the human gate and owns the registry push, redeploy trigger and endpoint read-back (`V7`).
+  - S10.7 The image gated in S9 is carried into `publish-release` and pushed without being rebuilt, with its digest asserted equal on both sides of the job boundary — the gated image is the pushed image (`V9`).
+  - S10.8 After the Pages deploy, `pollForCommit` against the preview apex returns `{ ok: true }` for the exact commit, `assertServedBytesMatchEmitted` succeeds against the emitted apex, and `assertUnknownPathResponse` against a unique unknown path returns `{ ok: true }` (`V8`, `V11` and `V12`, Pages halves). None is a human or release gate in front of Pages publication.
+  - S10.9 No preview URL is stated before S10.8 passes; no image tag is stated before the push succeeds and the tag resolves; and no live-site claim is made before the redeployed endpoint serves the exact marker and unknown-path composition (`V8`, `V14`, `V15`).
+  - S10.10 A preview or release job whose commit is no longer the deployment-branch head stops before mutating its target and reports a clean stop rather than a failure, demonstrated against `assertDeploymentCandidateCurrent` and by each job's conditional.
+  - S10.11 The full graph is demonstrated by one workflow run: the shared build completes; `publish-preview` runs without waiting for release gates while image-gate and link-check prepare the release; Pages read-back and those release checks converge before truth attestation; then the branch head is re-checked, the gated image is pushed, the Compose redeploy is triggered, and exact-marker plus unknown-path endpoint read-back licenses the live claim (`V7`, `V15`).
 
-Out of scope: A compose stack actually pulling the image — *Open question* 8 now authorizes it in
-principle, but no compose file exists yet and this slice does not write one. A scheduled post-deploy
-link re-check — *Open question* 6. Domain, DNS, TLS and hosting configuration, which the brief's
-non-goals put out of scope permanently, and which *Open question* 7 (TLS termination) accordingly
-stays undecided rather than answered.
+Out of scope: A scheduled post-deploy link re-check —
+*Open question* 6. The domain, its DNS records, TLS termination and any reverse proxy or host the
+deployment sits behind, which the brief's non-goals still put out of scope permanently, and which
+*Open question* 7 (TLS termination) accordingly stays foreclosed rather than answered.
 
 ---
 
@@ -460,19 +460,28 @@ after, which is the honest limit of the chosen release boundary.
 
 ### Where the compose stack terminates TLS — `10-design.md` *Open question* 7
 
-Undecided. `00-brief.md`'s non-goal puts "Domain, DNS, TLS and hosting configuration... out of scope
-permanently"; naming a TLS mechanism (a reverse proxy, a certificate source) answers a question the
-brief already closed, so this stays blocked on the owner narrowing or striking that non-goal rather
-than on any missing design work. *Open question* 8 (whether the compose file lives in this repository)
-is answered — `design/90-decisions.md`, 2026-08-07 — and does not release this: the compose file's
-existence and what fronts it with TLS are separable, and S9 and S10 need neither.
+Foreclosed, not merely undecided. `00-brief.md`'s non-goal — as amended 2026-08-07 — still excludes
+TLS by name: *"an agent may not decide what terminates TLS in front of this site, or configure the
+thing that does."* Naming a TLS mechanism (a reverse proxy, a certificate source) answers a question
+the brief has closed twice, so this is blocked on the owner striking that clause rather than on any
+missing design work.
 
-### An owner edit to the brief — [`U5`](20-contract.md#u5--noscript-is-withdrawn-pending-an-owner-edit-to-the-brief)
+**The 2026-08-07 amendment does not release it, and that is the point of how it was drawn.** It moved
+the boundary to the deployment artifact: *Open question* 8 (the compose file) is answered and now
+rests on the brief rather than in tension with it — `design/90-decisions.md`, 2026-08-07 — while what
+fronts that file with TLS stays out. The compose file's existence and its ingress are separable, and
+S9 and S10 need neither.
 
-Not a slice and not work for an agent. The brief's *Definition of done* still requires `<noscript>`
-content, adjudicated on 2026-08-05 as the defect. Until the owner strikes that clause, the brief and
-the contract disagree on a released requirement, and S6 ships a document that deliberately does not
-satisfy it.
+### ~~An owner edit to the brief~~ — [`U5`](20-contract.md#u5--noscript-is-withdrawn-pending-an-owner-edit-to-the-brief)
+
+**Released 2026-08-07. The edit was made.** The brief's *Definition of done* no longer requires
+`<noscript>` content and now states why the element has no role on a document that needs no scripting.
+S6 therefore ships a document that satisfies the bullet rather than one that deliberately does not,
+and nothing here blocks. `20-contract.md`'s `U5` was closed against that edit on 2026-08-07; its
+heading is retained unchanged because three documents cite the anchor.
+
+The same edit closed `U10`, whose motion clause the brief now carries in `P3`'s narrowed wording. It
+had no entry in this section.
 
 ---
 
@@ -483,26 +492,33 @@ The job graph below is derived from [`10-design.md`](10-design.md)'s ordering in
 not itself a slice, and it allocates no number.
 
 ```
-build ──┬──► image-gate ──┐
-        │                 ├──► attestation ──► publish
-        └──► link-check ──┘
+build ──┬──► publish-preview ──────────┐
+        ├──► image-gate ───────────────┼──► attestation ──► publish-release
+        └──► link-check ───────────────┘
 ```
 
 | Job | Discharges | Runs on | Delivered by |
 |---|---|---|---|
-| `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `V1`, `V2`, `V3`, `V13`, `X4` | push + all PRs | S6, S7, S8 |
-| `image-gate` — build, run and gate the image before any push | `V10`, `V11`, `V12` (container half) | push + all PRs | S9 |
+| `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `R6`, `V1`, `V2`, `V3`, `V13`, `V16`, `X4` | push + all PRs | S6, S7, S8 |
+| `image-gate` — build, run and gate the image before any push | `V10`, `V11` (image half), `V12` (container half) | push + all PRs | S9 |
 | `link-check` — **already implemented** | `V4` | push + same-repo PRs | S3 |
+| `publish-preview` — branch-head check, Pages deploy, Pages read-back; no release gate precedes publication | `V6`, `V8` (preview half), `V11` (Pages half), `V12` (Pages half) | main push | S10 |
 | `attestation` — human gate bound to the commit | `V5` | main push | S10 |
-| `publish` — branch-head check, deploy and push, read-back | `V6`–`V9`, `V12` (Pages half), `V14` | main push | S10 |
+| `publish-release` — branch-head **re-check**, registry push, redeploy trigger, endpoint read-back | `V6` again, `V8` (site half), `V9`, `V14`, `V15` | main push | S10 |
 
 Three constraints follow from the design rather than from preference. A slice that re-decides any of
 them fails silently:
 
-1. **`publish` is one job.** The design holds that two publication targets are not two critical
-   sections. A workflow's concurrency group is per job, and two jobs sharing a group serialize against
-   each other, which cannot express one critical section spanning both. Pages deploy and registry push
-   therefore share a single job holding a single group.
+1. **Publication is two jobs with one concurrency group, and the branch-head check runs in each.**
+   This read "`publish` is one job" until 2026-08-07, on the design's holding that two publication
+   targets are not two critical sections. The truth attestation then moved to gate the release only,
+   and a CI environment approval gates a **job**, not a step — so a single job can no longer express an
+   ordering with a human gate in the middle of it. The two jobs share one group, which means an
+   Preview publication depends only on `build`; it does not wait on `image-gate`, `link-check` or
+   `attestation`. An interleaving across runs is therefore reachable: `A`'s preview, `B`'s preview,
+   then `A`'s release. **The
+   branch-head re-check is what makes that safe**, stopping `A`'s release cleanly because `A` is no
+   longer head. Without the re-check this split is unsound, so the two changes are one change.
 2. **That group does not cancel in progress.** Cancelling mid-publish produces the torn state the
    critical section exists to prevent. The design's mechanism for stopping a superseded run is the
    branch-head check — a clean stop — not cancellation.
