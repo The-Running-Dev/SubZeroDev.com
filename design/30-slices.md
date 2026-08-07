@@ -386,7 +386,9 @@ Acceptance:
 
 Out of scope: Pushing the image anywhere. The attestation gate and the deployment — S10. Byte identity
 against the Pages target, which does not exist until S10. Anything about a compose stack: the design
-guarantees a published image is correct and stops there, and *Open questions* 7 and 8 are undecided.
+guarantees a published image is correct and stops there. *Open question* 8 now answers that a compose
+file belongs to this repository, but this slice builds no compose file and pushes nothing regardless
+(S9.8) — that stays a future slice's. *Open question* 7 (TLS termination) is still undecided.
 
 ---
 
@@ -419,10 +421,11 @@ Acceptance:
   - S10.10 A run whose commit is no longer the deployment-branch head stops before publishing and reports a clean stop rather than a failure, demonstrated against `assertDeploymentCandidateCurrent` and by the workflow's own conditional.
   - S10.11 The full ordering holds end to end, demonstrated by one workflow run: content validation → render → package build → Artifact → offline verification → image build → in-CI image gate → networked link check and truth attestation → branch-head check → Pages deploy and registry push → exact-marker and unknown-path read-back (`V7`).
 
-Out of scope: Any claim about a compose stack pulling the image, which *Open questions* 7 and 8 leave
-undecided and the brief puts outside this work. A scheduled post-deploy link re-check — *Open
-question* 6. Domain, DNS, TLS and hosting configuration, which the brief's non-goals put out of scope
-permanently.
+Out of scope: A compose stack actually pulling the image — *Open question* 8 now authorizes it in
+principle, but no compose file exists yet and this slice does not write one. A scheduled post-deploy
+link re-check — *Open question* 6. Domain, DNS, TLS and hosting configuration, which the brief's
+non-goals put out of scope permanently, and which *Open question* 7 (TLS termination) accordingly
+stays undecided rather than answered.
 
 ---
 
@@ -455,11 +458,14 @@ it is the sole thing that would make this repository observe the others — adja
 non-goal without obviously being inside it. S3 checks links before deployment and nothing checks them
 after, which is the honest limit of the chosen release boundary.
 
-### Whether the compose file lives in this repository — `10-design.md` *Open question* 8
+### Where the compose stack terminates TLS — `10-design.md` *Open question* 7
 
-Undecided, and the two answers are different artifacts: a compose file here documents how to run the
-image, while one in the homelab repository is the deployment. S9 and S10 need neither. This is named
-so that a later slice does not decide it by writing one.
+Undecided. `00-brief.md`'s non-goal puts "Domain, DNS, TLS and hosting configuration... out of scope
+permanently"; naming a TLS mechanism (a reverse proxy, a certificate source) answers a question the
+brief already closed, so this stays blocked on the owner narrowing or striking that non-goal rather
+than on any missing design work. *Open question* 8 (whether the compose file lives in this repository)
+is answered — `design/90-decisions.md`, 2026-08-07 — and does not release this: the compose file's
+existence and what fronts it with TLS are separable, and S9 and S10 need neither.
 
 ### An owner edit to the brief — [`U5`](20-contract.md#u5--noscript-is-withdrawn-pending-an-owner-edit-to-the-brief)
 
