@@ -39,7 +39,7 @@ Ten units are fully specified, independently valuable, and deliverable. `S1`–`
 outcome. `S1`–`S3` ended at a CI outcome because a served document was blocked. `S4` and `S5` end at a
 CI outcome for a different reason — **size, not blockage** — and the distinction matters, because the
 old justification no longer applies and reusing it would hide a judgement call. Each of them still
-produces a *page*, not a layer: `composeMiss()` and `composeApex(inventory)` each return a complete
+produces a *page*, not a layer: `composeMiss()` and `composeApex(inventory, origin)` each return a complete
 document body and the stylesheet it requires. From `S6` on, every slice ends at an emitted or served
 document.
 
@@ -224,12 +224,12 @@ Acceptance:
   - S5.2 `projectTotal(inventory)` equals the number of projects in it, and `countByStage(inventory)` returns one entry per `Stage` in `stageOrder` order whose counts sum to `projectTotal` (`C12`).
   - S5.3 `ecosystemTree(inventory)` returns one group per `Stage` in `stageOrder` order including groups with no projects; within a group projects ascend by `id`; every project appears exactly once across all groups (`C11`).
   - S5.4 `contaminationForest(inventory)` roots every project carrying no `escapedFrom`, contains every project exactly once, and over the committed inventory yields at least one node at depth 2 or greater — the chain S2.7 put in the data.
-  - S5.5 `composeApex(inventory)` returns a `ComposedRoute` whose `bodyHtml` contains every project `name` in the committed inventory, the text of `primarySlogan`, and the text of `apexFooterQuote`.
-  - S5.6 `composeApex` returns byte-identical `bodyHtml` for the same inventory on repeated calls, so the built-output assertions in S6 can name what is on the page.
+  - S5.5 `composeApex(inventory, origin)` returns a `ComposedRoute` whose `bodyHtml` contains every project `name` in the committed inventory, the text of `primarySlogan`, and the text of `apexFooterQuote`.
+  - S5.6 `composeApex` returns byte-identical `bodyHtml` for the same inventory and `origin` on repeated calls, so the built-output assertions in S6 can name what is on the page.
   - S5.7 Composing an inventory with one project removed changes the rendered total, that project's stage count, and the ecosystem grouping — asserted by comparing two compositions, so no figure on the page can be a typed literal (`X1`).
   - S5.8 A fixture project whose `name`, `line` and `question` each contain `<`, `>`, `&`, `"` and `'` composes to a `bodyHtml` in which none of the five reaches text position unescaped (`X5`).
-  - S5.9 `assertStyleAgreement` returns `{ ok: true }` for `composeApex(inventory)` over the committed inventory.
-  - S5.10 `composeApex`'s `bodyHtml` contains no `<form>`, no `<script>`, no `<iframe>` and no `on*` attribute (`X3`).
+  - S5.9 `assertStyleAgreement` returns `{ ok: true }` for `composeApex(inventory, origin)` over the committed inventory.
+  - S5.10 `composeApex`'s `bodyHtml` contains no `<form>`, no `<iframe>` and no `on*` attribute (`X3`), and exactly one `<script type="application/ld+json">` element carrying no `</script` sequence in any case (`X6`).
 
 Out of scope: The head metadata, the route declarations and the package — S6. Adding
 `SubZeroDev.Platform.UI.LandingPage` as a dependency: nothing in this slice is emitted, so nothing in
@@ -244,8 +244,9 @@ as a parameter and its tests supply it.
 Delivers: For the first time this repository produces actual HTML files. The landing-page package is
 added at an exact version, the two routes are declared with their titles, descriptions and social
 metadata, and running the build writes one document for the apex and one for the 404 page — each
-carrying the whole page in the response body, the stylesheet inline and the icon embedded, with no
-script and no linked asset of any kind. CI fails the build if anything the bundler adds breaks that.
+carrying the whole page in the response body, the stylesheet inline and the icon embedded, and no
+linked asset of any kind. The apex document carries exactly one inert `application/ld+json` script
+(`X6`); the 404 document carries none. CI fails the build if anything the bundler adds breaks that.
 
 **This is the slice that exercises the design's largest bet.** Every argument downstream assumes a
 bundler hands back a self-contained document, and nothing has ever run it.
@@ -265,7 +266,7 @@ A slice transcribes these values; it does not invent them.
 Acceptance:
   - S6.1 `package.json` names `subzerodev-platform-ui-landing-page` at `0.3.0` with no range prefix, `package-lock.json` resolves exactly that version, and a test asserts both — so a clean install resolving anything else fails.
   - S6.2 `parseCommitId` returns a `CommitId` for a forty-character lowercase hex string and `null` for a 39-character, a 41-character, an uppercase and a non-hex value; a check over the repository finds no second implementation of the forty-hex pattern (`C15`).
-  - S6.3 `config.routes` has exactly two entries — the first at `apexPath` carrying `composeApex(inventory)`, the second at `missPath` carrying `composeMiss()` — each taking `body` and `stylesheet` from its own `ComposedRoute` (`A4`).
+  - S6.3 `config.routes` has exactly two entries — the first at `apexPath` carrying `composeApex(inventory, origin)`, the second at `missPath` carrying `composeMiss()` — each taking `body` and `stylesheet` from its own `ComposedRoute` (`A4`).
   - S6.4 Each route's `metadata.canonicalUrl` and `metadata.openGraph.url` equal `origin` concatenated with that route's `path`, `metadata.openGraph.type` is `"website"`, and the origin string appears exactly once in Adapter's source (`A1`).
   - S6.5 `metadata.icons` has exactly one entry whose `href` is Presentation's `iconDataUri`, and `metadata.themeColor` is Presentation's `themeColor` — both imported; no hex literal and no `data:` literal appears anywhere in Adapter's source (`A2`, `A7`).
   - S6.6 Neither route declares `entry`, `hydrate` or `noScript`, and `config` declares no `styles`, no `publicDir` and no `allow` (`A6`).
@@ -308,7 +309,7 @@ Acceptance:
   - S7.2 `injectBuildMarker(html, commit)` inserts the marker immediately before the first `</head>` and nowhere else; a document with no `</head>` returns `MarkerInsertionPointMissing`; a document already carrying a marker returns `MarkerAlreadyPresent` and gains no second one.
   - S7.3 `finalizeArtifact` validates `input.commit` before anything else: a non-forty-hex value returns `CommitIdMalformed` with `entry: null`, and no file in the tree is modified.
   - S7.4 `finalizeArtifact` over a tree containing no `.html` document returns `OutputTreeMissing` with `entry: null`; over a tree with documents but no `404/index.html` it returns `MissDocumentMissing` with `entry` equal to `missEmittedEntry`.
-  - S7.5 After `finalizeArtifact` succeeds, `missRootEntry` and `missEmittedEntry` are byte-identical in the finished tree (`R2`) — which holds because the copy precedes the injection, asserted by both carrying the same marker.
+  - S7.5 `finalizeArtifact` copies `missEmittedEntry` to `missRootEntry` before either is marked, so the two carry the same marker at the moment the copy is asserted byte-identical; after `finalizeArtifact` succeeds, `missEmittedEntry` is absent from the finished tree and `missRootEntry` is its only surviving copy (`R2`).
   - S7.6 `ArtifactReport.markedEntries` names every `.html` document in the finished tree including the root copy, and `readBuildMarker` returns the input commit for each of them (`R1`).
   - S7.7 `serverConfig()` returns text that resolves an unknown path to `missRootEntry` with status 404, names no path the build does not emit, and sets no cookie, no application-chosen cache-control directive, and no tracking or rewrite header (`R4`) — asserted against the returned string with no container, filesystem or network involved.
   - S7.8 `ArtifactReport.serverConfigPath` is outside `outputDir`, and after `finalizeArtifact` no file named `serverConfigFilename` exists anywhere inside the output tree (`R6`).
