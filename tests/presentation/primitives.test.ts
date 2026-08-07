@@ -4,9 +4,18 @@ import { primitives } from "../../src/presentation";
 import type { PrimitiveName } from "../../src/presentation";
 import { extractSelectors } from "../helpers/css";
 
-const EXPECTED_NAMES: PrimitiveName[] = ["page", "stack", "entry", "meta", "rule", "link"];
+const EXPECTED_NAMES: PrimitiveName[] = [
+  "page",
+  "stack",
+  "entry",
+  "meta",
+  "rule",
+  "link",
+  "row",
+  "bar",
+];
 
-describe("S4.3 — primitives has exactly the six PrimitiveName keys, valid classNames, no duplicates", () => {
+describe("S4.3 — primitives has exactly the eight PrimitiveName keys, valid classNames, no duplicates", () => {
   it("has exactly the expected keys", () => {
     expect(Object.keys(primitives).sort()).toEqual([...EXPECTED_NAMES].sort());
   });

@@ -28,6 +28,7 @@ export { parseCommitId } from "./commit";
 export { resolvedHomes } from "./resolved-homes";
 export { projects } from "./projects";
 export { primarySlogan, apexFooterQuote } from "./copy";
+export { sourceUrl } from "./links";
 export {
   contaminationForest,
   countByStage,

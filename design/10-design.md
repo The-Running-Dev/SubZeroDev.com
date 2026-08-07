@@ -741,8 +741,20 @@ non-goal: it makes the build depend on twelve repositories' internal formats or 
 
 **Rejected — separate `/manifesto`, `/projects`, `/philosophy` routes.** The apex's genre is the plain
 document, and a document is one thing. Splitting it produces a small site, which is what every child
-already is, and the apex's whole distinction is that it is not one. It would also add navigation
-chrome that the visual identity rules out.
+already is, and the apex's whole distinction is that it is not one. It would also add the navigation
+chrome a *multi-route* site requires — a persistent bar carrying route state, a current-page
+affordance, a path back — which is what the visual identity rules out.
+
+**That last clause was narrowed on 2026-08-07**, because it had been read as forbidding any link row
+at all. It was never entitled to that reading: the visual identity ruling
+([`90-decisions.md`](90-decisions.md), 2026-08-06, *"`U2` answered"*) enumerates its constraints —
+minimal, dark, typography-first, large whitespace, no gradient, no illustration, no webfont, a closed
+primitive set — and names no rule about navigation. `00-brief.md` states the opposite obligation: the
+apex *"routes to them"*, and a visitor who arrives and *"has no route to the work"* is the problem
+this site exists to solve. This document's own *Data model* already anticipates the mechanism, calling
+a project `id` *"the anchor fragment"*. **A single row of links on the one document is in scope**; the
+chrome this paragraph rejects is the kind that only a multi-route site can have. See
+[`90-decisions.md`](90-decisions.md), 2026-08-07.
 
 ### A fixed slogan, rather than rotation
 

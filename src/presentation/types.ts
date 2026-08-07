@@ -24,7 +24,9 @@ export type PrimitiveName =
   | "entry"
   | "meta"
   | "rule"
-  | "link";
+  | "link"
+  | "row"
+  | "bar";
 
 export type Primitive = {
   readonly className: ClassName;

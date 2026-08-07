@@ -17,43 +17,148 @@ import {
   ecosystemTree,
   primarySlogan,
   projectTotal,
+  resolvedHomes,
   sinceYear,
+  sourceUrl,
 } from "../content";
-import type { ContaminationNode, Inventory, Project } from "../content";
+import type { AbsoluteUrl, ContaminationNode, Inventory, Project, ProjectId } from "../content";
 import { primitives, stylesheetFor } from "../presentation";
 import type { BodyHtml } from "../presentation";
 import { escapeHtml } from "./escape-html";
 import type { ComposedRoute } from "./types";
 
-// Idea.md lines 556-579 — the "Effortless Action" full essay, one of three
-// unresolved drafts at Idea.md lines 540-604. Chosen by the owner; the other
-// two remain unimplemented in that transcript.
+// A section's anchor, its `meta` index label and its heading, in one place.
+// The header nav links to the same three headings, and a second copy of the
+// heading text is a promise the nav and the h2 will drift.
+type Section = {
+  readonly anchor: string;
+  readonly label: string;
+  readonly heading: string;
+};
+
+const manifestoSection: Section = {
+  anchor: "effortless-action",
+  label: "01 / Effortless Action",
+  heading: "Effortless Action",
+};
+
+const ecosystemSection: Section = {
+  anchor: "echo-system",
+  label: "02 / The Ecosystem",
+  heading: "The Echo System",
+};
+
+const contaminationSection: Section = {
+  anchor: "contamination",
+  label: "03 / Contamination",
+  heading: "Contamination",
+};
+
+const sections: readonly Section[] = [manifestoSection, ecosystemSection, contaminationSection];
+
+// Owner-supplied copy, not a transcription from Idea.md — see 90-decisions.md,
+// 2026-08-07, "the manifesto supersedes the Idea.md draft".
 const manifestoParagraphs: readonly string[] = [
-  "SubZeroDev wasn't built from a business plan.",
-  "None of our products were.",
-  "We don't force ideas into existence.",
-  "We follow curiosity.",
-  "One problem becomes a solution.",
-  "One solution becomes infrastructure.",
-  "Infrastructure becomes a platform.",
-  "Sometimes it becomes an entirely different product.",
-  "We don't chase outcomes.",
+  "SubZeroDev was always meant to be a business.",
+  "We just never decided what kind.",
+  "There was no master plan.",
+  "No product roadmap.",
+  "We built things because they were useful, interesting, or both.",
+  "One problem became a solution.",
+  "One solution became infrastructure.",
+  "Infrastructure became a platform.",
+  "Some things became products.",
+  "Others escaped and became entirely different things.",
+  "We don't force ideas to fit the business.",
+  "We let the business follow the ideas.",
   "We do the next interesting thing well.",
-  "The rest tends to happen on its own.",
+  "Then we see what happened.",
+  "The absence of a plan is the plan.",
 ];
+
+// Opens a top-level section: the anchor the nav targets, the index label and
+// the heading, all from the one `Section` record.
+function openSection(section: Section): string {
+  return [
+    `<div class="${primitives.stack.className}" id="${section.anchor}">`,
+    `<p class="${primitives.meta.className}">${section.label}</p>`,
+    `<h2>${section.heading}</h2>`,
+  ].join("");
+}
+
+type NavTarget = {
+  readonly label: string;
+  readonly url: AbsoluteUrl;
+};
+
+// Blog and Portfolio are the inventory's own homes, found by id rather than
+// restated — those URLs have one home, in `projects.ts`. Renaming either
+// record drops its link silently, because Composition is total and cannot
+// fail. Two tests go red instead: `tests/composition/apex-navigation.test.ts`
+// pins the drop-not-fake behaviour, and `tests/content/inventory.test.ts`
+// asserts the committed inventory still carries both ids (C14's call site).
+function homeOf(
+  hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>,
+  projectId: string,
+): AbsoluteUrl | undefined {
+  for (const [id, url] of hrefById) {
+    if (id === projectId) return url;
+  }
+  return undefined;
+}
+
+function target(label: string, url: AbsoluteUrl | undefined): NavTarget | null {
+  return url === undefined ? null : { label, url };
+}
+
+// `sourceUrl` addresses the account rather than a project, so it produces no
+// `ResolvedHome` and no gate checks it — the cost `20-contract.md` states.
+function outboundTargets(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): readonly NavTarget[] {
+  return [
+    target("Blog", homeOf(hrefById, "publishing")),
+    target("Projects", sourceUrl),
+    target("Portfolio", homeOf(hrefById, "portfolio")),
+  ].filter((t): t is NavTarget => t !== null);
+}
+
+function renderLink(href: string, text: string): string {
+  return `<a class="${primitives.link.className}" href="${href}">${text}</a>`;
+}
+
+function renderOutbound(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
+  return outboundTargets(hrefById)
+    .map((t) => renderLink(escapeHtml(t.url), t.label))
+    .join(" · ");
+}
+
+function renderNav(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
+  const inPage = sections.map((s) => renderLink(`#${s.anchor}`, s.heading)).join(" · ");
+
+  return [
+    `<nav class="${primitives.bar.className}">`,
+    `<p class="${primitives.meta.className}">${inPage}</p>`,
+    `<p class="${primitives.meta.className}">${renderOutbound(hrefById)}</p>`,
+    `</nav>`,
+  ].join("");
+}
 
 function renderManifesto(): string {
   return [
-    `<div class="${primitives.stack.className}">`,
-    `<p class="${primitives.meta.className}">01 / Effortless Action</p>`,
-    `<h2>Effortless Action</h2>`,
+    openSection(manifestoSection),
     ...manifestoParagraphs.map((sentence) => `<p>${sentence}</p>`),
     `<p><em>Effortless Action.</em></p>`,
     `</div>`,
   ].join("");
 }
 
-function renderProjectEntry(project: Project): string {
+function renderProjectName(project: Project, hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
+  const href = hrefById.get(project.id);
+  return href !== undefined
+    ? `<a class="${primitives.link.className}" href="${escapeHtml(href)}">${escapeHtml(project.name)}</a>`
+    : escapeHtml(project.name);
+}
+
+function renderProjectEntry(project: Project, hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
   const edge =
     project.escapedFrom !== undefined
       ? ` · escaped from ${escapeHtml(project.escapedFrom)}`
@@ -65,7 +170,7 @@ function renderProjectEntry(project: Project): string {
 
   return [
     `<div class="${primitives.entry.className}">`,
-    `<h4>${escapeHtml(project.name)}</h4>`,
+    `<h4>${renderProjectName(project, hrefById)}</h4>`,
     `<p class="${primitives.meta.className}">${escapeHtml(project.id)} · ${project.year} · ${escapeHtml(project.stage)}${edge}</p>`,
     `<p>${escapeHtml(project.line)}</p>`,
     question,
@@ -73,7 +178,7 @@ function renderProjectEntry(project: Project): string {
   ].join("");
 }
 
-function renderEcosystem(inventory: Inventory): string {
+function renderEcosystem(inventory: Inventory, hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
   const groups = ecosystemTree(inventory);
   const counts = countByStage(inventory);
   const byStage = new Map(counts.map((c) => [c.stage, c.count] as const));
@@ -82,7 +187,7 @@ function renderEcosystem(inventory: Inventory): string {
     const count = byStage.get(group.stage) ?? 0;
     const body =
       group.projects.length > 0
-        ? `<div class="${primitives.stack.className}">${group.projects.map(renderProjectEntry).join("")}</div>`
+        ? `<div class="${primitives.stack.className}">${group.projects.map((p) => renderProjectEntry(p, hrefById)).join("")}</div>`
         : `<p class="${primitives.meta.className}">No projects here yet.</p>`;
 
     return [
@@ -94,47 +199,48 @@ function renderEcosystem(inventory: Inventory): string {
   });
 
   return [
-    `<div class="${primitives.stack.className}">`,
-    `<p class="${primitives.meta.className}">02 / The Ecosystem</p>`,
-    `<h2>The Ecosystem</h2>`,
+    openSection(ecosystemSection),
     `<p class="${primitives.meta.className}">${projectTotal(inventory)} projects.</p>`,
     ...groupHtml,
     `</div>`,
   ].join("");
 }
 
-function renderContaminationNode(node: ContaminationNode): string {
+function renderContaminationNode(
+  node: ContaminationNode,
+  hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>,
+): string {
   const edge =
     node.project.escapedFrom !== undefined
       ? `${escapeHtml(node.project.escapedFrom)} → `
       : "";
   const children =
     node.escapes.length > 0
-      ? `<div class="${primitives.stack.className}">${node.escapes.map(renderContaminationNode).join("")}</div>`
+      ? `<div class="${primitives.stack.className}">${node.escapes.map((e) => renderContaminationNode(e, hrefById)).join("")}</div>`
       : "";
 
   return [
     `<div class="${primitives.entry.className}">`,
     `<p class="${primitives.meta.className}">${edge}${escapeHtml(node.project.id)}</p>`,
-    `<h4>${escapeHtml(node.project.name)}</h4>`,
+    `<h4>${renderProjectName(node.project, hrefById)}</h4>`,
     children,
     `</div>`,
   ].join("");
 }
 
-function renderContamination(inventory: Inventory): string {
+function renderContamination(inventory: Inventory, hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
   const forest = contaminationForest(inventory);
 
   return [
-    `<div class="${primitives.stack.className}">`,
-    `<p class="${primitives.meta.className}">03 / Contamination</p>`,
-    `<h2>Contamination</h2>`,
-    ...forest.map(renderContaminationNode),
+    openSection(contaminationSection),
+    ...forest.map((n) => renderContaminationNode(n, hrefById)),
     `</div>`,
   ].join("");
 }
 
 export function composeApex(inventory: Inventory): ComposedRoute {
+  const hrefById = new Map(resolvedHomes(inventory).map((h) => [h.projectId, h.url] as const));
+
   const bodyHtml = [
     `<div class="${primitives.page.className}">`,
     `<div class="${primitives.stack.className}">`,
@@ -143,15 +249,21 @@ export function composeApex(inventory: Inventory): ComposedRoute {
     `<p class="${primitives.meta.className}">Professional uncertainty since ${sinceYear(inventory)}.</p>`,
     `<p>${primarySlogan}</p>`,
     `</header>`,
+    renderNav(hrefById),
     `<hr class="${primitives.rule.className}" />`,
+    `<div class="${primitives.row.className}">`,
+    `<div class="${primitives.stack.className}">`,
     renderManifesto(),
-    `<hr class="${primitives.rule.className}" />`,
-    renderEcosystem(inventory),
-    `<hr class="${primitives.rule.className}" />`,
-    renderContamination(inventory),
+    renderContamination(inventory, hrefById),
+    `</div>`,
+    renderEcosystem(inventory, hrefById),
+    `</div>`,
     `<hr class="${primitives.rule.className}" />`,
     `<footer class="${primitives.stack.className}">`,
+    `<div class="${primitives.bar.className}">`,
     `<p>${apexFooterQuote}</p>`,
+    `<p class="${primitives.meta.className}">${renderOutbound(hrefById)}</p>`,
+    `</div>`,
     `</footer>`,
     `</div>`,
     `</div>`,

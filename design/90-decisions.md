@@ -5,10 +5,384 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-(none — both prior items became [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16)
-and [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+(none currently — the inventory/brief subdomain-count item became
+[#37](https://github.com/The-Running-Dev/SubZeroDev.com/issues/37) on 2026-08-07; the two before it
+became [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
+[#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
 
 ---
+
+### 2026-08-07 — `inventory.test.ts` follows the code's `AgentKit` over `Idea.md`/`30-slices.md`'s `Automation`, unreconciled
+Context: `8be5903` (PR #38's base commit, nominally "Header and footer navigation") also rewrote most of
+`src/content/projects.ts`, removing the `Automation` project (`home.kind: "own"`,
+`build-agent.subzerodev.com`) and adding `AgentKit` (`home.kind: "own"`, `agentkit.subzerodev.com`)
+without updating `Idea.md`'s *Product Ecosystem* list or `design/30-slices.md`'s S2.2/S2.3 criteria,
+both of which still name `Automation` and "twelve" verified subdomains. `tests/content/inventory.test.ts`
+was touched in the same commit but its S2.2 `NAMED` array and S2.3 `VERIFIED_SUBDOMAINS` list were not,
+leaving three assertions red and blocking CI on PR #38. Separately, `agentkit.subzerodev.com` does not
+currently resolve (`getaddrinfo ENOTFOUND`, checked directly 2026-08-07), which S2.3's own wording
+("every project with a live subdomain") already contradicts, independent of the naming question.
+Chosen, on the owner's ruling: update only `inventory.test.ts` to match the current code — `NAMED` now
+reads `AgentKit`, `VERIFIED_SUBDOMAINS` gains `agentkit.subzerodev.com` and the expected count moves to
+thirteen. `Idea.md`, `30-slices.md`, and the `agentkit.subzerodev.com` DNS state are left exactly as they
+are; this is a recorded, deliberate deferral, not an oversight.
+Rejected: **Reverting `Automation`** — restores agreement with `Idea.md`/`30-slices.md` with no doc
+edits, but was not what the owner chose. **Recording `AgentKit` as the deliberate rebrand** — would have
+required also editing `Idea.md`'s ecosystem list and `30-slices.md`'s S2.2/S2.3 wording, and setting
+`AgentKit`'s `home.kind` to `"none"` until its subdomain actually resolves; not chosen either.
+Open, not filed as an issue because it is a decision already made, not a todo: `Idea.md` and
+`30-slices.md` still say `Automation`/twelve while the inventory and its test now say `AgentKit`/thirteen,
+and `agentkit.subzerodev.com` is in the inventory as an `own` home that does not resolve.
+Reversibility: cheap — the test-file edit is one array element and one integer; whichever of the two
+rejected alternatives is picked up later touches the same handful of files.
+
+---
+
+### 2026-08-07 — The manifesto supersedes the Idea.md draft
+Context: the manifesto prose in `apex.ts` (`manifestoParagraphs`) reads differently from the "Effortless
+Action" draft at `Idea.md` lines 552-573, which `tests/build/emitted-document.test.ts`'s
+`manifestoSentences` fixture and the code's own comment still cited. Found by running the `build` CI
+job's assertions locally (`npm run build` + `vitest run --config vitest.build.config.ts`): the emitted
+document failed `assertContentPresent` with ten `ManifestoAbsent` errors, because the fixture had gone
+stale against the working tree with no record of when or why.
+Chosen, on the owner's ruling: the new manifesto ("SubZeroDev was always meant to be a business... The
+absence of a plan is the plan.") is the final copy and supersedes the `Idea.md` transcript outright —
+it is owner-supplied prose, not a transcription of one of the three drafts `Idea.md` lines 540-604
+records, so no line citation is made for it. The stale `Idea.md lines 556-579` comment in `apex.ts` is
+replaced with a pointer to this entry instead. `tests/build/emitted-document.test.ts`'s
+`manifestoSentences` fixture is updated to match.
+Recorded because the drift had no entry to begin with: whichever session changed the paragraphs did so
+without writing one, which is what let a build-breaking change sit uncommitted and undetected until
+`/verify` actually ran the `build` job's assertions rather than only `npm test`.
+Rejected: **Reverting to the `Idea.md` first draft** — matches the transcript, the prior commit and the
+stale fixture with no further edits needed; this was this session's own recollection of the owner's
+earlier choice and was raised as the recommended option, but the owner overrode it in favour of the new
+text when asked directly.
+Reversibility: cheap — one array literal, one test fixture, one comment.
+
+---
+
+### 2026-08-07 — `10-design.md`'s navigation-chrome clause narrows; a link row on the one document is in scope
+Context: the owner asked for a header and footer carrying links — in-page anchors on the left, outbound
+destinations on the right. `10-design.md` § *Alternatives considered* → *One document, rather than
+routes per section* closed with "It would also add navigation chrome that the visual identity rules
+out", which is a design statement that the requested feature is forbidden. `AGENTS.md` requires naming
+which side is the defect rather than reconciling, so the work stopped there before any edit.
+Chosen, on the owner's ruling: **the design clause is the defect and it narrows.** It now rejects the
+chrome a *multi-route* site requires — a persistent bar carrying route state, a current-page
+affordance, a path back — and says explicitly that a single row of links on the one document is in
+scope. The evidence for the clause being an over-claim, each checked against the tree rather than
+recalled: the visual identity ruling it appeals to (2026-08-06, "`U2` answered") enumerates its
+constraints and **names no rule about navigation**; `00-brief.md` states the opposite obligation, the
+apex "routes to them" and a visitor with "no route to the work" being the stated problem; and
+`10-design.md`'s own *Data model* already calls a project `id` "the anchor fragment", which anticipates
+the mechanism. The clause was a supporting sentence inside a rejected alternative about *routes*, and
+nothing downstream cites it.
+Recorded because it bounds what was ruled: the multi-route rejection itself is **untouched**. `A4` still
+declares exactly two routes and the apex is still one document. What changed is a claim about the
+visual identity that the visual identity never made.
+Rejected: **Keeping the clause and dropping the feature** — the reading that makes the document true as
+written, and defensible on the grounds that the ecosystem section already links every project, so the
+routing obligation is arguably met; declined by the owner. **Keeping the clause and shipping only the
+outbound half** — the in-page anchors are the part that reads as chrome, and the brief's routing
+language covers outbound links squarely; declined, and it would have left the clause asserting a
+visual-identity rule that still does not exist. **Editing nothing and implementing anyway** — the
+silent reconciliation `AGENTS.md` forbids, and it would leave the next `/redteam` session reading a
+design that contradicts the shipped page.
+Reversibility: cheap — one clause in one document, and no code depends on the wording.
+
+---
+
+### 2026-08-07 — `PrimitiveName` gains an eighth member, `bar`, for edge-justified layout
+Context: the header and footer above need a group of links at each end of the width. `row`, added
+earlier the same day, is `.row > * { flex: 1 1 0 }` — equal columns — so its second child begins at the
+midpoint and leaves roughly 300px dead at the right edge of the 1120px `page`. None of the seven
+expresses edge-justified placement, which is the same gap the `row` entry below records for
+side-by-side placement against the original six. The `row` amendment closed the set at seven and named
+an eighth a further contract amendment, so this is that amendment, one day later.
+Chosen, on the owner's ruling: `PrimitiveName` closes at **eight**. `bar` is a flex container laying
+its direct children left-to-right with `justify-content: space-between`, leaving them at their content
+width, wrapping to a single column at the same `720px` breakpoint `page` and `row` already use. It
+carries one spacing rule — a gap that is a floor in the unwrapped state — and no colour rule and no
+type rule.
+Recorded because it is the distinction that stops a ninth being argued for later: `bar` and `row` are
+not variants of one primitive. `row` divides a width and gives each child an equal share; `bar` leaves
+children at content width and puts the free space between them. Neither expresses the other — `row`
+cannot right-align a child without abandoning the equal share that is its purpose. Recorded with it:
+`bar` needs **no** rule reaching a child it does not name, since content sizing is the flex default,
+which leaves `row` the only primitive whose rules do.
+Rejected: **A single inline line of all six links** with the `·` separator idiom `renderProjectEntry`
+already uses — needs no amendment at all, keeps the set at seven, and is arguably the most
+typography-first answer available; declined by the owner because it is not the left/right split asked
+for. **Using `row` as-is and accepting 50/50 columns** — also no amendment; rejected because the right
+group would float at the midpoint with a third of the width dead beside it, which reads as a layout
+mistake rather than a restraint. **Adding `justify-content: space-between` to `row`** — no new
+primitive; rejected because it is inert while `.row > *` is `flex: 1 1 0`, and changing that child rule
+would break the manifesto/ecosystem layout `row` exists for. **Naming it `nav`** — it is a layout
+primitive and takes its name from structure, not from the one element that first used it, per
+`agent.md`'s "name things after structure, not flavour".
+Reversibility: expensive — `types.ts`, `primitives.ts`, `apex.ts`, `primitives.test.ts` and
+`stylesheet.test.ts` are all written against it, and it reopens a set closed the previous day.
+
+---
+
+### 2026-08-07 — `sourceUrl` enters Content as a constant, and is knowingly outside `V4`
+Context: the right-hand nav group carries Blog, Projects and Portfolio. Blog and Portfolio already
+exist as inventory records with resolvable homes, so both derive through `resolvedHomes` and no URL is
+written twice. **Projects had no representation anywhere** — no Content export addresses the account
+the repositories live in, and Composition may not invent data.
+Chosen, on the owner's ruling: one Content constant, `sourceUrl: AbsoluteUrl`, valued
+`https://github.com/The-Running-Dev?tab=repositories`. The org was confirmed against the remote rather
+than assumed — `origin` is `github.com/The-Running-Dev/SubZeroDev.com`, and there is no `SubZeroDev`
+organisation — and the URL was verified to answer `200` directly, with no redirect, on 2026-08-07.
+Recorded plainly because it is a real cost the contract now states: **this is the one outbound link on
+the page that no gate checks.** `checkLinks` runs over `resolvedHomes(inventory)` and `sourceUrl`
+produces no `ResolvedHome`. It sits outside `V4` rather than violating it — `00-brief.md` requires every
+outbound **project** link to resolve, and a code-forge account page is not one. `10-design.md`'s open
+question 4 ("which repositories are public?") does not block it: a profile page is public regardless of
+any individual repository's visibility.
+Recorded with it, as the fragility a future session will otherwise rediscover: Blog and Portfolio are
+found by the `ProjectId` strings `publishing` and `portfolio` written in `apex.ts`. Renaming either
+record makes its nav link vanish silently, because Composition is total and cannot fail. That is
+covered by an assertion in `tests/composition/` rather than by a type, and the test is what goes red.
+Rejected: **Widening `checkLinks` to accept a bare URL** so CI checks it uniformly — it closes the gap,
+and it was the middle option; declined by the owner because it is a Verification signature change and
+`LinkCheckResult.target` widens with it, which three of S3's acceptance criteria turn on. **A full
+`SiteLink` type with project-reference resolution** — the rigorous answer: a nav entry either names a
+`ProjectId` resolved through `resolvedHomes` or carries its own URL, so no URL is written twice and CI
+gets one list to check; declined as a slice rather than an amendment, needing a new type, a new
+derivation, new `ContentError` codes and a new `C` invariant to serve exactly one link. **Adding GitHub
+to the inventory as a `Project`** — never put to the owner: it would place a row in the ecosystem list
+for something that is not a project, and force a `stage`, a `line` and a `question` onto it.
+Reversibility: cheap — one constant, one export line and one contract paragraph.
+
+---
+
+### 2026-08-07 — `PrimitiveName` gains a seventh member, `row`, for side-by-side layout
+Context: the owner asked for the apex layout to put the manifesto and ecosystem sections side by side.
+All six existing primitives (`page`, `stack`, `entry`, `meta`, `rule`, `link`) are full-width vertical
+layouts; none expresses side-by-side placement, and the 2026-08-06 `U2` ruling closed `PrimitiveName`
+at six, naming an addition a contract amendment rather than a class someone adds to markup. The
+mechanical work was done first and the amendment was written as a **draft** at `sonnet`/medium, which
+routed it here; this entry supersedes that draft in place — it was never committed, so nothing in the
+log's history is rewritten.
+Chosen, on the owner's ruling at `/contract`: `PrimitiveName` closes at **seven**. `row` is a flex
+container laying its direct children left-to-right, each an equal share of the available width
+(`flex: 1 1 0; min-width: 0`), wrapping to a single column at the same `720px` breakpoint `.page`
+already uses. It carries exactly **one** spacing rule — the gap between columns — and no colour rule,
+no type rule and no spacing inside a column.
+Corrected with it: the draft claimed `row` "carries no colour, type or spacing rule of its own", while
+the implementation declares `gap: clamp(1.1rem, 2.4vw, var(--space-2))`. The **draft was the wrong
+side** — a flex row with no gap butts its columns together, and `page`, `stack` and `entry` each
+declare their own gap. `20-contract.md` now names the gap as the single exception.
+Recorded because it is new to the set: `row` is the only primitive whose rules reach elements it does
+not name, through `.row > *`. That is what makes the equal share a property of the row rather than of
+its contents — a child needs no cooperating class — and it is why `Primitive.rules` had to be restated
+(see the entry below).
+Rejected: **CSS Grid** (`repeat(auto-fit, minmax(…, 1fr))`) — genuinely wraps without a media query,
+which would be one fewer `@media` block; rejected because every other primitive is flex, the `720px`
+breakpoint is already `page`'s, and `auto-fit` stops giving equal columns between the wrap point and
+full width, which is the one property the row exists to provide. **A modifier class on `stack`** —
+smaller surface; rejected because `PrimitiveName` is the only class vocabulary Composition may
+reference, and a modifier would be a second, informal one beside it. **Naming it `columns`** — `row`
+names the flex-direction directly and matches how the ask was phrased. **Rejecting it outright and
+keeping the set at six** — the side-by-side layout would not ship.
+Reversibility: expensive now. `types.ts`, `primitives.ts`, `apex.ts`, `stylesheet.test.ts` and
+`primitives.test.ts` are all written against it, and `30-slices.md` § `S4.3`/`S4.7`/`S4.8` still say
+"the six" and are drift `/slices` owns.
+
+---
+
+### 2026-08-07 — `--link` moves to `#6FD3FF`, and the contract's `P2` figure was stale
+Context: `palette.ts` and `20-contract.md`'s token table both carried `--link: #6FD3FF`, uncommitted
+and with **no log entry**, hours after the 2026-08-07 ruling above reverted a palette swap and recorded
+`#5B7CFF` as retained. Changing it again the same day with nothing written down relitigates a
+signed-off decision, which is the failure `AGENTS.md` § *Budget discipline* names. Found by `/contract`
+re-deriving `P2` against the tree.
+Chosen, on the owner's ruling: `#6FD3FF` stands, and this entry is the record it never got. Contrast
+recomputed rather than remembered — `--link`/`--bg` improves from **5.18:1 to 11.17:1** against
+`P2`(a)'s 4.5:1 threshold, and `--link`/`--fg` moves from **3.22:1 to 1.50:1**, which strengthens
+`P2`(b)'s hue-independence argument rather than weakening it: the link is now even less separable from
+body text by luminance alone, so the `text-decoration: underline` the primitive declares is doing more
+work, not less.
+Corrected with it: `P2` stated `--link` against `--fg` as **3.22:1**, computed for `#5B7CFF` and false
+of the tree since the swap. It now reads 1.50:1 and names the 11.17:1 margin against `--bg`, so the
+row cannot be read as claiming (b) follows from (a).
+Recorded because a future reader will hit it: the 2026-08-07 palette entry above rejects WCAG AAA on
+the evidence that "`--fg-muted` (6.62:1) and `--link` (5.19:1) both still miss 7:1". Against `#6FD3FF`
+only `--fg-muted` misses; `--link` clears AAA at 11.17:1. That entry is not edited — the log is
+append-only — and the AAA rejection still stands on `--fg-muted` alone.
+Rejected: **Reverting to `#5B7CFF`** — restores the state the earlier ruling signed off and makes
+`P2`'s original figure true again with no new entry; declined by the owner, and it would have cost more
+than half the contrast margin against `--bg`. **Keeping `#6FD3FF` and writing no entry** — cheapest,
+and it leaves a token that changed twice in one day with one ruling recorded against it, so the next
+session re-derives the argument from scratch.
+Reversibility: cheap — one hex literal, one table cell, one invariant figure.
+
+---
+
+### 2026-08-07 — `X5` covers attribute position, and `Primitive.rules` is restated by its anchor
+Context: `/contract`. Two invariants were narrower than both the design and the committed code, one of
+them since before this session's work.
+Chosen: **`X5` widens.** It read "`name`, `line`, a present `question` … is HTML-escaped **in text
+position**". `apex.ts` interpolates `id`, `stage` and `escapedFrom` as well, and now writes a
+`ResolvedHome.url` into an `href` — an attribute, which the invariant did not reach at all. The
+**contract was the defect**: `escapeHtml` already escapes `"` and `'`, so the code was correct and
+unasserted. `X5` is now over every interpolated Content value, in attribute position as well as text,
+and states why the halves are not redundant — `"` and `'` are inert in text and are exactly what closes
+an attribute early. The field enumeration is dropped rather than extended, because it is what went
+stale.
+Chosen: **`Primitive.rules` is restated by its anchor.** It permitted "a pseudo-class, a pseudo-element
+or a descendant combinator", while `.page > .stack`, `.entry + .entry` and
+`.page section > p, .page article > p` have been committed since the editorial pass and `.row > *` adds
+a universal selector. The **contract was the defect, and predates this session.** The clause now
+requires only that every selector *begins with* the primitive's class selector, each selector in a list
+anchored independently, because the anchor alone establishes the property the clause exists for — no
+rule matching an element the class is absent from. Verified by inspection: all seven primitives satisfy
+it.
+Rejected: **Extending each enumeration** — `X5` gaining `id`, `stage`, `escapedFrom` and `url`;
+`Primitive.rules` gaining child, sibling and universal selectors. Rejected because both lists have now
+gone stale once by the ordinary act of writing correct code against them, and a list that must be
+revisited on every composition change is a drift generator. Stating the rule by its reason is the same
+move `R4` made when "adds no header of its own" proved unsatisfiable. **Leaving both and filing them
+for `/track`** — they are contract text, and `/contract` is the command that owns it.
+Reversibility: cheap — two table rows.
+
+---
+
+### 2026-08-07 — The `P3` brief conflict is numbered `U10`
+Context: the 2026-08-07 `P3` entry narrowed the invariant to motion and recorded that this puts the
+contract in conflict with `00-brief.md` § *Definition of done*, explicitly leaving "whether it earns
+its own `Unresolved` number" to the owner. `## Unresolved` is `20-contract.md`'s section, so the
+numbering is `/contract`'s to apply once ruled.
+Chosen, on the owner's ruling: add `U10`, in `U5`'s shape — the brief clause, the contract clause, the
+adjudication, and the remaining action named as an owner edit to `00-brief.md`. The reasoning for the
+number is that a live brief conflict recorded only in an append-only log is one nobody re-reads;
+`## Unresolved` is the list that gets checked. `U10` blocks nothing, and `U9` still owns the separate
+question of what would verify `P3`.
+Rejected: **`U10` plus a `U11` for the inventory-versus-brief conflict** — `00-brief.md` § *Environment*
+records "Verified 2026-08-05 … twelve project subdomains" while the inventory now carries thirteen own
+homes, with three failing assertions in `tests/content/inventory.test.ts` as the evidence; declined,
+and it is a content-versus-brief question rather than an interface gap, so it does not belong in this
+contract's `Unresolved`. It is reported and left for the owner. **No number at all** — the conflict is
+already in the log and in `P3`'s own row, so nothing would be lost but the checklist position.
+Reversibility: cheap — one `Unresolved` entry, and numbers are never reused.
+
+---
+
+### 2026-08-07 — The GameEngine colour palette is not adopted; the editorial-pass palette stands
+Context: `/reconcile`. An uncommitted change swapped all five palette tokens a second time — from the
+2026-08-06 editorial-pass values to `SubZeroDev.GameEngine`'s own landing tokens, read out of
+`site/src/site.css` (`--landing-bg` #090a0d, `--landing-text` #f4f5f7, `--landing-muted` #a2a9b4,
+`--landing-accent` #82d8ff), with `--rule` #242528 as the opaque flattening of that page's
+`rgba(255, 255, 255, 0.11)` decorative border against the new `--bg`. The transcription was verified
+correct against the sibling file and the flattening is exact (36.06 / 36.95 / 39.62 → #242528).
+Recomputed contrast improved on every pair: `--fg`/`--bg` 18.15:1, `--fg-muted`/`--bg` 8.36:1,
+`--link`/`--bg` 12.46:1, `--rule`/`--bg` 1.29:1 (exempt), `--link`/`--fg` 1.46:1. `20-contract.md`'s
+token table was **not** updated with it, and the suite stayed green at 275 tests — see the
+`palette.test.ts` entry below for why nothing caught that.
+Chosen, on the owner's ruling: the code reverts. `palette.ts` and `tests/presentation/palette.test.ts`
+return to the editorial-pass values — #111113 / #F3F1EC / #9A989F / #2B2B31 / #5B7CFF — which the
+contract's token table already records, so no design document moves. The font stack does **not** revert
+with it; that is the entry below, and the sibling-site alignment is therefore deliberately partial.
+Recorded with it, because it is the evidence anyone reopening this would need: against the rejected
+palette the whole set clears **WCAG AAA**, which would have falsified the 2026-08-06 `P2` entry's
+rejection of AAA ("`--fg-muted` (5.71:1) and `--link` (6.03:1) both miss"). Against the retained
+palette that rejection stands unchanged — 6.62:1 and 5.19:1 both still miss 7:1.
+Recorded with it, because it sent this pass looking in the wrong places: the 2026-08-06 entry's
+`Divergence:` note says `10-design.md`'s *visual identity* / *Copy* sections and `30-slices.md`'s
+`S4`/`S5` acceptance text "may still describe the U2 values verbatim (hex codes, the 4rem–8.5rem `h1`
+range)". Neither document contains a six-digit hex or that range. `S4.1` *references* the contract's
+table rather than copying it, so single ownership held and there was nothing there to reconcile. The
+note is left standing, this log being append-only. That entry also cites `site/src/landing.css` as the
+palette's source; the colour tokens live in `site/src/site.css`, and `landing.css` carries the scale
+and spacing it was in fact matched against.
+Rejected: Moving the contract to the new values — the recommended resolution, on the grounds that the
+change was owner-directed, the transcription verified and every contrast margin better; declined by
+the owner. Keeping the swap and leaving the contract stale — the state the working tree was in, and
+the one this command exists to end.
+Reversibility: cheap — five hex literals in one file, and the contract never moved
+
+### 2026-08-07 — `--font-sans` leads with Inter, and the contract stops calling the stack a system stack
+Context: `/reconcile`. The same uncommitted change also moved `--font-sans` from
+`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif` to
+`Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`,
+transcribed from `SubZeroDev.GameEngine`'s `site/src/index.css`. `Inter` is not a system face on
+Windows, macOS or mainstream Linux, while `20-contract.md`'s token table described `--font-sans` as
+"a system sans stack".
+Chosen, on the owner's ruling: the code stands and the contract moves. The table cell becomes "a sans
+stack of locally-resolved faces", and the paragraph below it gains the reason — naming a face is a
+preference the browser resolves locally, not a load, so an absent face falls through to the next
+entry. `P1` is untouched, and was verified rather than assumed: nothing here declares an `@font-face`
+or a `url(`, and neither does the sibling — GameEngine names `Inter` the same way and loads no webfont
+anywhere in that repository. `S4.8`'s implemented check tests for `url(` and `@font-face`, which is
+the right reading of `P1` and needed no change.
+Rejected: Reverting the stack alongside the palette — the recommended resolution, since keeping one
+half of a sibling-site alignment leaves the apex carrying GameEngine's typeface without its colours,
+and it would have left the working tree clean against `master` with no document edit at all; declined
+by the owner. Keeping the code and leaving the cell saying "a system sans stack" — cheapest, and it
+would have been a known-and-retained inaccuracy rather than a silent one; rejected because the
+contract would describe something the code does not do. Self-hosting `Inter` so the face actually
+resolves — never on the table: that is a webfont, which `P1` forbids outright.
+Reversibility: cheap — one token value and two sentences
+
+### 2026-08-07 — `P3` narrows to motion; a colour transition is not animation, and the brief now disagrees
+Context: `/reconcile`. The `link` primitive has declared `transition: color 120ms ease` since the
+2026-08-06 editorial pass, and no `@media (prefers-reduced-motion: reduce)` rule exists anywhere in
+`src/`. `P3` as written — "Nothing animates under `prefers-reduced-motion: reduce`" — was therefore
+false of the tree, and had been since that pass. It survived because `U9` leaves `P3` with no
+verification surface: an invariant with nothing callable behind it cannot fail. `20-contract.md`'s
+`Primitive.rules` row had already reserved the mechanism ("`P3`'s `prefers-reduced-motion` rules are
+the case that needs one"), so this was an unused affordance rather than an unforeseen gap.
+Chosen, on the owner's ruling: `P3` narrows rather than the code changing. The invariant now says
+nothing **moves** — no transform, translation, scale, rotation, position change or scroll behaviour
+animated or transitioned — and states that a transition of a non-positional property is permitted, the
+hover colour change being the case in the primitive set. The reasoning is that the preference
+addresses vestibular motion rather than change as such, which is WCAG 2.3.3's subject. The tree is
+compliant with no code change.
+**This puts the contract in conflict with the brief, and the conflict is recorded rather than
+resolved.** `00-brief.md` § *Definition of done* states the broad form — "animates nothing under
+`prefers-reduced-motion: reduce`" — and the brief outranks the contract. A model may interrogate that
+file but not author it, so the edit is not made here. Until the owner strikes or narrows that clause,
+the brief and the contract disagree on a released requirement. That is the same shape as `U5`, and
+whether it earns its own `Unresolved` number is the owner's call, not this entry's.
+Rejected: Adding the reduced-motion block to the `link` primitive and staging the checker for `/track`
+— the recommended resolution: four lines, the mechanism already reserved, the inner selector still
+rooted at `.link` so `S4.4` and `X4` were unaffected, and it would have made `P3` true rather than
+merely unchecked; declined by the owner. Reporting only and staging the whole thing for `/track` — the
+strictest reading of this command's remit, and it would have left a known invariant violation in the
+tree for as long as the issue sat. Leaving `P3` broad and the code untouched — the state found, and
+the one this command exists to end.
+Reversibility: cheap for the wording — one invariant row. The brief conflict is the owner's to close
+and is not this document's to assume closed.
+
+### 2026-08-07 — `palette.test.ts` parses the contract's token table instead of transcribing it
+Context: `/reconcile`. The test's own comment claimed it was the drift check between
+`20-contract.md`'s token-block table and `palette.ts` — "transcribed once here so a drift between the
+table and `palette` fails a test rather than going unnoticed". It could not be. It held a **second
+copy** of the table in an `EXPECTED` constant, so it proved only that the file agreed with itself: the
+palette swap above edited `palette.ts` and `EXPECTED` together, and the whole suite stayed green at
+275 tests while the contract went stale. The mechanism written to catch exactly this drift was
+defeated by the ordinary way the drift is introduced.
+Chosen, on the owner's ruling, a code change rather than a tracker item: the test **reads the five
+colour rows out of `design/20-contract.md`** at run time and compares `palette` against them. The
+contract is now a party to the check rather than the subject of a claim about one. An arity assertion
+requires the parse to find exactly five rows, so a table reflow fails loudly instead of yielding an
+empty expectation and passing vacuously — which is the new failure mode a parsing check introduces and
+the transcription did not have.
+Verified in both directions rather than asserted. Positive: 10 of 10 pass against the tree as it
+stands. Negative: changing `--bg` in the contract alone to `#111114` fails **2** assertions naming
+both values, and stripping the value backticks to simulate a reflow fails **8**, the arity guard among
+them. The contract was restored from a copy after each, and `git diff` confirmed it clean.
+Rejected: Staging the defective guard under `## Open` for `/track` and correcting only the comment —
+the recommended resolution, on `AGENTS.md`'s "defer work to the tracker rather than processing it
+inline", and it avoids a test that depends on a document's formatting; declined by the owner in favour
+of closing the hole now. Proposing the `agent.md` lesson and changing nothing — it would have left a
+check in the suite whose comment overstates what it guarantees, which is how this drift got through
+once already. Moving the hex values out of the contract so the table cites `palette.ts` and there is
+nothing to keep in sync — the other way to give one value one home; not put to the owner, because it
+would strip the contract of the values a `P2` checker and every reviewer read that table for.
+Reversibility: cheap — one test file, and the row shape it depends on is documented in it
 
 ### 2026-08-06 — Visual identity revised: an editorial pass over the U2 palette, type scale and spacing
 Context: The owner judged the U2 apex identity (`90-decisions.md`, "`U2` answered: Presentation's token

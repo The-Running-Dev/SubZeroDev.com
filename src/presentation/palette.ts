@@ -13,7 +13,7 @@ export const palette: Palette = {
   fg: hex("#F3F1EC"),
   "fg-muted": hex("#9A989F"),
   rule: hex("#2B2B31"),
-  link: hex("#5B7CFF"),
+  link: hex("#6FD3FF"),
 };
 
 // Derived from `--bg` rather than chosen separately (U2's ruling): the

@@ -46,7 +46,7 @@ describe("S2.2 — every named ecosystem product appears exactly once", () => {
     "Game Engine",
     "Platform",
     "Publishing",
-    "Automation",
+    "AgentKit",
     "Documentation",
     "Lucifer Chronicles",
     "Ogre's Kitchen",
@@ -57,7 +57,7 @@ describe("S2.2 — every named ecosystem product appears exactly once", () => {
   });
 });
 
-describe("S2.3 — the twelve verified subdomains each appear exactly once as an own home", () => {
+describe("S2.3 — the thirteen verified subdomains each appear exactly once as an own home", () => {
   const VERIFIED_SUBDOMAINS = [
     "https://blog.subzerodev.com",
     "https://build-agent.subzerodev.com",
@@ -69,6 +69,7 @@ describe("S2.3 — the twelve verified subdomains each appear exactly once as an
     "https://blogging.subzerodev.com",
     "https://platform.subzerodev.com",
     "https://workspace.subzerodev.com",
+    "https://agentkit.subzerodev.com",
     "https://winget.subzerodev.com",
     "https://portfolio.subzerodev.com",
   ];
@@ -76,8 +77,8 @@ describe("S2.3 — the twelve verified subdomains each appear exactly once as an
   const ownUrls: string[] = [];
   for (const p of projects) if (p.home.kind === "own") ownUrls.push(p.home.url);
 
-  it("carries exactly twelve own homes", () => {
-    expect(ownUrls).toHaveLength(12);
+  it("carries exactly thirteen own homes", () => {
+    expect(ownUrls).toHaveLength(13);
   });
 
   it.each(VERIFIED_SUBDOMAINS)("%s appears exactly once", (target) => {
@@ -200,6 +201,27 @@ describe("S5.5 — composeApex(inventory)'s bodyHtml over the committed inventor
 
   it("contains the text of apexFooterQuote", () => {
     expect(bodyHtml).toContain(apexFooterQuote);
+  });
+});
+
+// The apex nav derives its Blog and Portfolio links by looking up the id
+// strings `publishing` and `portfolio` (apex.ts). Composition is total and
+// cannot fail, so a renamed or removed record drops the link silently. These
+// are the assertions that go red instead — see 90-decisions.md, 2026-08-07.
+describe("the apex nav's two derived links still resolve against the committed inventory", () => {
+  it.each(["publishing", "portfolio"])("a project with id %s exists and has a resolvable home", (id) => {
+    const project = projects.find((p) => p.id === id);
+    expect(project, `no project carries the id "${id}" that apex.ts looks up`).toBeDefined();
+    expect(project?.home.kind, `project "${id}" must have a home the nav can link to`).not.toBe(
+      "none",
+    );
+  });
+
+  it("composeApex over the committed inventory renders all three outbound links", () => {
+    const { bodyHtml } = composeApex(committed);
+    for (const label of ["Blog", "Projects", "Portfolio"]) {
+      expect(bodyHtml, `the nav lost its ${label} link`).toContain(`>${label}</a>`);
+    }
   });
 });
 

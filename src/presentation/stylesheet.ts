@@ -14,7 +14,7 @@ import type { BodyHtml, StylesheetText } from "./types";
 
 function tokenBlock(): string {
   return `:root {
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "Cascadia Code", Consolas, monospace;
   --step--1: 0.8rem;
   --step-0: 1rem;
