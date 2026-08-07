@@ -23,6 +23,8 @@ export const context: BuildContext = {
   utcYear: yr(2026),
 };
 
+export const TEST_ORIGIN = "https://subzerodev.com";
+
 export function makeProject(overrides: Partial<Project> = {}): Project {
   const base: Project = {
     id: pid("base"),

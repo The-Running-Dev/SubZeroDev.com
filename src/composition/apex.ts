@@ -25,7 +25,16 @@ import type { AbsoluteUrl, ContaminationNode, Inventory, Project, ProjectId } fr
 import { primitives, stylesheetFor } from "../presentation";
 import type { BodyHtml } from "../presentation";
 import { escapeHtml } from "./escape-html";
+import { organizationJsonLd } from "./json-ld";
 import type { ComposedRoute } from "./types";
+
+// PLACEHOLDER COPY: the Organization block's `name` and `description` are
+// placeholders, started on the owner's explicit instruction ahead of final
+// copy — the same precedent as S6's route titles and descriptions
+// (design/90-decisions.md, 2026-08-06). Replace before publication.
+const organizationName = "SubZeroDev (placeholder name — replace before publication)";
+const organizationDescription =
+  "Placeholder description for the SubZeroDev organisation — replace before publication.";
 
 // A section's anchor, its `meta` index label and its heading, in one place.
 // The header nav links to the same three headings, and a second copy of the
@@ -238,7 +247,7 @@ function renderContamination(inventory: Inventory, hrefById: ReadonlyMap<Project
   ].join("");
 }
 
-export function composeApex(inventory: Inventory): ComposedRoute {
+export function composeApex(inventory: Inventory, origin: string): ComposedRoute {
   const hrefById = new Map(resolvedHomes(inventory).map((h) => [h.projectId, h.url] as const));
 
   const bodyHtml = [
@@ -267,6 +276,7 @@ export function composeApex(inventory: Inventory): ComposedRoute {
     `</footer>`,
     `</div>`,
     `</div>`,
+    `<script type="application/ld+json">${organizationJsonLd(organizationName, organizationDescription, origin)}</script>`,
   ].join("") as BodyHtml;
 
   return {

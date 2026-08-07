@@ -16,6 +16,7 @@ import {
 } from "../../src/content";
 import type { BuildContext, CommitId, Inventory, Project, Year } from "../../src/content";
 import { assertStyleAgreement } from "../../src/verification";
+import { TEST_ORIGIN } from "./fixtures";
 
 const context: BuildContext = {
   commit: "0".repeat(40) as CommitId,
@@ -188,7 +189,7 @@ const ESCAPE_TABLE: Record<string, string> = {
 const htmlEscape = (s: string): string => s.replace(ESCAPE_SOURCE, (c) => ESCAPE_TABLE[c]!);
 
 describe("S5.5 — composeApex(inventory)'s bodyHtml over the committed inventory", () => {
-  const { bodyHtml } = composeApex(committed);
+  const { bodyHtml } = composeApex(committed, TEST_ORIGIN);
 
   it.each(projects.map((p) => p.name))("contains project name %s (escaped where X5 requires it)", (name) => {
     expect(bodyHtml).toContain(htmlEscape(name));
@@ -217,7 +218,7 @@ describe("the apex nav's two derived links still resolve against the committed i
   });
 
   it("composeApex over the committed inventory renders all three outbound links", () => {
-    const { bodyHtml } = composeApex(committed);
+    const { bodyHtml } = composeApex(committed, TEST_ORIGIN);
     for (const label of ["Blog", "Projects", "Portfolio"]) {
       expect(bodyHtml, `the nav lost its ${label} link`).toContain(`>${label}</a>`);
     }
@@ -226,7 +227,7 @@ describe("the apex nav's two derived links still resolve against the committed i
 
 describe("S5.9 — assertStyleAgreement holds for composeApex(inventory) over the committed inventory", () => {
   it("returns ok: true", () => {
-    const { bodyHtml, stylesheet } = composeApex(committed);
+    const { bodyHtml, stylesheet } = composeApex(committed, TEST_ORIGIN);
     expect(assertStyleAgreement(bodyHtml, stylesheet)).toEqual({ ok: true, value: null });
   });
 });

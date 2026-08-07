@@ -14,7 +14,7 @@ import { composeApex } from "../../src/composition";
 import { projects, validateInventory } from "../../src/content";
 import { iconDataUri } from "../../src/presentation";
 import { assertContentPresent, assertSelfContained } from "../../src/verification";
-import { context, makeProject, pid } from "../content/fixtures";
+import { context, makeProject, pid, TEST_ORIGIN } from "../content/fixtures";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const distDir = resolve(here, "../../site/dist");
@@ -74,7 +74,7 @@ describe("S6.11 — assertContentPresent holds for the emitted apex", () => {
       makeProject({ id: pid("alpha"), name: "Alpha Systems" }),
       makeProject({ id: pid("bravo"), name: "Bravo Labs" }),
     ] as const;
-    const { bodyHtml } = composeApex(fixtureInventory);
+    const { bodyHtml } = composeApex(fixtureInventory, TEST_ORIGIN);
     expect(assertContentPresent(bodyHtml, manifestoSentences, fixtureInventory)).toEqual({
       ok: true,
       value: null,

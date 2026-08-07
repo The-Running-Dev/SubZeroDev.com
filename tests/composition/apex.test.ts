@@ -10,7 +10,7 @@ import { composeApex } from "../../src/composition";
 import { apexFooterQuote, primarySlogan } from "../../src/content";
 import type { Inventory, Project } from "../../src/content";
 import { assertStyleAgreement } from "../../src/verification";
-import { makeProject, pid } from "../content/fixtures";
+import { makeProject, pid, TEST_ORIGIN } from "../content/fixtures";
 
 function inventory(...projects: readonly [Project, ...Project[]]): Inventory {
   return projects;
@@ -26,7 +26,7 @@ const bravo = makeProject({
 const sample: Inventory = inventory(alpha, bravo);
 
 describe("S5.5 — composeApex's bodyHtml carries project names, the slogan and the footer quote", () => {
-  const { bodyHtml } = composeApex(sample);
+  const { bodyHtml } = composeApex(sample, TEST_ORIGIN);
 
   it.each(sample.map((p) => p.name))("contains project name %s", (name) => {
     expect(bodyHtml).toContain(name);
@@ -43,8 +43,8 @@ describe("S5.5 — composeApex's bodyHtml carries project names, the slogan and 
 
 describe("S5.6 — composeApex is deterministic", () => {
   it("returns byte-identical bodyHtml and stylesheet for the same inventory on repeated calls", () => {
-    const first = composeApex(sample);
-    const second = composeApex(sample);
+    const first = composeApex(sample, TEST_ORIGIN);
+    const second = composeApex(sample, TEST_ORIGIN);
     expect(first.bodyHtml).toBe(second.bodyHtml);
     expect(first.stylesheet).toBe(second.stylesheet);
   });
@@ -52,8 +52,8 @@ describe("S5.6 — composeApex is deterministic", () => {
 
 describe("S5.7 — no figure on the page is a typed literal (X1)", () => {
   it("removing a project changes the total, its stage count and the ecosystem grouping", () => {
-    const full = composeApex(sample).bodyHtml;
-    const reduced = composeApex(inventory(bravo)).bodyHtml;
+    const full = composeApex(sample, TEST_ORIGIN).bodyHtml;
+    const reduced = composeApex(inventory(bravo), TEST_ORIGIN).bodyHtml;
 
     expect(reduced).not.toBe(full);
     expect(reduced).not.toContain(alpha.name);
@@ -72,7 +72,7 @@ describe("S5.8 — interpolated Content strings are escaped (X5)", () => {
       question: `Question ${dangerous}`,
     }),
   );
-  const { bodyHtml } = composeApex(inv);
+  const { bodyHtml } = composeApex(inv, TEST_ORIGIN);
 
   it("does not carry the raw fixture text in text position", () => {
     expect(bodyHtml).not.toContain(`Name ${dangerous}`);
@@ -90,20 +90,16 @@ describe("S5.8 — interpolated Content strings are escaped (X5)", () => {
 
 describe("S5.9 — assertStyleAgreement holds for composeApex", () => {
   it("returns ok: true for a fixture inventory", () => {
-    const { bodyHtml, stylesheet } = composeApex(sample);
+    const { bodyHtml, stylesheet } = composeApex(sample, TEST_ORIGIN);
     expect(assertStyleAgreement(bodyHtml, stylesheet)).toEqual({ ok: true, value: null });
   });
 });
 
-describe("S5.10 — composeApex's bodyHtml contains no form, script, iframe or on* attribute (X3)", () => {
-  const { bodyHtml } = composeApex(sample);
+describe("S5.10 — composeApex's bodyHtml contains no form, iframe or on* attribute (X3), and exactly one application/ld+json script (X6)", () => {
+  const { bodyHtml } = composeApex(sample, TEST_ORIGIN);
 
   it("no <form>", () => {
     expect(bodyHtml.toLowerCase()).not.toContain("<form");
-  });
-
-  it("no <script>", () => {
-    expect(bodyHtml.toLowerCase()).not.toContain("<script");
   });
 
   it("no <iframe>", () => {
@@ -112,5 +108,28 @@ describe("S5.10 — composeApex's bodyHtml contains no form, script, iframe or o
 
   it("no on* attribute", () => {
     expect(bodyHtml).not.toMatch(/\son[a-zA-Z]+\s*=/i);
+  });
+
+  it("exactly one <script type=\"application/ld+json\"> element", () => {
+    const matches = bodyHtml.match(/<script\b/gi) ?? [];
+    expect(matches).toHaveLength(1);
+    expect(bodyHtml).toContain('<script type="application/ld+json">');
+  });
+
+  it("the ld+json block carries no </script sequence in any case", () => {
+    const match = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/i.exec(bodyHtml);
+    expect(match).not.toBeNull();
+    expect(match![1]!.toLowerCase()).not.toContain("</script");
+  });
+
+  it("the ld+json block holds a valid Organization object naming the origin", () => {
+    const match = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/i.exec(bodyHtml);
+    expect(match).not.toBeNull();
+    const parsed: unknown = JSON.parse(match![1]!);
+    expect(parsed).toMatchObject({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      url: TEST_ORIGIN,
+    });
   });
 });

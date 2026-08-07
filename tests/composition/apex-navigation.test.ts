@@ -11,7 +11,7 @@ import { sourceUrl } from "../../src/content";
 import type { Inventory, Project } from "../../src/content";
 import { primitives } from "../../src/presentation";
 import { assertStyleAgreement } from "../../src/verification";
-import { makeProject, pid, url } from "../content/fixtures";
+import { makeProject, pid, TEST_ORIGIN, url } from "../content/fixtures";
 
 const publishing = makeProject({
   id: pid("publishing"),
@@ -32,7 +32,7 @@ const inventory = (...ps: readonly [Project, ...Project[]]): Inventory => ps;
 const full: Inventory = inventory(publishing, portfolio);
 
 describe("the nav bar renders through the `bar` primitive", () => {
-  const { bodyHtml } = composeApex(full);
+  const { bodyHtml } = composeApex(full, TEST_ORIGIN);
 
   it("carries the bar class", () => {
     expect(bodyHtml).toContain(`class="${primitives.bar.className}"`);
@@ -50,7 +50,7 @@ describe("the nav bar renders through the `bar` primitive", () => {
 });
 
 describe("every in-page anchor resolves to a section that exists in the same document", () => {
-  const { bodyHtml } = composeApex(full);
+  const { bodyHtml } = composeApex(full, TEST_ORIGIN);
   const anchors = [...bodyHtml.matchAll(/href="#([^"]+)"/g)].map((m) => m[1]!);
 
   it("emits three in-page anchors", () => {
@@ -73,7 +73,7 @@ describe("every in-page anchor resolves to a section that exists in the same doc
 });
 
 describe("the nav link text is the section heading, not a second copy of it", () => {
-  const { bodyHtml } = composeApex(full);
+  const { bodyHtml } = composeApex(full, TEST_ORIGIN);
 
   it.each(["Effortless Action", "The Echo System", "Contamination"])(
     "%s appears as both a heading and a nav link",
@@ -85,7 +85,7 @@ describe("the nav link text is the section heading, not a second copy of it", ()
 });
 
 describe("the outbound group carries Blog, Projects and Portfolio", () => {
-  const { bodyHtml } = composeApex(full);
+  const { bodyHtml } = composeApex(full, TEST_ORIGIN);
 
   it("Blog's href is the publishing project's own home, not a restated URL", () => {
     expect(bodyHtml).toContain(`href="https://blog.example.test">Blog</a>`);
@@ -116,13 +116,16 @@ describe("the outbound group carries Blog, Projects and Portfolio", () => {
 // renamed record drops its link with no error. This is what that looks like.
 describe("a derived link is dropped — not faked — when its project is absent", () => {
   it("no Blog link when nothing carries the publishing id", () => {
-    const { bodyHtml } = composeApex(inventory(portfolio));
+    const { bodyHtml } = composeApex(inventory(portfolio), TEST_ORIGIN);
     expect(bodyHtml).not.toContain(">Blog</a>");
     expect(bodyHtml).toContain(">Portfolio</a>");
   });
 
   it("Projects survives regardless, being a constant rather than a lookup", () => {
-    const { bodyHtml } = composeApex(inventory(makeProject({ id: pid("unrelated") })));
+    const { bodyHtml } = composeApex(
+      inventory(makeProject({ id: pid("unrelated") })),
+      TEST_ORIGIN,
+    );
     expect(bodyHtml).toContain(`href="${sourceUrl}">Projects</a>`);
     expect(bodyHtml).not.toContain(">Blog</a>");
     expect(bodyHtml).not.toContain(">Portfolio</a>");
@@ -131,7 +134,7 @@ describe("a derived link is dropped — not faked — when its project is absent
 
 describe("X4 — the nav does not break markup/stylesheet agreement", () => {
   it("assertStyleAgreement holds for a body carrying the nav", () => {
-    const { bodyHtml, stylesheet } = composeApex(full);
+    const { bodyHtml, stylesheet } = composeApex(full, TEST_ORIGIN);
     expect(assertStyleAgreement(bodyHtml, stylesheet)).toEqual({ ok: true, value: null });
   });
 });
