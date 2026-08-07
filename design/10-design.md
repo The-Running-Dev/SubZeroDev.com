@@ -798,15 +798,18 @@ and renumbering would rot those citations silently. An answered question keeps i
 6. **Should a scheduled link check run?** It is the only way a dead outbound link is noticed after
    deploy. It costs a workflow and it is the sole thing that would make this repository observe the
    others — adjacent to a brief non-goal, though not obviously inside it.
-7. ~~**Where does the compose stack terminate TLS, and does anything in it need to be true for the
-   container to be correct?**~~ **Answered 2026-08-07: Nginx Proxy Manager, on a shared Docker
-   network, same pattern as `SubZeroDev.Blog`'s `blog-bot` service.** See
-   `design/90-decisions.md`, 2026-08-07 — "The deployment Compose file and Portainer GitOps redeploy
-   are in scope for this repository". Retained so the citation resolves.
+7. **Where does the compose stack terminate TLS, and does anything in it need to be true for the
+   container to be correct?** Considered and deliberately left open a second time: a first answer
+   named Nginx Proxy Manager, but that names TLS termination — exactly what `00-brief.md`'s non-goal
+   ("Domain, DNS, TLS and hosting configuration are out of scope... permanently") excludes. See
+   `design/90-decisions.md`, 2026-08-07 — "The deployment Compose file is in scope for this
+   repository; TLS termination stays undecided".
 8. ~~**Does the compose file live in this repository?**~~ **Answered 2026-08-07: yes, and it is the
    deployment, not documentation of one.** Mirrors `SubZeroDev.Blog`'s split — a local-build Compose
    file plus a separate deployment Compose file pulling the published GHCR image, imported as the
-   Portainer stack. See the same 2026-08-07 decision-log entry cited above.
+   Portainer stack. Q7 is unaffected — the compose file's location and the mechanism that redeploys
+   it are answered here; what terminates TLS in front of it is not. See the same 2026-08-07
+   decision-log entry cited above.
 
 Further unresolved items were raised downstream and are owned by
 [`20-contract.md`](20-contract.md) rather than restated here: whether a social image asset exists
