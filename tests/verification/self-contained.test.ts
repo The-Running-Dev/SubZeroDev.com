@@ -54,6 +54,41 @@ describe("S6.10 — assertSelfContained", () => {
     expect(assertSelfContained(doc)).toEqual({ ok: true, value: null });
   });
 
+  it("a single application/ld+json script is not flagged (X6)", () => {
+    const doc = `${CLEAN_DOCUMENT}<script type="application/ld+json">{"@type":"Organization"}</script>`;
+    expect(assertSelfContained(doc)).toEqual({ ok: true, value: null });
+  });
+
+  it("a second application/ld+json script is flagged", () => {
+    const oneBlock = `<script type="application/ld+json">{"@type":"Organization"}</script>`;
+    const doc = `${CLEAN_DOCUMENT}${oneBlock}${oneBlock}`;
+    const result = assertSelfContained(doc);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.filter((e) => e.code === "ScriptElementPresent")).toHaveLength(1);
+  });
+
+  it("an application/ld+json script whose content carries a </script sequence in any case is flagged", () => {
+    // "</scriptTag>" is not itself a valid closing tag (the tag name does not
+    // match), so the real </script> further on is what actually closes the
+    // element — exercising the content check against a genuine </script
+    // substring that survives inside the matched content, rather than one
+    // that terminates the match early.
+    const doc = `${CLEAN_DOCUMENT}<script type="application/ld+json">{"x":"</scriptTag>"}</script>`;
+    const result = assertSelfContained(doc);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.some((e) => e.code === "ScriptElementPresent")).toBe(true);
+  });
+
+  it("an application/ld+json script carrying a src attribute is flagged", () => {
+    const doc = `${CLEAN_DOCUMENT}<script type="application/ld+json" src="/data.json">{}</script>`;
+    const result = assertSelfContained(doc);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.some((e) => e.code === "ScriptElementPresent")).toBe(true);
+  });
+
   it("a document carrying all three faults returns three errors in one Result", () => {
     const doc =
       `${CLEAN_DOCUMENT}` +

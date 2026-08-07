@@ -48,7 +48,7 @@ if (!validated.ok) {
 }
 
 const inventory = validated.value;
-const apex = composeApex(inventory);
+const apex = composeApex(inventory, origin);
 const miss = composeMiss();
 
 const config: LandingPageConfig = defineLandingPage({
