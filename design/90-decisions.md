@@ -12,6 +12,32 @@ became [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 
 ---
 
+### 2026-08-07 — `inventory.test.ts` follows the code's `AgentKit` over `Idea.md`/`30-slices.md`'s `Automation`, unreconciled
+Context: `8be5903` (PR #38's base commit, nominally "Header and footer navigation") also rewrote most of
+`src/content/projects.ts`, removing the `Automation` project (`home.kind: "own"`,
+`build-agent.subzerodev.com`) and adding `AgentKit` (`home.kind: "own"`, `agentkit.subzerodev.com`)
+without updating `Idea.md`'s *Product Ecosystem* list or `design/30-slices.md`'s S2.2/S2.3 criteria,
+both of which still name `Automation` and "twelve" verified subdomains. `tests/content/inventory.test.ts`
+was touched in the same commit but its S2.2 `NAMED` array and S2.3 `VERIFIED_SUBDOMAINS` list were not,
+leaving three assertions red and blocking CI on PR #38. Separately, `agentkit.subzerodev.com` does not
+currently resolve (`getaddrinfo ENOTFOUND`, checked directly 2026-08-07), which S2.3's own wording
+("every project with a live subdomain") already contradicts, independent of the naming question.
+Chosen, on the owner's ruling: update only `inventory.test.ts` to match the current code — `NAMED` now
+reads `AgentKit`, `VERIFIED_SUBDOMAINS` gains `agentkit.subzerodev.com` and the expected count moves to
+thirteen. `Idea.md`, `30-slices.md`, and the `agentkit.subzerodev.com` DNS state are left exactly as they
+are; this is a recorded, deliberate deferral, not an oversight.
+Rejected: **Reverting `Automation`** — restores agreement with `Idea.md`/`30-slices.md` with no doc
+edits, but was not what the owner chose. **Recording `AgentKit` as the deliberate rebrand** — would have
+required also editing `Idea.md`'s ecosystem list and `30-slices.md`'s S2.2/S2.3 wording, and setting
+`AgentKit`'s `home.kind` to `"none"` until its subdomain actually resolves; not chosen either.
+Open, not filed as an issue because it is a decision already made, not a todo: `Idea.md` and
+`30-slices.md` still say `Automation`/twelve while the inventory and its test now say `AgentKit`/thirteen,
+and `agentkit.subzerodev.com` is in the inventory as an `own` home that does not resolve.
+Reversibility: cheap — the test-file edit is one array element and one integer; whichever of the two
+rejected alternatives is picked up later touches the same handful of files.
+
+---
+
 ### 2026-08-07 — The manifesto supersedes the Idea.md draft
 Context: the manifesto prose in `apex.ts` (`manifestoParagraphs`) reads differently from the "Effortless
 Action" draft at `Idea.md` lines 552-573, which `tests/build/emitted-document.test.ts`'s

@@ -46,7 +46,7 @@ describe("S2.2 — every named ecosystem product appears exactly once", () => {
     "Game Engine",
     "Platform",
     "Publishing",
-    "Automation",
+    "AgentKit",
     "Documentation",
     "Lucifer Chronicles",
     "Ogre's Kitchen",
@@ -57,7 +57,7 @@ describe("S2.2 — every named ecosystem product appears exactly once", () => {
   });
 });
 
-describe("S2.3 — the twelve verified subdomains each appear exactly once as an own home", () => {
+describe("S2.3 — the thirteen verified subdomains each appear exactly once as an own home", () => {
   const VERIFIED_SUBDOMAINS = [
     "https://blog.subzerodev.com",
     "https://build-agent.subzerodev.com",
@@ -69,6 +69,7 @@ describe("S2.3 — the twelve verified subdomains each appear exactly once as an
     "https://blogging.subzerodev.com",
     "https://platform.subzerodev.com",
     "https://workspace.subzerodev.com",
+    "https://agentkit.subzerodev.com",
     "https://winget.subzerodev.com",
     "https://portfolio.subzerodev.com",
   ];
@@ -76,8 +77,8 @@ describe("S2.3 — the twelve verified subdomains each appear exactly once as an
   const ownUrls: string[] = [];
   for (const p of projects) if (p.home.kind === "own") ownUrls.push(p.home.url);
 
-  it("carries exactly twelve own homes", () => {
-    expect(ownUrls).toHaveLength(12);
+  it("carries exactly thirteen own homes", () => {
+    expect(ownUrls).toHaveLength(13);
   });
 
   it.each(VERIFIED_SUBDOMAINS)("%s appears exactly once", (target) => {
