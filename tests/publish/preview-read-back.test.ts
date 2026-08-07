@@ -20,6 +20,7 @@ import {
   deploymentPollRetry,
   pollForCommit,
 } from "../../src/verification";
+import { unknownPathUrl } from "./unknown-path-url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const distDir = resolve(here, "../../site/dist");
@@ -42,7 +43,7 @@ describe("S10.8 — the deployed Pages apex serves the exact commit byte for byt
     });
 
     const emittedMissDocument = readFileSync(resolve(distDir, missRootEntry), "utf8");
-    const response = await fetch(`${pagesUrl}${randomUUID()}-does-not-exist`);
+    const response = await fetch(unknownPathUrl(pagesUrl, `${randomUUID()}-does-not-exist`));
     const body = await response.text();
 
     expect(assertUnknownPathResponse({ status: response.status, body }, emittedMissDocument)).toEqual(
