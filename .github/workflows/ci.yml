@@ -44,8 +44,9 @@ jobs:
   # could publish it (design/30-slices.md § S9). Consumes the `build` job's
   # already-finalized tree rather than re-running finalizeArtifact. Pushes
   # nothing and authenticates to no registry — the registry push is S10's
-  # `publish` job alone (design/90-decisions.md, 2026-08-06 — "S9's image
-  # build and push mechanism confirmed, scoped: this slice pushes nothing").
+  # `publish-release` job alone (design/90-decisions.md, 2026-08-06 — "S9's
+  # image build and push mechanism confirmed, scoped: this slice pushes
+  # nothing").
   image-gate:
     name: Image gate
     runs-on: ubuntu-latest
@@ -76,11 +77,12 @@ jobs:
       - run: npm run image-gate
         env:
           SERVED_BASE_URL: http://localhost:8080
-      # Carries the gated image into `publish` rather than rebuilding it
-      # there (design/30-slices.md § S10.7) — a staging registry push would
-      # be a registry write before the branch-head check, which the design
-      # forbids (design/30-slices.md § *The publication CI*). The digest is
-      # recorded here and asserted equal after `publish` loads the tarball.
+      # Carries the gated image into `publish-release` rather than rebuilding
+      # it there (design/30-slices.md § S10.7) — a staging registry push
+      # would be a registry write before the branch-head check, which the
+      # design forbids (design/30-slices.md § *The publication CI*). The
+      # digest is recorded here and asserted equal after `publish-release`
+      # loads the tarball.
       - name: Save the gated image
         run: |
           docker inspect -f '{{.Id}}' "subzerodev-com:${{ github.sha }}" > image-digest.txt
@@ -113,13 +115,109 @@ jobs:
       - run: npm ci
       - run: npm run check-links
 
-  # A human gate bound to the commit (design/30-slices.md § S10). Targets the
-  # protected `SubZeroDev` GitHub Environment, which requires a reviewer's
-  # approval before this job's steps run — the wait for that approval is the
-  # environment's own mechanism, not a workflow step. Runs only on a push to
-  # `main` (S10.5): the branch's own protection plus this environment's
-  # required-reviewer rule are what make an approval unreplayable onto
-  # another run (U3, design/90-decisions.md).
+  # Ungated Pages preview/development publishing (design/30-slices.md §
+  # S10.6, *The publication CI*). Depends only on the shared `build` — never
+  # on `image-gate`, `link-check` or `attestation` — because no human
+  # approval, image gate, link gate or truth attestation precedes the Pages
+  # publish (design/00-brief.md, design/10-design.md § *Publication
+  # targets*). Shares one non-cancelling concurrency group with
+  # `publish-release`: two publication targets are not two critical
+  # sections, but each still opens with its own branch-head check so a
+  # superseded run stops cleanly rather than being cancelled mid-publish.
+  publish-preview:
+    name: Publish preview
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    concurrency:
+      group: publish
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy-pages.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: publishable-tree
+          path: site
+
+      # At the top of the critical section: an older queued run must not
+      # overwrite a newer commit (design/10-design.md § *Concurrency and
+      # ordering*). A stale candidate is a clean stop, not a failure (S10.10)
+      # — `continue-on-error` keeps this job's conclusion green, and every
+      # publishing step below is gated on this check having passed.
+      - name: Read the deployment branch's current head
+        id: branch-head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          HEAD=$(gh api repos/${{ github.repository }}/commits/main --jq '.sha')
+          echo "head=$HEAD" >> "$GITHUB_OUTPUT"
+      - name: Assert this commit is still the branch head
+        id: candidate-check
+        continue-on-error: true
+        run: npm run deployment-candidate-gate
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          BRANCH_HEAD: ${{ steps.branch-head.outputs.head }}
+      - name: Stop cleanly — this commit is no longer the branch head
+        if: steps.candidate-check.outcome == 'failure'
+        run: |
+          {
+            echo "### Stale deployment candidate (preview)";
+            echo "Commit \`${{ github.sha }}\` is no longer \`main\`'s head (\`${{ steps.branch-head.outputs.head }}\`). A newer run supersedes this one; stopping before publishing.";
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Configure Pages
+        if: steps.candidate-check.outcome == 'success'
+        uses: actions/configure-pages@v5
+      - name: Upload the Pages artifact
+        if: steps.candidate-check.outcome == 'success'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+      - name: Deploy to Pages
+        if: steps.candidate-check.outcome == 'success'
+        id: deploy-pages
+        uses: actions/deploy-pages@v4
+
+      # Only this read-back licenses the preview URL (S10.8, S10.9, V8) —
+      # nothing above announces one.
+      - name: Read back the deployed Pages apex
+        if: steps.candidate-check.outcome == 'success'
+        run: npm run publish-preview-gate
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          PAGES_URL: ${{ steps.deploy-pages.outputs.page_url }}
+      - name: Announce the preview URL
+        if: steps.candidate-check.outcome == 'success'
+        run: |
+          {
+            echo "### Preview published";
+            echo "${{ steps.deploy-pages.outputs.page_url }}";
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # A human gate bound to the commit, governing the release path only
+  # (design/30-slices.md § S10). Targets the protected `SubZeroDev` GitHub
+  # Environment, which requires a reviewer's approval before this job's
+  # steps run — the wait for that approval is the environment's own
+  # mechanism, not a workflow step. Runs only on a push to `main` (S10.5):
+  # the branch's own protection plus this environment's required-reviewer
+  # rule are what make an approval unreplayable onto another run (U3,
+  # design/90-decisions.md). Depends on `image-gate` and `link-check`, not
+  # on `publish-preview` — the preview and the release gates prepare in
+  # parallel and converge only at `publish-release`.
   attestation:
     name: Attestation
     runs-on: ubuntu-latest
@@ -152,13 +250,17 @@ jobs:
         env:
           GITHUB_SHA: ${{ github.sha }}
 
-  # The branch-head check, Pages deploy, registry push and read-back, all
-  # inside one job holding one non-cancelling concurrency group — the single
-  # critical section the design requires (design/30-slices.md § S10.6, *The
-  # publication CI*). Runs only on a push to `main`, after `attestation`
-  # has recorded a human approval for this exact commit.
-  publish:
-    name: Publish
+  # The release path (design/30-slices.md § S10.6, *The publication CI*):
+  # branch-head re-check, registry push, Compose redeploy trigger and
+  # endpoint read-back, all inside one job. Shares `publish-preview`'s
+  # concurrency group — the redeploy and a Pages deploy for a different
+  # commit must not interleave — but re-checks the branch head itself,
+  # because an approval that started against an older commit could still be
+  # completing after a newer one already published its preview (S10.10).
+  # Runs only on a push to `main`, after `attestation` has recorded a human
+  # approval for this exact commit.
+  publish-release:
+    name: Publish release
     runs-on: ubuntu-latest
     needs: attestation
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -168,12 +270,7 @@ jobs:
     permissions:
       contents: read
       actions: read
-      pages: write
-      id-token: write
       packages: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy-pages.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -212,22 +309,9 @@ jobs:
         if: steps.candidate-check.outcome == 'failure'
         run: |
           {
-            echo "### Stale deployment candidate";
+            echo "### Stale deployment candidate (release)";
             echo "Commit \`${{ github.sha }}\` is no longer \`main\`'s head (\`${{ steps.branch-head.outputs.head }}\`). A newer run supersedes this one; stopping before publishing.";
           } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Configure Pages
-        if: steps.candidate-check.outcome == 'success'
-        uses: actions/configure-pages@v5
-      - name: Upload the Pages artifact
-        if: steps.candidate-check.outcome == 'success'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site/dist
-      - name: Deploy to Pages
-        if: steps.candidate-check.outcome == 'success'
-        id: deploy-pages
-        uses: actions/deploy-pages@v4
 
       # The gated image is carried, never rebuilt: its digest is asserted
       # equal on both sides of the job boundary before anything is pushed
@@ -262,18 +346,35 @@ jobs:
             echo "\`$IMAGE:${{ github.sha }}\`";
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # Only this read-back licenses a live URL (S10.8, V8) — nothing above
-      # announces one.
-      - name: Read back the deployed site
+      # The redeploy trigger itself carries no contract surface — no
+      # signature, no error code — on the same footing as the registry push
+      # (design/90-decisions.md, 2026-08-07). It fires a Portainer stack
+      # webhook held as a secret; only the read-back below licenses any
+      # claim that the redeploy landed (V15).
+      - name: Trigger the Compose stack redeploy
         if: steps.candidate-check.outcome == 'success'
-        run: npm run publish-gate
+        env:
+          REDEPLOY_WEBHOOK_URL: ${{ secrets.PORTAINER_REDEPLOY_WEBHOOK_URL }}
+        run: |
+          if [ -z "$REDEPLOY_WEBHOOK_URL" ]; then
+            echo "PORTAINER_REDEPLOY_WEBHOOK_URL is not set — cannot trigger the redeploy" >&2
+            exit 1
+          fi
+          curl -sf -X POST "$REDEPLOY_WEBHOOK_URL"
+
+      # Only this read-back licenses a live-site claim (S10.9, V8, V15) —
+      # nothing above announces one. A successful push and a successful
+      # webhook call are not a deployment.
+      - name: Read back the redeployed endpoint
+        if: steps.candidate-check.outcome == 'success'
+        run: npm run publish-release-gate
         env:
           GITHUB_SHA: ${{ github.sha }}
-          PAGES_URL: ${{ steps.deploy-pages.outputs.page_url }}
+          SITE_URL: ${{ vars.RELEASE_ENDPOINT_URL || 'https://subzerodev.com' }}
       - name: Announce the live URL
         if: steps.candidate-check.outcome == 'success'
         run: |
           {
             echo "### Published";
-            echo "${{ steps.deploy-pages.outputs.page_url }}";
+            echo "${{ vars.RELEASE_ENDPOINT_URL || 'https://subzerodev.com' }}";
           } >> "$GITHUB_STEP_SUMMARY"
