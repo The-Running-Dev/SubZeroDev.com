@@ -174,10 +174,7 @@ export const projects: readonly Project[] = [
     stage: "Reusable",
     line: "Repository-installed agent infrastructure that eventually became capable of finding bugs in itself and filing the paperwork.",
     question: "What if the repository could tell the agent how to work here?",
-    home: {
-      kind: "own",
-      url: url("https://agentkit.subzerodev.com"),
-    },
+    home: { kind: "none" },
   },
   {
     id: id("git-service"),
