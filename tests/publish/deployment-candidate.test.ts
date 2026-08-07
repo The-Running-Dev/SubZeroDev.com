@@ -1,6 +1,7 @@
-// The publish job's branch-head check, at the top of the critical section
-// (design/30-slices.md § S10.10). Runs only under `vitest.publish.config.ts`'s
-// own job — same convention as this directory's other gate test.
+// The branch-head check shared by `publish-preview` and `publish-release`, at
+// the top of each job's critical section (design/30-slices.md § S10.10). Runs
+// only under `vitest.publish.config.ts`'s own job — same convention as this
+// directory's other gate tests.
 
 import { describe, expect, it } from "vitest";
 

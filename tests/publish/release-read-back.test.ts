@@ -1,8 +1,14 @@
-// The publish job's Pages read-back (design/30-slices.md § S10.8). Runs only
-// under `vitest.publish.config.ts`'s own job, after the `publish` job has
-// deployed to Pages — same convention as `vitest.build.config.ts`,
-// `vitest.link-check.config.ts` and `vitest.image-gate.config.ts`: a plain
-// `vitest run` never reaches the network.
+// The publish-release job's endpoint read-back, after the Compose redeploy
+// is triggered (design/30-slices.md § S10.11; contract's V15). Runs only
+// under `vitest.publish.config.ts`'s own job — same convention as this
+// directory's other gate tests: a plain `vitest run` never reaches the
+// network.
+//
+// V15 reuses `pollForCommit` and `assertUnknownPathResponse` unchanged and
+// names no byte-match check here — the container's bytes were already
+// asserted equal to the emitted tree in `image-gate` (S9), and this read-back
+// exists to prove the *redeploy* landed, not to re-derive the container's
+// own correctness.
 
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -19,15 +25,15 @@ const here = dirname(fileURLToPath(import.meta.url));
 const distDir = resolve(here, "../../site/dist");
 
 const commit = process.env.GITHUB_SHA as CommitId;
-const pagesUrl = process.env.PAGES_URL as AbsoluteUrl;
+const siteUrl = process.env.SITE_URL as AbsoluteUrl;
 
-describe("S10.8 — the deployed Pages apex serves the exact commit and answers an unknown path with 404", () => {
+describe("S10.11 — the redeployed endpoint serves the exact commit and answers an unknown path with 404", () => {
   it("pollForCommit and assertUnknownPathResponse both return ok: true", async () => {
-    const result = await pollForCommit(pagesUrl, commit, deploymentPollRetry);
+    const result = await pollForCommit(siteUrl, commit, deploymentPollRetry);
     expect(result.ok).toBe(true);
 
     const emittedMissDocument = readFileSync(resolve(distDir, missRootEntry), "utf8");
-    const response = await fetch(`${pagesUrl}${randomUUID()}-does-not-exist`);
+    const response = await fetch(`${siteUrl}${randomUUID()}-does-not-exist`);
     const body = await response.text();
 
     expect(assertUnknownPathResponse({ status: response.status, body }, emittedMissDocument)).toEqual(

@@ -1,0 +1,25 @@
+# The deployment artifact (design/30-slices.md § S10; design/00-brief.md's
+# amended hosting non-goal). Pulls the image `image-gate` already gated and
+# `publish-release` already pushed — never built here. Tagged `latest` with
+# `pull_policy: always`; deployed identity is established by the endpoint
+# read-back after redeploy, never by reading this file
+# (design/90-decisions.md, 2026-08-07 — "The deployment artifact's network
+# attachment and image reference are settled").
+#
+# Declares the one already-existing network this container attaches to, by
+# name, and nothing else about it — not what else is on it, not what
+# terminates TLS in front of it. That boundary is the brief's, not this
+# file's to redraw.
+
+services:
+  subzerodev-com:
+    image: ghcr.io/the-running-dev/subzerodev-com:latest
+    pull_policy: always
+    container_name: subzerodev-com
+    restart: unless-stopped
+    networks:
+      - proxy-net
+
+networks:
+  proxy-net:
+    external: true
