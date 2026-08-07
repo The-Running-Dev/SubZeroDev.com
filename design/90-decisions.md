@@ -5,10 +5,76 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-(none currently — the inventory/brief subdomain-count item became
-[#37](https://github.com/The-Running-Dev/SubZeroDev.com/issues/37) on 2026-08-07; the two before it
-became [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
+(the five code items `/reconcile` staged on 2026-08-07 became
+[#48](https://github.com/The-Running-Dev/SubZeroDev.com/issues/48),
+[#49](https://github.com/The-Running-Dev/SubZeroDev.com/issues/49),
+[#50](https://github.com/The-Running-Dev/SubZeroDev.com/issues/50),
+[#51](https://github.com/The-Running-Dev/SubZeroDev.com/issues/51) and
+[#52](https://github.com/The-Running-Dev/SubZeroDev.com/issues/52) on 2026-08-07; the inventory/brief
+subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.com/issues/37) on
+2026-08-07; the two before it became
+[#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-07 — `/reconcile`: five documented rules have no implementation, and in each the tree is the defect
+Context: a full `/reconcile` pass over the tree against `10-design.md` and `20-contract.md`. Five
+divergences, and four of them share one cause: the 2026-08-07 red-team adjudication amended the
+contract, the design and `30-slices.md` for `X6`, `R2`'s removal, `assertImportGraph`/`V16` and `X7`,
+but the slices those amendments belong to — S5, S6 and S7 — had already merged. No slice carried the
+work and no issue was opened, so the amendments went into S9, S10 and a merge to `main` unimplemented.
+The pass measured rather than assumed it: `tsc --noEmit` clean and **310 tests across 31 files green,
+the identical counts the amending entry itself recorded before those amendments**, which is proof no
+test was added and therefore that nothing could have failed. Two of the five are defects live on both
+published targets.
+Chosen, on the owner's ruling, each divergence put separately: **the documents stand in all five, and
+the tree is the defect in each.** No clause of `10-design.md` or `20-contract.md` moved. The five are
+staged in `## Open` above for `/track`, since none is a slice. One consequential edit followed from
+keeping `R2`: `MissEntryStillPresent` was documented in *Error semantics* but **missing from the
+`VerificationErrorCode` union** — a defect inside the contract, independent of the code and surviving
+either resolution — and it is added.
+Recorded rather than assumed: `V16`'s rules are not unchecked today. `tests/helpers/import-graph.ts`
+covers `C1`, `C14`, `X2`, `A3`, Presentation's `Branded`-only import, Artifact's three names and
+no-imports-into-Verification, each with a teeth test. What is missing is the contract surface, not the
+enforcement — which is why this was the one item where the code had a defensible claim, and why the
+ruling is recorded rather than treated as obvious.
+Rejected, one per divergence, each declined for the same underlying reason — **relitigating a
+2026-08-07 owner ruling with no new evidence**, which *Budget discipline* forbids: **striking `R2`'s
+removal** and accepting a soft 404 at the one path the unknown-path checks never request; **deleting
+`X6` and reverting `V13`** to the blanket ban, which that day's entry declined as the recommended
+option and which gives up the one machine-readable statement of what this organisation is; **deleting
+`assertImportGraph` and `V16`**, which would return Presentation's `Branded`-only rule, Artifact's
+three names and no-imports-into-Verification to having no invariant id — the exact gap `V16` closed;
+**striking `X7`**, which that day's entry rejected as "rendering every stage including empty ones";
+**striking `RoutePath`**, leaving `A4`'s two-value narrowing as prose with nothing enforcing it. Also
+rejected across the board: **tracking all five and changing neither side**, which is cheapest now and
+leaves a documented lie in the tree plus two live defects.
+Reversibility: cheap for the documents — one union member added and nothing else moved. The tree's
+side is five separate changes across Composition, Artifact and Verification, each independently
+reversible; `R2`'s and `X7`'s are the two that change what is published.
+
+---
+
+### 2026-08-07 — `V13` exempts the document's own canonical link, which `A1` requires on every route
+Context: the same `/reconcile` pass, and the one finding that was not a missing implementation.
+`assertSelfContained` skips `<link rel="canonical">` before its data-URI check, and the carve-out
+appears in no design clause, no contract row and no entry in this log. It is load-bearing rather than
+incidental: `A1` requires `metadata.canonicalUrl` on every route and the brief's *Definition of done*
+requires a canonical URL on the page, so without the exemption `S6.9` fails on both emitted documents
+— `V13` and `A1` would contradict each other on everything this design emits.
+Chosen: **the exemption is written into the contract** rather than left as an unexplained branch in
+one file. `ExternalAssetReference`'s row now names both things that are not asset references — an
+outbound link, and the document's own canonical link — and states why the second is forced rather than
+granted: it names the address of the document already loaded, so no browser fetches it. The rule keeps
+one home; nothing is copied into `V13`'s wording, which defines itself by reference to that row.
+Rejected: **appending this entry and leaving `V13`'s wording alone** — cheaper, and it leaves the
+contract's `ExternalAssetReference` row describing a check the code does not perform, which is the
+drift class this whole pass exists to catch. **Removing the carve-out as a defect** — it turns `S6.9`
+red on both documents and is only coherent alongside striking `canonicalUrl`, which the brief
+requires. **Treating a self-address as an asset reference and exempting it in `V13` instead** — puts
+the rule in two places and guarantees they diverge.
+Reversibility: cheap. One table row, and no source file moves.
 
 ---
 
