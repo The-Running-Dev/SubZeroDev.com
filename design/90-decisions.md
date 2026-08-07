@@ -5,7 +5,11 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-(the five code items `/reconcile` staged on 2026-08-07 became
+(the three items `/reconcile` staged on 2026-08-08 became
+[#54](https://github.com/The-Running-Dev/SubZeroDev.com/issues/54),
+[#55](https://github.com/The-Running-Dev/SubZeroDev.com/issues/55) and
+[#56](https://github.com/The-Running-Dev/SubZeroDev.com/issues/56) on 2026-08-08; the five code items
+`/reconcile` staged on 2026-08-07 became
 [#48](https://github.com/The-Running-Dev/SubZeroDev.com/issues/48),
 [#49](https://github.com/The-Running-Dev/SubZeroDev.com/issues/49),
 [#50](https://github.com/The-Running-Dev/SubZeroDev.com/issues/50),
@@ -15,6 +19,115 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-08 — The two publication branches never converge: the release does not wait for the Pages read-back
+Context: a `/reconcile` pass found `.github/workflows/ci.yml`'s `attestation` job declaring
+`needs: [image-gate, link-check]` and nothing else, while five statements across three documents
+required the Pages read-back to complete first — `10-design.md` § *Control flow* ("the release still
+waits for the Pages read-back so `V11` has proved byte identity"), § *Concurrency and ordering* ("the
+branches converge before truth attestation"), `20-contract.md` `V7` ("both branches complete before
+truth attestation"), and `30-slices.md`'s publication-CI graph and S10.11. The workflow's own comment
+asserted a third thing, that the branches "converge only at `publish-release`", which is not what any
+document said and is not true of the workflow either, since `publish-release` needs only `attestation`.
+Nothing could go red: S10.11 is discharged by a human watching one run, the only acceptance criterion
+in the set with no assertion behind it. Measured rather than assumed — `tsc --noEmit` clean and 310
+tests across 31 files green, the same counts the 2026-08-07 pass recorded.
+Chosen, on the owner's ruling: **the documents are the defect and the workflow stands.** The
+convergence bought a schedule, not a proof. `V11`'s two halves each compare a served response against
+**the emitted apex document**, never against each other, so the in-CI image gate establishes the
+release's byte identity on its own and the Pages read-back adds nothing the release needs. Making the
+release wait would stall it behind a publisher this repository does not run, for a proof it already
+has. `10-design.md` § *Control flow* and § *Concurrency and ordering*, `V7`, the `30-slices.md` graph
+and S10.11 all now state that the branches never join, and the design records the cost.
+The cost, kept and stated rather than dropped: a release can be attested and pushed while the Pages
+read-back is still running or after it has failed, leaving an unproven preview beside a proven release.
+`V8` is what stops that becoming a false claim — each read-back licenses a claim about its own target
+and about nothing else.
+Rejected: **changing the workflow to match the documents** — add `publish-preview` to `attestation`'s
+`needs`, one line, restoring the property as written. Declined because the property is redundant
+against the image gate and its price is a release path that a Pages outage can stall indefinitely, held
+inside a concurrency group. **Tracking it and changing neither side** — cheapest now, and it leaves
+three documents describing a pipeline that does not exist, which is the drift class this pass exists to
+catch.
+Reversibility: cheap on both sides. The documents are five passages; the workflow would be one `needs`
+entry.
+
+---
+
+### 2026-08-08 — The token block declares the whole scale, and `--font-mono` is a register rather than a prohibition
+Context: the same `/reconcile` pass. Three annotations in `20-contract.md`'s token table and in `P2`
+described users that the primitive set does not have. `--font-mono` was reserved to "`year`, `stage`,
+`ProjectId` and `escapedFrom` edges — never prose", while its one declaring primitive, `meta`, also
+carries the header tagline, the derived counts, the empty-group sentence, the section indices and both
+link rows. `--space-1` was annotated "record separation" and `P2`(a)'s exemption of `--rule` from
+contrast rested on that, while `entry` separates records with its own `clamp()` padding and a
+`--rule` border. `P2`(a)'s 3:1 relaxation was scoped to "`--step-2` and above", a token no rule
+references. Six of the eighteen block properties — `--step-1`, `--step-2`, `--step-3`, `--space-3`,
+`--space-4`, `--measure` — are emitted into every document with no user at all, which `X4`'s
+`SelectorWithoutUser` half cannot see, since it is over class selectors and the block carries none.
+Chosen, on the owner's ruling: **the documents are the defect.** The `--font-mono` row now names the
+`meta` register it actually is and excludes the manifesto and a project's `line` rather than "prose"
+generally. `P2`(a) states its threshold as `1.563rem` — the WCAG large-text size, which is what
+`--step-2` was standing in for — and rests `--rule`'s exemption on record separation existing rather
+than on which value expresses it. A new paragraph states that the block declares the authored ratio
+whole and that a primitive draws on as much of it as it needs, so a step with no user is declaration
+rather than drift.
+Rejected: **changing the composition to match the annotations** — move the tagline, counts, indices
+and link rows off `meta` onto some other class. Declined because what class they should carry instead
+is authored visual identity, which is the owner's and not derivable, so the fix could not be applied
+in this pass anyway; and because the register `meta` expresses is coherent as it stands.
+**Deleting the six unused tokens** — makes every declaration load-bearing, and re-derives the ratio's
+endpoints the moment anything needs a step back. **Tracking it and changing neither side** — leaves an
+invariant whose stated premise is false, which is worse than an imprecise invariant.
+Reversibility: cheap. Three table annotations, one invariant clause and one added paragraph; no source
+file moves.
+
+---
+
+### 2026-08-08 — `row` is the only primitive that *sizes* an unnamed child, not the only one that reaches one
+Context: the same `/reconcile` pass. `20-contract.md` § *Presentation* stated that `row` "is also the
+only primitive whose rules reach elements it does not name", and the `bar` paragraph closed on the same
+claim. It was never true of the set: `page` carries typography and spacing rules for `header`,
+`h1`–`h4`, `p`, `section`, `article`, `footer` and `.stack`, and `entry` carries rules for a nested
+`.stack`. Every one of them satisfies the `Primitive.rules` anchoring constraint, so nothing is wrong
+with them.
+Chosen, on the owner's ruling: **the document is the defect**, narrowed to the verb the paragraph was
+actually arguing — `row` is the only primitive that **sizes** a child it does not name, through the
+child combinator on the universal selector. That is the property distinguishing it from `bar`, and the
+contrast the paragraph exists to draw survives intact. A stale count in the same sentence went with it:
+"the other six" predated `row` and `bar` closing the set at eight.
+Rejected: **changing the primitives to make the absolute claim true** — strip every descendant and
+child selector from `page` and `entry` and move that typography into the token block. Declined as a
+substantial rewrite of authored visual identity, and because the token block would then carry
+unanchored rules, which `Primitive.rules` forbids by design. **Tracking it and changing neither side** —
+leaves a factual claim the tree contradicts with nothing checking it.
+Reversibility: cheap. Two sentences.
+
+---
+
+### 2026-08-08 — `sourceUrl`'s module-load guard is the one bare exception this repository owns
+Context: the same `/reconcile` pass. `src/content/links.ts` validates `sourceUrl` at import — parsed
+through `URL`, required `https:` — and throws a bare `Error` on failure, while `20-contract.md`
+§ *Types* stated "No function in this contract throws" and § *Error semantics* opened "Bare exceptions
+exist in the system and none of them is ours", enumerating four, all the external package's. The guard
+is not incidental: the contract already records that `sourceUrl` produces no `ResolvedHome` and sits
+outside `V4`, making it the one outbound link on the page that no gate checks.
+Chosen, on the owner's ruling: **the document is the defect**, and the guard is written into the
+contract as a named single exception rather than left as an unexplained branch in one file. *Public
+signatures* § *Content* now carries it with its consequence stated plainly — a malformed `sourceUrl`
+fails the build through an uncaught exception during Adapter's module evaluation, **not** through
+`A5`'s report-every-error-then-exit path, so it is the one content fault that does not arrive
+alongside the others. § *Types* and § *Error semantics* point at that one copy rather than restating it.
+Rejected: **removing the throw** — restores the contract exactly as written, and leaves `sourceUrl`
+wholly unchecked, so a malformed or `http:` literal would reach the rendered page with nothing
+noticing. **Moving the check into a `Result`-returning parse reported through `A5`** — keeps the check,
+keeps the no-throw rule and puts the failure where `A5` already promises it. Genuinely better shaped,
+and declined here because it widens `A3`'s enumerated Adapter imports and adds a `ContentErrorCode`,
+making it a contract amendment rather than the wording fix this divergence is. It stays available.
+Reversibility: cheap for the document — one added paragraph and two pointers. The rejected third option
+remains open at the cost of an `A3` amendment.
 
 ---
 

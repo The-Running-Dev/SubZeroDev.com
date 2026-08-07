@@ -421,7 +421,7 @@ Acceptance:
   - S10.8 After the Pages deploy, `pollForCommit` against the preview apex returns `{ ok: true }` for the exact commit, `assertServedBytesMatchEmitted` succeeds against the emitted apex, and `assertUnknownPathResponse` against a unique unknown path returns `{ ok: true }` (`V8`, `V11` and `V12`, Pages halves). None is a human or release gate in front of Pages publication.
   - S10.9 No preview URL is stated before S10.8 passes; no image tag is stated before the push succeeds and the tag resolves; and no live-site claim is made before the redeployed endpoint serves the exact marker and unknown-path composition (`V8`, `V14`, `V15`).
   - S10.10 A preview or release job whose commit is no longer the deployment-branch head stops before mutating its target and reports a clean stop rather than a failure, demonstrated against `assertDeploymentCandidateCurrent` and by each job's conditional.
-  - S10.11 The full graph is demonstrated by one workflow run: the shared build completes; `publish-preview` runs without waiting for release gates while image-gate and link-check prepare the release; Pages read-back and those release checks converge before truth attestation; then the branch head is re-checked, the gated image is pushed, the Compose redeploy is triggered, and exact-marker plus unknown-path endpoint read-back licenses the live claim (`V7`, `V15`).
+  - S10.11 The full graph is demonstrated by one workflow run: the shared build completes; `publish-preview` runs without waiting for release gates while image-gate and link-check prepare the release; the two branches complete independently and neither waits on the other, so truth attestation follows the image gate and the link check alone; then the branch head is re-checked, the gated image is pushed, the Compose redeploy is triggered, and exact-marker plus unknown-path endpoint read-back licenses the live claim (`V7`, `V15`).
 
 Out of scope: A scheduled post-deploy link re-check —
 *Open question* 6. The domain, its DNS records, TLS termination and any reverse proxy or host the
@@ -493,10 +493,15 @@ The job graph below is derived from [`10-design.md`](10-design.md)'s ordering in
 not itself a slice, and it allocates no number.
 
 ```
-build ──┬──► publish-preview ──────────┐
-        ├──► image-gate ───────────────┼──► attestation ──► publish-release
-        └──► link-check ───────────────┘
+build ──┬──► publish-preview
+        ├──► image-gate ──┬──► attestation ──► publish-release
+        └──► link-check ──┘
 ```
+
+`publish-preview` is a leaf. It joins nothing downstream, and `attestation` does not wait on it — the
+two branches never converge, on the 2026-08-08 ruling recorded in
+[`90-decisions.md`](90-decisions.md). This graph drew an edge from `publish-preview` into `attestation`
+until then.
 
 | Job | Discharges | Runs on | Delivered by |
 |---|---|---|---|
