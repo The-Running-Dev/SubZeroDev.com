@@ -20,6 +20,7 @@ import { describe, expect, it } from "vitest";
 import { missRootEntry } from "../../src/artifact";
 import type { AbsoluteUrl, CommitId } from "../../src/content";
 import { assertUnknownPathResponse, deploymentPollRetry, pollForCommit } from "../../src/verification";
+import { unknownPathUrl } from "./unknown-path-url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const distDir = resolve(here, "../../site/dist");
@@ -33,7 +34,7 @@ describe("S10.11 — the redeployed endpoint serves the exact commit and answers
     expect(result.ok).toBe(true);
 
     const emittedMissDocument = readFileSync(resolve(distDir, missRootEntry), "utf8");
-    const response = await fetch(`${siteUrl}${randomUUID()}-does-not-exist`);
+    const response = await fetch(unknownPathUrl(siteUrl, `${randomUUID()}-does-not-exist`));
     const body = await response.text();
 
     expect(assertUnknownPathResponse({ status: response.status, body }, emittedMissDocument)).toEqual(
