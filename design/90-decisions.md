@@ -12,6 +12,38 @@ became [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 
 ---
 
+### 2026-08-07 — The Q7 answer below is walked back: TLS termination stays undecided
+Context: The entry immediately below ("The deployment Compose file and Portainer GitOps redeploy are
+in scope for this repository") answered `10-design.md`'s *Open questions* 7 and 8 together and merged
+as PR #42. An automated review of that PR flagged that the Q7 half — naming Nginx Proxy Manager as the
+TLS termination point, on a shared Docker network — answers exactly what `00-brief.md`'s non-goal
+excludes: *"Domain, DNS, TLS and hosting configuration are out of scope... permanently... until this
+file changes."* No agent, and no decision-log entry, may narrow a binding non-goal by simply writing
+past it.
+Chosen, on the owner's ruling: the earlier Q7 answer was the defect, not the brief. **Q7 reverts to
+undecided.** This entry does not edit the one below — the log is append-only and that entry already
+merged — it supersedes the Q7 half of it going forward. **Q8 is unaffected and stands**: the compose
+file lives in this repository and is the deployment itself, per the entry below. The redeploy-webhook
+mechanism recorded there also stands unchanged — it names a webhook and a health poll, not an ingress,
+a certificate or a proxy, so it never depended on Q7's answer.
+Corrected with it, two inaccuracies the same review caught in the entry below, left uncorrected there
+because the log does not edit merged entries: (1) `ghcr.io/the-running-dev/...` is a placeholder: the
+image `ci.yml`'s `publish` job actually pushes is `ghcr.io/the-running-dev/subzerodev-com`, confirmed
+against `.github/workflows/ci.yml`'s `Push the gated image to GHCR` step, and any future Compose file
+should pull that name, not the ellipsis. (2) `10-design.md`'s Q7 citation named `SubZeroDev.Blog`'s
+"`blog-bot`" service; checked directly against that repository, no `blog-bot` exists there — only
+`tools/blog-mcp`, which is what this entry and the one below both otherwise cite correctly.
+`10-design.md`'s *Open questions* 7 and 8 are updated in place to reflect this walk-back — that
+document is not append-only, and the citation must point somewhere current.
+Rejected: **Narrowing the brief's non-goal to admit the NPM/TLS answer instead** — the alternative
+resolution, and the more permissive one; declined by the owner, who judged the Q7 answer the thing
+that was wrong rather than the four-month-old non-goal it was asked to override on the strength of one
+decision-log sentence.
+Reversibility: cheap — this entry and two design-doc corrections; nothing built against the withdrawn
+Q7 answer, since S9 and S10 need neither question answered (`30-slices.md` § *Blocked*).
+
+---
+
 ### 2026-08-07 — The deployment Compose file and Portainer GitOps redeploy are in scope for this repository
 Context: `10-design.md`'s *Open questions* 7 and 8 had stood unanswered since the S9/S10 design pass —
 whether this repository owns the compose stack that runs the published GHCR image, and where it
