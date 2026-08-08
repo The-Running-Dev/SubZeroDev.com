@@ -5,16 +5,19 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-`tests/helpers/import-graph.ts`'s `listTsFiles` `SKIP_DIRS` set contains the bare name `"build"`,
-intended to skip a build-output directory, but the walker matches directory *names* rather than
-paths — so `tests/build/` (a source directory of committed test files, not build output) is silently
-excluded from every `listTsFiles(repoRoot)` walk. Found 2026-08-08 while adding `S11`'s `C16` import
-check: `tests/build/emitted-document.test.ts` imports `testimonials` (and, pre-existing, `projects`)
-and is invisible to both the new `C16` check and the existing `C14` check as a result — neither names
-it as a permitted call site because neither can see it. Not fixed in this pass: the fix belongs to the
-helper itself and is orthogonal to the testimonials route.
+`10-design.md`'s *Route* section still reads "a single back-link... not a persistent nav bar" for
+`/testimonials/`, which the testimonials-fold decision below (2026-08-08) narrows a second time without
+editing the doc — this implementation session isn't the right session to rewrite design prose it didn't
+author. `/reconcile` should fold the fold's actual shape (shared nav, CSS-only `:target`/`:has()` view
+toggle, no second document load) back into `10-design.md` and `20-contract.md` (`composeApex`/
+`composeTestimonials` gained no new parameters, but `foldRoutes` is a new Composition export the contract
+doesn't name yet).
 
-(the three items `/reconcile` staged on 2026-08-08 became
+(the two items found 2026-08-08 while adding S11's C16 import check and while adjudicating the
+testimonialsPath fix — the SKIP_DIRS/tests/build/ exclusion and the untethered footer back-link —
+became [#68](https://github.com/The-Running-Dev/SubZeroDev.com/issues/68) and
+[#69](https://github.com/The-Running-Dev/SubZeroDev.com/issues/69) on 2026-08-08;
+the three items `/reconcile` staged on 2026-08-08 became
 [#54](https://github.com/The-Running-Dev/SubZeroDev.com/issues/54),
 [#55](https://github.com/The-Running-Dev/SubZeroDev.com/issues/55) and
 [#56](https://github.com/The-Running-Dev/SubZeroDev.com/issues/56) on 2026-08-08; the five code items
@@ -28,6 +31,84 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-08 — the testimonials fold: one shared nav, switched by `:target`/`:has()`, not a second route load
+Context: the owner asked, directly, for `/testimonials/` to carry the apex's nav and for switching between
+it and the apex to replace the visible root content in place rather than navigate — explicitly overriding
+the conflict this session raised first: `10-design.md`'s *Route* section (narrowed 2026-08-08) states
+`/testimonials/` carries "a single back-link... not a persistent nav bar," and the whole design caps the
+site at exactly one script element anywhere (`X6`, `V13`) with zero requests beyond the navigation document
+(`V2`). A client-side router needs a script and/or a fetch; neither is available here.
+Chosen: **a CSS-only fold.** `src/composition/fold.ts` takes `composeApex`'s and `composeTestimonials`'s
+already-composed, untouched output and re-wraps both into one shared body per route: the apex's own
+`<nav>`, reused verbatim in both views, and two `[data-view]` blocks toggled with `:target`/`:has()` — no
+script, no fetch. `/` and `/testimonials/` now emit the *same two views*, differing only in which one is
+visible with no fragment present (`default-apex`/`default-testimonials`), so both remain independently
+loadable and crawlable with CSS absent. `composeApex`/`composeTestimonials` themselves are unchanged —
+every S5/S11 test still asserts their real, unfolded output — so the fold is strictly additive at the
+Adapter-wiring layer (`site/landing.config.ts` now calls `foldRoutes` instead of the two composers
+directly). Verified against the real emitted documents, not just fixtures: `assertSelfContained` and
+`assertStyleAgreement` both return `{ ok: true }` for the built `/` and `/testimonials/` documents
+(exactly one script element survives — the apex's JSON-LD block), and a real-browser check confirmed
+clicking the nav's Testimonials link from `/` updates `location.hash` to `#testimonials` and swaps the
+visible view with zero navigation and zero additional requests, and the reverse from `/testimonials/`.
+`tests/composition/fold.test.ts` covers this at the unit level. Not run: the image-gate and deploy-candidate
+gates (S9/S10) — they require a running Docker image / deployed environment this session didn't stand up.
+Rejected: **a script-driven router** (the literal reading of "fold... no page switching," done with
+`fetch`/`history.pushState` and a click handler) — flatly incompatible with `X6`/`V13`'s hard cap of one
+script element anywhere, enforced by `assertSelfContained` as a build-failing gate, not a convention.
+Weakening that gate to permit a second, non-JSON-LD script is a real contract change (`X6`, `V13`) this
+session did not make. **Leaving `/testimonials/` a plain separate page with a real-path nav link** — the
+minimal, zero-conflict option this session offered first — was rejected by the owner in favor of the fold.
+This entry narrows `10-design.md`'s *Route* § "narrowed again on 2026-08-08" passage a second time: that
+passage rejected *persistent nav-bar chrome requiring a second document load*; a same-document, CSS-only
+view toggle sharing one nav is not that, but `10-design.md` itself is not rewritten in this pass — flagged
+here for `/reconcile` to fold back in properly rather than silently updated by an implementation session.
+Reversibility: cheap — `foldRoutes` is one new module and one wiring change; reverting drops back to the
+two independent routes with zero change to `composeApex`/`composeTestimonials`.
+
+---
+
+### 2026-08-08 — `role` and `organization` get dedicated empty-field codes, not `EmptyField`
+Context: `20-contract.md` § *Testimonial* says `role` and `organization` are "never empty, on the same
+convention as `Project.question`", but `validateTestimonials` checked only `quote` and `author`. Verified
+by execution, not reading: a record carrying `role: ""` validated clean and `composeTestimonials` then
+emitted `<p class="meta"></p>` — the empty metadata element `X8` forbids. Contract and code disagreed.
+Chosen: **the code was wrong.** Unlike the invariant narrowed in the entry below, the contract here names
+a concrete convention that the sibling validator already implements at `validate.ts`, so there is no
+reading under which the looser behaviour was intended. Added `TestimonialRoleEmpty` and
+`TestimonialOrganizationEmpty` to `ContentErrorCode`, the two present-but-empty checks, two error-table
+rows, and `S11.1` negative cases — verified by reverting the checks and confirming both new cases fail.
+Rejected: **reusing the existing `EmptyField` code**, which needs no contract amendment and follows the
+`Project.question` precedent the contract literally names — but `validateTestimonials` had already
+established per-field codes with `TestimonialQuoteEmpty`/`TestimonialAuthorEmpty`, and internal
+consistency within that function beats consistency with a different validator. The amendment was the
+cheaper of the two inconsistencies to accept.
+Reversibility: cheap, though the two codes are now published in `ContentErrorCode` and removing them later
+would be a breaking contract change rather than an edit.
+
+---
+
+### 2026-08-08 — `composeTestimonials`'s content-agnostic invariant narrowed to testimonial content
+Context: a cloud review found the module emits `Back to SubZeroDev` at `src/composition/testimonials.ts`,
+contradicting the "carries no SubZeroDev-specific string" invariant stated identically in this
+contract, in `S11.7`, and in the module header. Code and contract disagreed, so one of them was wrong.
+Chosen: **the wording was wrong, not the code.** The module already carried site-specific copy one line
+above the offending link — its `heading` is unmistakably this site's voice and merely happens not to
+contain the token — and `composeApex`, the sibling the contract compares it against, is saturated with
+such copy. So Composition as a layer plainly may carry site words; what the design actually wants is
+agnosticism about *the quoted people*, which is what `C16` and `S11.7`'s fixture-only test already
+enforce. Narrowed all three statements to "carries no testimonial content of its own".
+Rejected: **parameterising the back-link** as `backLink: { href, label }` on `composeTestimonials`.
+It is the more faithful reading of the invariant as written, and it would genuinely let a second
+consumer reuse the route — but it changes a signature this contract publishes, which is a contract
+amendment rather than a review fix, and the invariant it defends is one the heading already breaches.
+Retained as known: the route is therefore not reusable verbatim by a consumer wanting different chrome.
+Rejected: **leaving the wording and letting `S11.7`'s test stay weaker than the criterion above it** —
+that is the drift `AGENTS.md` § *Verification* exists to prevent.
+Reversibility: cheap — three prose edits, and the parameterisation stays open if a second consumer appears.
 
 ---
 

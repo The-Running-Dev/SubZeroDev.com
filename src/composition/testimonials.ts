@@ -3,7 +3,9 @@
 // Deterministic and total on `Testimonials`: renders every entry in input
 // order (X8) and knows nothing about who is being quoted — it takes the data
 // as a parameter exactly as `composeApex` takes `Inventory` (C16), and
-// carries no SubZeroDev-specific string. `testimonialTotal` is the one figure
+// carries no testimonial content of its own — the heading and the back-link
+// below are this site's words, not any quoted person's, on the same footing as
+// `composeApex`'s copy. `testimonialTotal` is the one figure
 // on the page, derived rather than typed (X1). No script element (X6): this
 // route emits none.
 

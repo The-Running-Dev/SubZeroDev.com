@@ -304,6 +304,24 @@ export function validateTestimonials(
         ),
       );
     }
+    // Present-but-empty, on `Project.question`'s convention. Absent is valid;
+    // an empty string is not, because `renderAttribution` guards on `undefined`
+    // and would otherwise emit the empty metadata element `X8` forbids.
+    if (testimonial.role !== undefined && testimonial.role.trim() === "") {
+      errors.push(
+        error("TestimonialRoleEmpty", null, "role", `role at index ${index} is empty after trimming.`),
+      );
+    }
+    if (testimonial.organization !== undefined && testimonial.organization.trim() === "") {
+      errors.push(
+        error(
+          "TestimonialOrganizationEmpty",
+          null,
+          "organization",
+          `organization at index ${index} is empty after trimming.`,
+        ),
+      );
+    }
   });
 
   if (errors.length > 0) {

@@ -14,6 +14,14 @@ import type { Testimonials } from "../../src/content";
 import { assertStyleAgreement } from "../../src/verification";
 import { makeTestimonial } from "../content/fixtures";
 
+// Adapter's apex route constant, so the footer back-link below is pinned to it
+// rather than to a second untethered spelling of "/". GITHUB_SHA is forced to a
+// valid commit id before the import because Adapter's module-level code calls
+// `process.exit` on an invalid one (A5) — the same guard, for the same reason,
+// as tests/build/adapter-config.test.ts.
+process.env.GITHUB_SHA ??= "a".repeat(40);
+const { apexPath } = await import("../../site/landing.config");
+
 function testimonials(...ts: readonly [ReturnType<typeof makeTestimonial>, ...ReturnType<typeof makeTestimonial>[]]): Testimonials {
   return ts;
 }
@@ -130,6 +138,13 @@ describe("S11.9 — no form, iframe, on* attribute or script element; no avatar-
   it("carries no img element and no data: URI", () => {
     expect(bodyHtml).not.toContain("<img");
     expect(bodyHtml).not.toContain("data:");
+  });
+});
+
+describe("the footer back-link targets Adapter's apexPath", () => {
+  it("renders the back-link at apexPath rather than a second spelling of it", () => {
+    const { bodyHtml } = composeTestimonials(sample);
+    expect(bodyHtml).toContain(`href="${apexPath}">Back to`);
   });
 });
 

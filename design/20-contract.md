@@ -655,7 +655,10 @@ a `Testimonials` cannot be malformed by construction, and none of the three func
 
 `composeTestimonials` renders every `Testimonial` in its input, in input order, and knows nothing about
 who any of them are — it takes the data as a parameter exactly as `composeApex` takes `Inventory`, and
-carries no SubZeroDev-specific string. It takes no `origin`, unlike `composeApex`: `X6` restated below
+carries no testimonial content of its own: no author, quote, role, or organization appears in its
+source. Site copy it does carry, on the same footing as `composeApex`'s — the page heading and the
+back-link to the apex are this site's words, and only the quoted people's words are parameterised.
+It takes no `origin`, unlike `composeApex`: `X6` restated below
 permits no script element on this route, so there is no JSON-LD block to address, and the route's
 `canonicalUrl`/`openGraph.url` are built at the Adapter layer by `A1`, the same as every route's.
 
@@ -1027,7 +1030,9 @@ export type ContentErrorCode =
   | "EscapedFromCycle"
   | "EmptyTestimonials"
   | "TestimonialQuoteEmpty"
-  | "TestimonialAuthorEmpty";
+  | "TestimonialAuthorEmpty"
+  | "TestimonialRoleEmpty"
+  | "TestimonialOrganizationEmpty";
 
 export type ContentError = {
   readonly code: ContentErrorCode;
@@ -1068,6 +1073,8 @@ own three-code union, was considered and rejected for exactly that duplication.
 | `EmptyTestimonials` | The testimonial collection has no entries | `null` | `null` |
 | `TestimonialQuoteEmpty` | A `quote` is empty after trimming, at the index in `detail` | `null` | `"quote"` |
 | `TestimonialAuthorEmpty` | An `author` is empty after trimming, at the index in `detail` | `null` | `"author"` |
+| `TestimonialRoleEmpty` | A `role` is present but empty after trimming, at the index in `detail`. Absent is valid; present-and-empty is not (`X8` would otherwise render an empty metadata element) | `null` | `"role"` |
+| `TestimonialOrganizationEmpty` | An `organization` is present but empty after trimming, at the index in `detail`. Absent is valid; present-and-empty is not, for `TestimonialRoleEmpty`'s reason | `null` | `"organization"` |
 
 ### Artifact
 

@@ -21,7 +21,9 @@ export type ContentErrorCode =
   | "EscapedFromCycle"
   | "EmptyTestimonials"
   | "TestimonialQuoteEmpty"
-  | "TestimonialAuthorEmpty";
+  | "TestimonialAuthorEmpty"
+  | "TestimonialRoleEmpty"
+  | "TestimonialOrganizationEmpty";
 
 export type ContentError = {
   readonly code: ContentErrorCode;
