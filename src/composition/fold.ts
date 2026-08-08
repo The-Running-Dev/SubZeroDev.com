@@ -87,8 +87,11 @@ export function foldRoutes(
   const apexView = `<div class="${primitives.stack.className}" id="apex" data-view="apex">${apexInner.replace(nav, foldedNav)}</div>`;
 
   const testimonialsWithNav = testimonialsInner.replace("</header>", `</header>${foldedNav}`);
+  if (testimonialsWithNav === testimonialsInner) {
+    throw new Error("fold: expected the testimonials body to carry a </header>, none found.");
+  }
   const testimonialsWithBackLink = testimonialsWithNav.replace(OLD_BACK_HREF, NEW_BACK_HREF);
-  if (testimonialsWithBackLink === testimonialsInner) {
+  if (testimonialsWithBackLink === testimonialsWithNav) {
     throw new Error("fold: expected the testimonials body to carry a back-link, none found.");
   }
   const testimonialsView = `<div class="${primitives.stack.className}" id="testimonials" data-view="testimonials">${testimonialsWithBackLink}</div>`;
