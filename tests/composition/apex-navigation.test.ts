@@ -13,6 +13,15 @@ import { primitives } from "../../src/presentation";
 import { assertStyleAgreement } from "../../src/verification";
 import { makeProject, pid, TEST_ORIGIN, url } from "../content/fixtures";
 
+// Adapter's route constant, so the Testimonials nav case below pins the
+// composition-local literal against it rather than against a third spelling
+// that nothing pins in turn. GITHUB_SHA is forced to a valid commit id before
+// the import because Adapter's module-level code calls `process.exit` on an
+// invalid one (A5) — the same guard, for the same reason, as
+// tests/build/adapter-config.test.ts.
+process.env.GITHUB_SHA ??= "a".repeat(40);
+const { testimonialsPath } = await import("../../site/landing.config");
+
 const publishing = makeProject({
   id: pid("publishing"),
   name: "Publishing",
@@ -135,8 +144,8 @@ describe("a derived link is dropped — not faked — when its project is absent
 describe("the in-page nav row also carries a route link to Testimonials", () => {
   const { bodyHtml } = composeApex(full, TEST_ORIGIN);
 
-  it('renders a link to "/testimonials/" labelled Testimonials', () => {
-    expect(bodyHtml).toContain(`href="/testimonials/">Testimonials</a>`);
+  it("renders a link to Adapter's testimonialsPath, labelled Testimonials", () => {
+    expect(bodyHtml).toContain(`href="${testimonialsPath}">Testimonials</a>`);
   });
 });
 

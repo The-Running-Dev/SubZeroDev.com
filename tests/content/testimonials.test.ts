@@ -55,6 +55,42 @@ describe("S11.1 — validateTestimonials rejects malformed input", () => {
     }
   });
 
+  it("rejects a present-but-empty role with TestimonialRoleEmpty naming its index", () => {
+    const fixture: Testimonial[] = [
+      { quote: "Fine.", author: "Someone" },
+      { quote: "Also fine.", author: "Someone Else", role: "  " },
+    ];
+    const result = validateTestimonials(fixture);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]).toMatchObject({ code: "TestimonialRoleEmpty", field: "role" });
+      expect(result.errors[0].detail).toContain("1");
+    }
+  });
+
+  it("rejects a present-but-empty organization with TestimonialOrganizationEmpty naming its index", () => {
+    const fixture: Testimonial[] = [{ quote: "Fine.", author: "Someone", organization: "" }];
+    const result = validateTestimonials(fixture);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]).toMatchObject({
+        code: "TestimonialOrganizationEmpty",
+        field: "organization",
+      });
+      expect(result.errors[0].detail).toContain("0");
+    }
+  });
+
+  it("accepts role and organization when absent, and when present and non-empty", () => {
+    const fixture: Testimonial[] = [
+      { quote: "Fine.", author: "Someone" },
+      { quote: "Also fine.", author: "Someone Else", role: "Sage", organization: "Dagobah" },
+    ];
+    expect(validateTestimonials(fixture).ok).toBe(true);
+  });
+
   it("reports all failures in one Result for a fixture carrying two bad records", () => {
     const fixture: Testimonial[] = [
       { quote: "", author: "Someone" },

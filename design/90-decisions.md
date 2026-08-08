@@ -13,6 +13,24 @@ check: `tests/build/emitted-document.test.ts` imports `testimonials` (and, pre-e
 and is invisible to both the new `C16` check and the existing `C14` check as a result — neither names
 it as a permitted call site because neither can see it. Not fixed in this pass: the fix belongs to the
 helper itself and is orthogonal to the testimonials route.
+Attempted 2026-08-08 and reverted, with the result recorded because it turns the item into a decision
+rather than a chore: `tests/build/` is the *only* directory named `build` in the repository — there is
+no build-output directory of that name — so dropping the entry from `SKIP_DIRS` is safe in itself and
+excludes nothing it should. Doing so makes the suite fail exactly twice, both in
+`tests/content/import-graph.test.ts`: `tests/build/emitted-document.test.ts` imports `projects` and
+`testimonials` and is on neither `C14`'s nor `C16`'s permitted call-site list. So the fix cannot land
+alone — it forces a prior decision about whether that file is a legitimate "Verification assertion over
+the collection" in `C14`/`C16`'s sense (in which case both lists gain it, and the invariants' wording
+should say so) or whether it should not be reaching for the committed data at all. That is a contract
+question, not a helper fix, which is why the helper is still unfixed.
+
+`src/composition/testimonials.ts`'s footer back-link spells its target as the literal `href="/"`, which
+duplicates Adapter's `apexPath` (`site/landing.config.ts`) with nothing pinning the two together — the
+same untethered-literal shape that was fixed for `testimonialsPath` on 2026-08-08 by having
+`tests/composition/apex-navigation.test.ts` assert against Adapter's constant. Found 2026-08-08 while
+adjudicating that fix. Not fixed in the same pass: `apexPath` is `/` and a change to it is far less
+likely than a route rename, so this is lower-yield than the case that prompted it, but it is the same
+defect and should close the same way.
 
 (the three items `/reconcile` staged on 2026-08-08 became
 [#54](https://github.com/The-Running-Dev/SubZeroDev.com/issues/54),
@@ -28,6 +46,47 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-08 — `role` and `organization` get dedicated empty-field codes, not `EmptyField`
+Context: `20-contract.md` § *Testimonial* says `role` and `organization` are "never empty, on the same
+convention as `Project.question`", but `validateTestimonials` checked only `quote` and `author`. Verified
+by execution, not reading: a record carrying `role: ""` validated clean and `composeTestimonials` then
+emitted `<p class="meta"></p>` — the empty metadata element `X8` forbids. Contract and code disagreed.
+Chosen: **the code was wrong.** Unlike the invariant narrowed in the entry below, the contract here names
+a concrete convention that the sibling validator already implements at `validate.ts`, so there is no
+reading under which the looser behaviour was intended. Added `TestimonialRoleEmpty` and
+`TestimonialOrganizationEmpty` to `ContentErrorCode`, the two present-but-empty checks, two error-table
+rows, and `S11.1` negative cases — verified by reverting the checks and confirming both new cases fail.
+Rejected: **reusing the existing `EmptyField` code**, which needs no contract amendment and follows the
+`Project.question` precedent the contract literally names — but `validateTestimonials` had already
+established per-field codes with `TestimonialQuoteEmpty`/`TestimonialAuthorEmpty`, and internal
+consistency within that function beats consistency with a different validator. The amendment was the
+cheaper of the two inconsistencies to accept.
+Reversibility: cheap, though the two codes are now published in `ContentErrorCode` and removing them later
+would be a breaking contract change rather than an edit.
+
+---
+
+### 2026-08-08 — `composeTestimonials`'s content-agnostic invariant narrowed to testimonial content
+Context: a cloud review found the module emits `Back to SubZeroDev` at `src/composition/testimonials.ts`,
+contradicting the "carries no SubZeroDev-specific string" invariant stated identically in this
+contract, in `S11.7`, and in the module header. Code and contract disagreed, so one of them was wrong.
+Chosen: **the wording was wrong, not the code.** The module already carried site-specific copy one line
+above the offending link — its `heading` is unmistakably this site's voice and merely happens not to
+contain the token — and `composeApex`, the sibling the contract compares it against, is saturated with
+such copy. So Composition as a layer plainly may carry site words; what the design actually wants is
+agnosticism about *the quoted people*, which is what `C16` and `S11.7`'s fixture-only test already
+enforce. Narrowed all three statements to "carries no testimonial content of its own".
+Rejected: **parameterising the back-link** as `backLink: { href, label }` on `composeTestimonials`.
+It is the more faithful reading of the invariant as written, and it would genuinely let a second
+consumer reuse the route — but it changes a signature this contract publishes, which is a contract
+amendment rather than a review fix, and the invariant it defends is one the heading already breaches.
+Retained as known: the route is therefore not reusable verbatim by a consumer wanting different chrome.
+Rejected: **leaving the wording and letting `S11.7`'s test stay weaker than the criterion above it** —
+that is the drift `AGENTS.md` § *Verification* exists to prevent.
+Reversibility: cheap — three prose edits, and the parameterisation stays open if a second consumer appears.
 
 ---
 
