@@ -95,6 +95,25 @@ describe("S5.9 — assertStyleAgreement holds for composeApex", () => {
   });
 });
 
+describe("X7 — composeApex omits EcosystemGroups that carry no projects", () => {
+  // Inventory has only Prototype projects; Architecture, Curiosity, etc. carry zero.
+  const prototypeOnly = inventory(makeProject({ id: pid("p1"), stage: "Prototype" }));
+  const { bodyHtml } = composeApex(prototypeOnly, TEST_ORIGIN);
+
+  it("does not render a heading for a stage with no projects", () => {
+    // Each group heading is rendered as `<h3>Stage (count)</h3>`.
+    expect(bodyHtml).not.toContain("Architecture (0)");
+    expect(bodyHtml).not.toContain("Curiosity (0)");
+    expect(bodyHtml).not.toContain("Infrastructure (0)");
+    expect(bodyHtml).not.toContain("Reusable (0)");
+    expect(bodyHtml).not.toContain("Escaped (0)");
+  });
+
+  it("does render the stage that has projects", () => {
+    expect(bodyHtml).toContain("Prototype (1)");
+  });
+});
+
 describe("S5.10 — composeApex's bodyHtml contains no form, iframe or on* attribute (X3), and exactly one application/ld+json script (X6)", () => {
   const { bodyHtml } = composeApex(sample, TEST_ORIGIN);
 
