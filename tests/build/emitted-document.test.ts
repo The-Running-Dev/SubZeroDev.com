@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
 
 import { missRootEntry } from "../../src/artifact";
 import { composeApex } from "../../src/composition";
-import { projects, validateInventory } from "../../src/content";
+import { projects, testimonials, validateInventory, validateTestimonials } from "../../src/content";
 import { iconDataUri } from "../../src/presentation";
 import { assertContentPresent, assertSelfContained } from "../../src/verification";
 import { context, makeProject, pid, TEST_ORIGIN } from "../content/fixtures";
@@ -26,10 +26,12 @@ const apexHtml = readFileSync(resolve(distDir, "index.html"), "utf8");
 // time this suite executes — same convention as tests/build/artifact.test.ts.
 // missRootEntry (404.html) carries the same, byte-identical, marked content.
 const missHtml = readFileSync(resolve(distDir, missRootEntry), "utf8");
+const testimonialsHtml = readFileSync(resolve(distDir, "testimonials/index.html"), "utf8");
 
-describe("S6.9 — the build emits a document for the apex and one at 404/index.html", () => {
-  it("both documents exist and are non-empty", () => {
+describe("S6.9/S11.13 — the build emits a document for the apex, the testimonials route, and one at 404/index.html", () => {
+  it("all three documents exist and are non-empty", () => {
     expect(apexHtml.length).toBeGreaterThan(0);
+    expect(testimonialsHtml.length).toBeGreaterThan(0);
     expect(missHtml.length).toBeGreaterThan(0);
   });
 
@@ -37,8 +39,38 @@ describe("S6.9 — the build emits a document for the apex and one at 404/index.
     expect(assertSelfContained(apexHtml)).toEqual({ ok: true, value: null });
   });
 
+  it("assertSelfContained returns ok: true for the testimonials document", () => {
+    expect(assertSelfContained(testimonialsHtml)).toEqual({ ok: true, value: null });
+  });
+
   it("assertSelfContained returns ok: true for the miss document", () => {
     expect(assertSelfContained(missHtml)).toEqual({ ok: true, value: null });
+  });
+});
+
+// X5 escapes every interpolated character, so a raw quote or author carrying
+// one of the five reaches the built HTML escaped — the same reason
+// tests/content/inventory.test.ts and this file's own S6.11 suite name
+// "Ogre's Kitchen" as a documented exception to a literal containment check
+// rather than a bug. Comparing the escaped form here is the fix for
+// testimonials, not a workaround.
+function escapedForCompare(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+describe("S11.13 — the emitted testimonials document carries every committed quote and author", () => {
+  it("every quote and author appears in the built HTML, HTML-escaped (X5)", () => {
+    const validated = validateTestimonials(testimonials);
+    if (!validated.ok) throw new Error("committed testimonials failed to validate");
+    for (const t of validated.value) {
+      expect(testimonialsHtml).toContain(escapedForCompare(t.quote));
+      expect(testimonialsHtml).toContain(escapedForCompare(t.author));
+    }
   });
 });
 

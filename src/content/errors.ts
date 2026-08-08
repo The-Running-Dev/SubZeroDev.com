@@ -18,7 +18,10 @@ export type ContentErrorCode =
   | "HomeWithinOriginEscape"
   | "EscapedFromTargetMissing"
   | "EscapedFromSelfReference"
-  | "EscapedFromCycle";
+  | "EscapedFromCycle"
+  | "EmptyTestimonials"
+  | "TestimonialQuoteEmpty"
+  | "TestimonialAuthorEmpty";
 
 export type ContentError = {
   readonly code: ContentErrorCode;

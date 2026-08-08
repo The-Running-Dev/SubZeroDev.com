@@ -93,6 +93,10 @@ The binding list. Out of scope for every agent, permanently, until this file cha
   precisely when scripting is off, and on a document that needs no scripting there is no fallback for
   it to describe.
 - A 404 route exists, is on-voice, and is served for an unknown path at the apex.
+- **A `/testimonials/` route exists**, carrying a fixed collection of fabricated testimonials,
+  presented with the same corporate seriousness as the rest of the site. This is the one route the
+  house rule in *Source material* item 4 exempts — the page names nothing on it as fictional, satirical
+  or fake.
 - The page is legible in greyscale, **moves** nothing under `prefers-reduced-motion: reduce`, and is
   keyboard-traversable in visual order. Moves means no transform, translation, scale, rotation,
   position change or scroll behaviour, animated or transitioned. A transition of a non-positional
@@ -131,7 +135,7 @@ outlives any individual project on it. That justifies running the full pipeline.
 style, visual identity, the genre system, slogans, footer quotes, the Running Man reference, and the
 manifesto. It is input to the design, not itself a design.
 
-Three things about it are settled here rather than there:
+Four things about it are settled here rather than there:
 
 1. **SubZeroDev's own genre is "no genre" — the plain document.** `Idea.md` assigns a genre to seven
    products and leaves the apex blank. The apex is the parent voice unstyled: typography, whitespace,
@@ -142,3 +146,10 @@ Three things about it are settled here rather than there:
 3. **`Idea.md` lines 540–604 are an unresolved chat transcript**, not specification. They contain
    three competing drafts of an *Effortless Action* section. None is chosen. Nothing may treat any of
    them as settled copy.
+4. **The testimonials route is a bounded exception to item 2's house rule, not a repeal of it.**
+   `Idea.md` § *Company Personality* and § *Writing Style* ("Never exaggerate. Reality already did.")
+   describe the voice everywhere else on the site, and item 2 holds everywhere else. `/testimonials/`
+   is the one page built the opposite way on purpose: every quote on it is fabricated, most of them
+   adversarial to SubZeroDev, and the page never says so. The joke depends on the page never breaking
+   character — no "fake", "satire", "not real" or "for entertainment" label anywhere on it. Scoped to
+   this one route; the ecosystem list and everything else on the apex still answer to item 2 as written.

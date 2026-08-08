@@ -126,6 +126,22 @@ export type BuildContext = {
 };
 ```
 
+```ts
+export type Testimonial = {
+  readonly quote: string;
+  readonly author: string;
+  readonly role?: string;
+  readonly organization?: string;
+};
+
+export type Testimonials = readonly [Testimonial, ...Testimonial[]];
+```
+
+`quote` and `author` are non-empty after trimming. `role` and `organization` are absent, never
+`undefined`-valued and never empty, on the same convention as `Project.question`. No `avatar` field —
+`10-design.md` § *Testimonial* states why — and no `source` field, for the same section's reason.
+`Testimonials` carries its committed order as data; nothing derives, sorts or ranks it.
+
 ### Content — derived shapes
 
 ```ts
@@ -178,7 +194,9 @@ export type PrimitiveName =
   | "rule"
   | "link"
   | "row"
-  | "bar";
+  | "bar"
+  | "grid"
+  | "card";
 
 export type Primitive = {
   readonly className: ClassName;
@@ -195,11 +213,26 @@ export type PrimitiveSet = { readonly [N in PrimitiveName]: Primitive };
 | `ClassName` | Matches `/^[a-z][a-z0-9-]*$/` |
 | `Primitive.rules` | CSS text. Every selector in it **begins with** that primitive's own class selector, and each selector in a selector list is anchored independently. What follows the anchor is unconstrained — any pseudo-class, pseudo-element, combinator or universal selector — because the property that has to hold is that no rule can match an element the class is absent from, and the anchor alone establishes it. A rule that could match without the class belongs in the token block, not in a primitive, because `stylesheetFor` emits a primitive's rules only when its class is present. Rules may sit inside an `@media` block; `row`'s single-column wrap and `P3`'s `prefers-reduced-motion` rules are the cases that need one. Contains no `</style` sequence (`P5`) |
 
-`PrimitiveName` is **closed at eight** as of the 2026-08-07 amendment adding `bar`, which followed the
-same day's amendment adding `row`; see [`90-decisions.md`](90-decisions.md). Composition references a
-primitive through `primitives`, so a ninth is a further contract amendment rather than a class someone
-adds to markup. `rule` and `link` appear in both `ColorToken` and `PrimitiveName` and are different
-things in each — a colour custom property in the first, a class in the second.
+`PrimitiveName` is **closed at ten** as of the 2026-08-08 amendment adding `grid` and `card` for the
+testimonials route, which followed the 2026-08-07 amendment adding `bar` and, before it, `row`; see
+[`90-decisions.md`](90-decisions.md). Composition references a primitive through `primitives`, so an
+eleventh is a further contract amendment rather than a class someone adds to markup. `rule` and `link`
+appear in both `ColorToken` and `PrimitiveName` and are different things in each — a colour custom
+property in the first, a class in the second.
+
+`grid` lays its direct children out in a responsive multi-column flow — CSS `columns`, not `grid`
+layout, chosen so a card's height is its own and the flow reads top-to-bottom within a column rather
+than forcing every row to the tallest cell's height. It collapses to a single column at the same
+`720px` breakpoint the rest of the set uses. It is, like `row`, a primitive that reaches a child it does
+not name: each direct child gets `break-inside: avoid`, so a card is never split across the column
+break, on the same footing `row`'s width rule already established for reaching an unnamed child.
+
+`card` is a bordered, padded container for one attributed quote. It carries no colour rule beyond
+`--rule` for its border (`P2`(a)'s named exemption, on the same reasoning `entry` already rests on) and
+no type rule of its own — a card's quote text and attribution reuse `page`'s and `meta`'s existing
+rules. It is deliberately its own primitive rather than a `grid > *` selector, because a card is
+meaningful outside a grid — a future consumer rendering one testimonial needs the container without the
+multi-column flow.
 
 `row` lays its direct children out left-to-right, each taking an equal share of the available width,
 wrapping to a single column at the same `720px` breakpoint `page` already uses. Its **one** spacing
@@ -271,7 +304,7 @@ the pair, and `P6` is what makes it true of every `ComposedRoute` rather than a 
 ### Route
 
 ```ts
-export type RoutePath = "/" | "/404/";
+export type RoutePath = "/" | "/404/" | "/testimonials/";
 ```
 
 The design's `Route` — path, prerendered body, required stylesheet, static head metadata — **is** the
@@ -291,7 +324,7 @@ type LandingPageBodyRoute = {
 };
 ```
 
-`RoutePath` narrows `path` to the two values `A4` permits. `body` carries a `BodyHtml` and
+`RoutePath` narrows `path` to the three values `A4` permits. `body` carries a `BodyHtml` and
 `stylesheet` a `StylesheetText`; both cross the boundary as bare `string`, which is what the brands
 exist to guard on this side. The metadata half is the package's `LandingPageMetadata` and needs no
 addition — the icon set travels in its existing `icons[].href` as data URIs.
@@ -442,10 +475,18 @@ export const sourceUrl: AbsoluteUrl;
 
 export const projects: readonly Project[];
 
+export const testimonials: readonly Testimonial[];
+
 export function validateInventory(
   projects: readonly Project[],
   context: BuildContext,
 ): Result<Inventory, ContentError>;
+
+export function validateTestimonials(
+  testimonials: readonly Testimonial[],
+): Result<Testimonials, ContentError>;
+
+export function testimonialTotal(testimonials: Testimonials): number;
 
 export function parseCommitId(value: string): CommitId | null;
 
@@ -470,9 +511,17 @@ anticipates raw values that fail their own constraints. The brands gate the deri
 validation is `validateInventory`'s alone. `C14` is what stops `projects` becoming a second entry
 point into the module's data.
 
-Every function other than `validateInventory` and `parseCommitId` takes an `Inventory`, which only
-`validateInventory` can produce. They are total on that input and return no error.
-`validateInventory` is the sole validating entry point into the module's data.
+`testimonials` is the hand-authored, unvalidated testimonial collection, on the same footing as
+`projects` and guarded by the same parallel clause in `C14`: only `validateTestimonials` and
+Verification's assertions over it may import it. `validateTestimonials` is total over well-typed input
+and returns every violation rather than the first — empty `quote`, empty `author`, or an empty
+collection. `testimonialTotal` takes the validated `Testimonials` and is what keeps the count on the
+page a Content derivation rather than a typed literal (`X1`), on the same footing as `projectTotal`.
+
+Every function other than `validateInventory`, `validateTestimonials` and `parseCommitId` takes either
+an `Inventory` or a validated `Testimonials`, and only the matching validator can produce one. They are
+total on that input and return no error. `validateInventory` and `validateTestimonials` are the two
+validating entry points into the module's data.
 
 `parseCommitId` is here because Content owns `CommitId` and Artifact depends on Content for that type.
 It returns `null` rather than an error variant: its one caller turns that into `CommitIdMalformed`, and
@@ -597,10 +646,18 @@ as a data URI; being a `DataUri` is what discharges `A2`.
 export function composeApex(inventory: Inventory, origin: string): ComposedRoute;
 
 export function composeMiss(): ComposedRoute;
+
+export function composeTestimonials(testimonials: Testimonials): ComposedRoute;
 ```
 
-These two are the module's entire public surface. Both are total and neither can fail: an `Inventory`
-cannot be malformed by construction, and neither function performs I/O.
+These three are the module's entire public surface. All are total and none can fail: an `Inventory` or
+a `Testimonials` cannot be malformed by construction, and none of the three functions performs I/O.
+
+`composeTestimonials` renders every `Testimonial` in its input, in input order, and knows nothing about
+who any of them are — it takes the data as a parameter exactly as `composeApex` takes `Inventory`, and
+carries no SubZeroDev-specific string. It takes no `origin`, unlike `composeApex`: `X6` restated below
+permits no script element on this route, so there is no JSON-LD block to address, and the route's
+`canonicalUrl`/`openGraph.url` are built at the Adapter layer by `A1`, the same as every route's.
 
 Each produces its `bodyHtml` first, referencing classes only through `primitives`, and obtains
 `stylesheet` by calling `stylesheetFor` on that same body. Composition therefore never states which
@@ -640,6 +697,8 @@ export const apexPath: "/";
 
 export const missPath: "/404/";
 
+export const testimonialsPath: "/testimonials/";
+
 declare const config: LandingPageConfig;
 export default config;
 ```
@@ -648,9 +707,17 @@ The default export is the whole of Adapter's renderable surface: the package CLI
 and reads `config`. No repository module imports Adapter — Verification's assertions over `A4` and
 `A6` necessarily do, which is the same reading Verification's own boundary rule takes.
 
-`config.routes` is exactly two `LandingPageBodyRoute` values, in this order — the apex at `apexPath`
-carrying `composeApex(inventory, origin)`, and the miss at `missPath` carrying `composeMiss()` — each
-route's `body` and `stylesheet` taken from that route's own `ComposedRoute`.
+`config.routes` is exactly three `LandingPageBodyRoute` values, in this order — the apex at
+`apexPath` carrying `composeApex(inventory, origin)`, the testimonials route at `testimonialsPath`
+carrying `composeTestimonials(testimonials)`, and the miss at `missPath` carrying `composeMiss()` —
+each route's `body` and `stylesheet` taken from that route's own `ComposedRoute`. The miss stays last:
+it is the fallback route, not a third peer, and the order documents that.
+
+Adapter validates **two** content sets, not one: `validateInventory(projects, context)` and
+`validateTestimonials(testimonials)`, each exactly once (`A5`, restated below). Both run before any
+route is composed, and a failure in either reports every error from that call and exits non-zero
+without composing any route — `A5`'s "no route body, stylesheet or document is produced" now covers
+both validators, not one.
 
 Five fields are declared **absent**, in four groups, and each absence is load-bearing rather than a
 default:
@@ -688,14 +755,18 @@ transcribes them; it does not invent them.
 
 `missPath` is the canonical declaration of the miss route's path. Artifact's `missEmittedEntry` is the
 package's emitted mapping of exactly this value and must change with it; `R5` asserts the pairing.
+`testimonialsPath` needs no such pairing — Artifact treats every `.html` entry identically (`R1`,
+`R3`), and only the miss route has a second, relocated published path.
 
-**Adapter is the `validateInventory` call site.** It is the module the package CLI loads, so it is the
-one place in the import graph where the build's entry conditions are read and where the build can
-still refuse to produce anything. It constructs `BuildContext` from the environment — the commit
-through `parseCommitId`, the UTC year — calls `validateInventory(projects, context)`, and on
-`{ ok: false }` reports **every** `ContentError` and terminates the build with a non-zero exit,
-rendering nothing. On `{ ok: true }` it hands the `Inventory` to `composeApex` and declares the two
-routes. That handling is the whole of `A5`, and it is why `C14`'s closed importer set names Adapter.
+**Adapter is the `validateInventory` and `validateTestimonials` call site.** It is the module the
+package CLI loads, so it is the one place in the import graph where the build's entry conditions are
+read and where the build can still refuse to produce anything. It constructs `BuildContext` from the
+environment — the commit through `parseCommitId`, the UTC year — calls `validateInventory(projects,
+context)` and `validateTestimonials(testimonials)`, and on either returning `{ ok: false }` reports
+**every** `ContentError` from that call and terminates the build with a non-zero exit, rendering
+nothing. On both returning `{ ok: true }` it hands the `Inventory` to `composeApex`, the
+`Testimonials` to `composeTestimonials`, and declares the three routes. That handling is the whole of
+`A5`, and it is why `C14`'s closed importer set names Adapter for both content sets.
 
 It is a process exit, not a thrown exception and not a string error: *Error semantics* holds, and the
 failure is expressible where a `Result` returned from module evaluation would have had no caller.
@@ -953,7 +1024,10 @@ export type ContentErrorCode =
   | "HomeWithinOriginEscape"
   | "EscapedFromTargetMissing"
   | "EscapedFromSelfReference"
-  | "EscapedFromCycle";
+  | "EscapedFromCycle"
+  | "EmptyTestimonials"
+  | "TestimonialQuoteEmpty"
+  | "TestimonialAuthorEmpty";
 
 export type ContentError = {
   readonly code: ContentErrorCode;
@@ -966,7 +1040,15 @@ export type ContentError = {
 Every variant is deterministic and **not retryable**. In every case the caller — the build — exits
 non-zero and publishes nothing. There is no default value, no fallback stage, no dropped project and
 no silently empty section. `validateInventory` reports **all** failures in one `Result`, never the
-first only.
+first only. `validateTestimonials` holds to the same rule over its own three codes.
+
+The three testimonial codes reuse `ContentError` rather than earning a second error type: `projectId`
+is always `null` for them — a `Testimonial` has no `ProjectId` — and `detail` carries the offending
+record's zero-based index, since there is no identity field to name it by instead. `field` is `"quote"`
+or `"author"` for the two field-level codes and `null` for `EmptyTestimonials`. Reusing the shape costs
+one always-`null` field on these three variants and buys one error type, one `Result` shape and one
+caller-facing report format for both content sets — the alternative, a `TestimonialError` type with its
+own three-code union, was considered and rejected for exactly that duplication.
 
 | Code | Raised when | `projectId` | `field` |
 |---|---|---|---|
@@ -983,6 +1065,9 @@ first only.
 | `EscapedFromTargetMissing` | `escapedFrom` names no project in the inventory | set | `"escapedFrom"` |
 | `EscapedFromSelfReference` | `escapedFrom === id` | set | `"escapedFrom"` |
 | `EscapedFromCycle` | The `escapedFrom` edge set contains a cycle | each project on the cycle | `"escapedFrom"` |
+| `EmptyTestimonials` | The testimonial collection has no entries | `null` | `null` |
+| `TestimonialQuoteEmpty` | A `quote` is empty after trimming, at the index in `detail` | `null` | `"quote"` |
+| `TestimonialAuthorEmpty` | An `author` is empty after trimming, at the index in `detail` | `null` | `"author"` |
 
 ### Artifact
 
@@ -1136,6 +1221,7 @@ where a separate module checks it, that is said in the row.
 | **C12** | `countByStage` has one entry per `Stage` in `stageOrder` order, and its counts sum to `projectTotal` | Content |
 | **C13** | `resolvedHomes` yields one entry per `own` and `within` home and none for `none` | Content |
 | **C14** | Nothing imports `projects` except the `validateInventory` call site — Adapter once it exists, and until then the committed-inventory assertion — and Verification's assertions over the inventory. No derivation function, no Composition entry and no Artifact step reads it | Content |
+| **C16** | Nothing imports `testimonials` except the `validateTestimonials` call site — Adapter — and Verification's assertions over the collection. `composeTestimonials` takes `Testimonials` as a parameter and never reads `testimonials` itself, the same discipline `C14` holds `composeApex` to over `projects` | Content |
 | **C15** | `parseCommitId` is the only implementation of the `CommitId` pattern in the repository | Content |
 | **P1** | Nothing in Presentation references a linked font, an external stylesheet, a gradient or an illustration asset. Neither `--font-sans` nor `--font-mono` names a webfont, and no rule is an `@font-face` | Presentation |
 | **P2** | The rendered page is legible in greyscale, in two parts. **(a)** Every foreground colour resolved against the background it is rendered on meets WCAG AA — 4.5:1, or 3:1 at `1.563rem` and above, WCAG's large-text threshold and the value `--step-2` names. The threshold is stated as a size rather than as a token because no rule references that token. `--rule` is **exempt, by name**: record separation is carried by the **spacing around a record**, so a divider reinforces and never signals. This clause named `--space-1` as that spacing until 2026-08-08; the `entry` primitive separates records with its own `clamp()` padding, so the exemption rests on the separation existing rather than on which value expresses it. **(b)** No meaning is carried by hue alone, which obliges the `link` primitive to declare a `text-decoration`, or a font weight distinct from body text. Part (b) is what makes this say greyscale rather than contrast: `--link` against `--fg` is 1.50:1, far below the 4.5:1 body-text threshold, so a link is not reliably separable from body text by luminance alone. The margin against `--bg` is not what is at issue — `--link` clears (a) there at 11.17:1 — which is why (b) is a separate half rather than a consequence of (a) | Presentation |
@@ -1149,13 +1235,14 @@ where a separate module checks it, that is said in the row.
 | **X3** | The page contains no form, no analytics, no consent surface and no third-party script | Composition |
 | **X4** | For each `ComposedRoute`, every class referenced in `bodyHtml` has a matching selector in `stylesheet`, and every **class** selector in `stylesheet` has a user in `bodyHtml` — checked by `assertStyleAgreement`. The token block's `:root` rules fall outside both halves and need no exemption clause: they carry no class selector, and `Primitive.rules` roots every other rule at its own `className` | Composition |
 | **X5** | Every Content value interpolated into `bodyHtml` is HTML-escaped, in attribute position as well as in text position; `<`, `>`, `&`, `"` and `'` never reach the document unescaped from a content value. The rule is over every interpolated value, not over a named list of fields. The attribute half is not implied by the text half — `"` and `'` are inert in text and are exactly what closes an attribute early — and a `ResolvedHome.url` carried in an `href` is the case the apex composition has. Asserted with a fixture project carrying all five characters, in both positions. **One exception, and it is not a relaxation**: inside the `application/ld+json` block (`X6`) HTML escaping would corrupt the JSON — `&amp;` in a URL is a different URL — so values there are JSON-string-escaped instead, and `X6`'s `</script` guard is what keeps that safe rather than the escaping | Composition |
-| **X6** | The apex body carries **exactly one** `<script type="application/ld+json">` element and the miss body carries none. It holds a single JSON-LD `Organization` object; every value in it is JSON-string-escaped (`X5`), it contains no `</script` sequence in any case — checked as one of `ScriptElementPresent`'s raising conditions, not a separate code — and any figure in it is a Content derivation rather than a typed literal, exactly as `X1` requires of the visible page. It is the only script element this design permits anywhere | Composition |
+| **X6** | The apex body carries **exactly one** `<script type="application/ld+json">` element; the miss body and the testimonials body carry none. It holds a single JSON-LD `Organization` object; every value in it is JSON-string-escaped (`X5`), it contains no `</script` sequence in any case — checked as one of `ScriptElementPresent`'s raising conditions, not a separate code — and any figure in it is a Content derivation rather than a typed literal, exactly as `X1` requires of the visible page. It is the only script element this design permits anywhere | Composition |
 | **X7** | The apex renders only `EcosystemGroup`s carrying at least one project. `C11` keeps every `Stage` in the tree so counts, ordering and totals stay total and testable; a lifecycle stage nothing has reached yet is not rendered as a heading with nothing beneath it. The two are complementary rather than in tension — the derivation is complete, the page is not a list of empties — and this is stated because the design's "never a silently empty section" rule was written for an empty *inventory* and left the empty *group* unnamed | Composition |
+| **X8** | `composeTestimonials` renders every `Testimonial` in its input, in input order — it sorts nothing and drops nothing. A testimonial carrying neither `role` nor `organization` omits the metadata line entirely rather than rendering an empty one | Composition |
 | **A1** | Every URL in route metadata is built from `origin`; no origin string is written twice. Each route's `canonicalUrl` and `openGraph.url` equal `origin` concatenated with that route's `path` | Adapter |
 | **A2** | Every entry in `metadata.icons` carries a `DataUri` as its `href`; no icon is a linked asset | Adapter |
-| **A3** | Adapter obtains everything renderable from Composition; it imports Content only for `projects`, `validateInventory`, `BuildContext` and `parseCommitId`, and Presentation only for `themeColor` and `iconDataUri` — never a derivation function, a copy constant, a primitive or the stylesheet. Both import lists are enumerated, and nothing renderable is on either | Adapter |
-| **A4** | Exactly two routes are declared: `apexPath` and `missPath` | Adapter |
-| **A5** | Adapter validates the inventory exactly once; on failure it reports every `ContentError` and exits non-zero, and no route body, stylesheet or document is produced | Adapter |
+| **A3** | Adapter obtains everything renderable from Composition; it imports Content only for `projects`, `testimonials`, `validateInventory`, `validateTestimonials`, `BuildContext` and `parseCommitId`, and Presentation only for `themeColor` and `iconDataUri` — never a derivation function, a copy constant, a primitive or the stylesheet. Both import lists are enumerated, and nothing renderable is on either | Adapter |
+| **A4** | Exactly three routes are declared: `apexPath`, `testimonialsPath` and `missPath` | Adapter |
+| **A5** | Adapter validates each content set exactly once — the inventory and the testimonial collection; on either's failure it reports every `ContentError` from that call and exits non-zero, and no route body, stylesheet or document is produced | Adapter |
 | **A6** | Both routes are `LandingPageBodyRoute` values: neither declares `entry`, `hydrate` or `noScript`, and the configuration declares no `styles`, `publicDir` or `allow`. Each route's stylesheet travels in its own `stylesheet` field | Adapter |
 | **A7** | No colour literal and no data URI is written in Adapter. `metadata.themeColor` is Presentation's `themeColor` and every `metadata.icons[].href` is Presentation's `iconDataUri`, by reference — the same rule `A1` applies to `origin`, applied to visual identity | Adapter |
 | **R1** | Every emitted document carries exactly one build marker, and it carries the commit being built | Artifact |
@@ -1165,7 +1252,7 @@ where a separate module checks it, that is said in the row.
 | **R5** | `missEmittedEntry` is the package's emitted entry for Adapter's `missPath` — checked against the emitted tree **before `R2`'s removal**, never assumed. A pairing asserted after the file is gone would assert nothing | Artifact |
 | **R6** | The emitted server configuration is written outside `outputDir` and never appears in the published tree, on either target | Artifact |
 | **V1** | No document reaches publication unless it carries the exact commit's marker | Verification |
-| **V2** | Loading a route document triggers zero requests other than the navigation document itself | Verification |
+| **V2** | Loading a route document triggers zero requests other than the navigation document itself. Checked against `/` and `/testimonials/` — the miss route is reached only through the unknown-path mechanism `V12` covers, not through direct navigation | Verification |
 | **V3** | Every manifesto sentence asserted, and every project `name`, appears in built HTML with scripting never executed | Verification |
 | **V4** | Every `ResolvedHome` responds 2xx or 3xx before release. The Pages preview does not wait on this networked gate | Verification |
 | **V5** | An `Attestation` is valid for exactly one `CommitId` and is never accepted for another. It gates the **release path only** — the registry push and the redeploy — and not the Pages deploy, which is why the preview's every-commit cadence is real; the cost is recorded in `10-design.md` § *Publication targets* | Verification |
@@ -1174,7 +1261,7 @@ where a separate module checks it, that is said in the row.
 | **V8** | No live URL is stated or implied until `pollForCommit` returns `ok` for the exact commit **and** the unknown-path check passes **against the target that claim is about** — Pages for the preview URL, the endpoint for the site. A read-back on one target licenses no claim about the other | Verification |
 | **V9** | No image is pushed to the registry unless the in-CI gate passed for that image | Verification |
 | **V10** | The image tag equals the full commit id, and equals the marker the running image serves | Verification |
-| **V11** | What the running image serves for `/`, and what Pages serves for `/`, are **each** byte-identical to the emitted apex document. Both are compared, which is what makes the brief's "asserted rather than assumed" true of the pair rather than of one side of it. The endpoint is deliberately not compared — `V15` covers it with the marker and unknown-path pair instead, because a byte match across a proxy this repository does not own would fail on transport differences that are not divergence | Verification |
+| **V11** | What the running image serves for `/`, and what Pages serves for `/`, are **each** byte-identical to the emitted apex document. Both are compared, which is what makes the brief's "asserted rather than assumed" true of the pair rather than of one side of it. The endpoint is deliberately not compared — `V15` covers it with the marker and unknown-path pair instead, because a byte match across a proxy this repository does not own would fail on transport differences that are not divergence. **`/testimonials/` is deliberately outside this invariant's scope** — it names `/` only, and the testimonials document is verified offline against the emitted tree (`V1`, `V3`-shaped content-presence checks) rather than by a served-response byte comparison. Widening it to a second route was considered and declined: the image gate already reads the whole emitted tree, so a second live byte comparison would be redundant against what publishing the same tree already proves | Verification |
 | **V12** | An unknown path returns status 404 carrying the emitted miss document, on **both** targets | Verification |
 | **V13** | No emitted document contains an **executable** script element, a linked stylesheet or an external asset reference. Exactly one script element is permitted in the whole design — the apex's `application/ld+json` block (`X6`), which no browser executes and no browser fetches. Any other `type`, any absent `type`, and any `src` attribute on any script element fails. The rule was a blanket ban on script elements until 2026-08-07; it was narrowed because it forbade a non-executing element on the ground that it forbade execution, which is a check aimed at the wrong property | Verification |
 | **V14** | No image tag is stated or implied until the push for that tag has succeeded and the tag resolves in the registry | Verification |

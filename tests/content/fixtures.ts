@@ -9,6 +9,7 @@ import type {
   Project,
   ProjectId,
   RootRelativePath,
+  Testimonial,
   Year,
 } from "../../src/content";
 
@@ -33,6 +34,14 @@ export function makeProject(overrides: Partial<Project> = {}): Project {
     stage: "Prototype",
     line: "A base project, valid in every field.",
     home: { kind: "none" },
+  };
+  return { ...base, ...overrides };
+}
+
+export function makeTestimonial(overrides: Partial<Testimonial> = {}): Testimonial {
+  const base: Testimonial = {
+    quote: "A base testimonial, valid in every field.",
+    author: "Base Author",
   };
   return { ...base, ...overrides };
 }

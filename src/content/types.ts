@@ -65,6 +65,16 @@ export type BuildContext = {
   readonly utcYear: Year;
 };
 
+export type Testimonial = {
+  readonly quote: string;
+  readonly author: string;
+  readonly role?: string;
+  readonly organization?: string;
+};
+
+// The one value only `validateTestimonials` can produce: a non-empty collection.
+export type Testimonials = readonly [Testimonial, ...Testimonial[]];
+
 export type ResolvedHome = {
   readonly projectId: ProjectId;
   readonly url: AbsoluteUrl;

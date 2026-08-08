@@ -26,7 +26,9 @@ export type PrimitiveName =
   | "rule"
   | "link"
   | "row"
-  | "bar";
+  | "bar"
+  | "grid"
+  | "card";
 
 export type Primitive = {
   readonly className: ClassName;
