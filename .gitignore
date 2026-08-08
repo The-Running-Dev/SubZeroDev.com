@@ -4,3 +4,4 @@ coverage/
 *.tsbuildinfo
 .claude/session-costs.tsv
 site/server/
+.vscode/
