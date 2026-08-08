@@ -220,6 +220,24 @@ describe("finalizeArtifact wraps injectBuildMarker's error with the failing docu
       ],
     });
   });
+
+  it("injection runs, and fails, before removal — missEmittedEntry still exists on disk after the failure", async () => {
+    // Injecting before removing (contract's stated order) is what keeps a
+    // marker-insertion failure reported as itself: removing first and
+    // failing injection afterward would leave the tree without
+    // missEmittedEntry on top of the original failure, so a rerun would fail
+    // early with MissDocumentMissing instead of surfacing what actually went
+    // wrong.
+    writeTree({
+      "index.html": APEX_HTML,
+      "404/index.html": "<html><body>no head close</body></html>",
+    });
+    const result = await finalizeArtifact({ outputDir, serverConfigDir, commit: COMMIT });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0].code).toBe("MarkerInsertionPointMissing");
+    expect(existsSync(join(outputDir, "404/index.html"))).toBe(true);
+  });
 });
 
 describe("S7.8 — the server configuration is written outside outputDir", () => {
