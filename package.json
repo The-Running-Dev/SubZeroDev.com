@@ -10,6 +10,7 @@
     "check-links": "vitest run --config vitest.link-check.config.ts",
     "check-design-counts": "node tools/check-design-counts.mjs",
     "build": "subzerodev-platform-ui-landing-page build",
+    "finalize-artifact": "vitest run --config vitest.build.config.ts",
     "preview": "node tools/preview.mjs",
     "image-gate": "vitest run --config vitest.image-gate.config.ts",
     "attestation-gate": "vitest run --config vitest.attestation.config.ts",
