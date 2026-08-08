@@ -20,8 +20,13 @@ import type { BuildContext } from "../src/content";
 import { iconDataUri, themeColor } from "../src/presentation";
 
 export const origin = "https://subzerodev.com" as const;
-export const apexPath = "/" as const;
-export const missPath = "/404/" as const;
+
+// RoutePath (contract § Route, A4) — narrows config.routes' path to the two
+// values this Adapter declares, so a third route path fails typecheck rather
+// than relying on review (issue #52).
+export type RoutePath = "/" | "/404/";
+export const apexPath: RoutePath = "/";
+export const missPath: RoutePath = "/404/";
 
 function buildContext(): BuildContext {
   const rawCommit = process.env.GITHUB_SHA ?? "";
