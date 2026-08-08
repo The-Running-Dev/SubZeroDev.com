@@ -13,9 +13,11 @@ const EXPECTED_NAMES: PrimitiveName[] = [
   "link",
   "row",
   "bar",
+  "grid",
+  "card",
 ];
 
-describe("S4.3 — primitives has exactly the eight PrimitiveName keys, valid classNames, no duplicates", () => {
+describe("S4.3/S11.3 — primitives has exactly the ten PrimitiveName keys, valid classNames, no duplicates", () => {
   it("has exactly the expected keys", () => {
     expect(Object.keys(primitives).sort()).toEqual([...EXPECTED_NAMES].sort());
   });
@@ -47,7 +49,7 @@ describe("S4.4 — every selector in every primitive's rules contains that primi
   });
 });
 
-describe("S4.9 — exactly one primitive's rules reference --font-mono, and no token-block rule does", () => {
+describe("S4.9/S11.4 — exactly one primitive's rules reference --font-mono, and no token-block rule does", () => {
   it("exactly one primitive references --font-mono", () => {
     const referencing = EXPECTED_NAMES.filter((n) => primitives[n].rules.includes("--font-mono"));
     expect(referencing).toEqual(["meta"]);

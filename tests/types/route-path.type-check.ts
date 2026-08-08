@@ -16,16 +16,18 @@ type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B 
   : false;
 type AssertTrue<T extends true> = T;
 
-// RoutePath is exactly "/" | "/404/" — no more, no fewer.
-type _RoutePathIsExact = AssertTrue<Equals<RoutePath, "/" | "/404/">>;
+// RoutePath is exactly "/" | "/404/" | "/testimonials/" — no more, no fewer.
+type _RoutePathIsExact = AssertTrue<Equals<RoutePath, "/" | "/404/" | "/testimonials/">>;
 
-// The two values A4 permits are valid.
+// The three values A4 permits are valid.
 const apex: RoutePath = "/";
+const testimonials: RoutePath = "/testimonials/";
 const miss: RoutePath = "/404/";
 void apex;
+void testimonials;
 void miss;
 
-// A third route path is not.
-// @ts-expect-error "/blog/" is not one of the two values RoutePath permits.
-const third: RoutePath = "/blog/";
-void third;
+// A fourth route path is not.
+// @ts-expect-error "/blog/" is not one of the three values RoutePath permits.
+const fourth: RoutePath = "/blog/";
+void fourth;

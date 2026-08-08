@@ -19,14 +19,17 @@ export type {
   RootRelativePath,
   Stage,
   StageCount,
+  Testimonial,
+  Testimonials,
   Year,
 } from "./types";
 export type { ContentError, ContentErrorCode } from "./errors";
 export { stageOrder } from "./stage-order";
-export { validateInventory } from "./validate";
+export { validateInventory, validateTestimonials } from "./validate";
 export { parseCommitId } from "./commit";
 export { resolvedHomes } from "./resolved-homes";
 export { projects } from "./projects";
+export { testimonials } from "./testimonials";
 export { primarySlogan, apexFooterQuote } from "./copy";
 export { sourceUrl } from "./links";
 export {
@@ -35,4 +38,5 @@ export {
   ecosystemTree,
   projectTotal,
   sinceYear,
+  testimonialTotal,
 } from "./derivations";

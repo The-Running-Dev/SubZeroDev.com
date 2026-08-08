@@ -152,9 +152,43 @@ be visible rather than buried in markup: the **primary slogan** (`Well… Why no
 footer quote** (`Trust us… It'll be fine. Or not.`). Each is a single named constant, not a
 collection. There is no rotation — see *Alternatives considered*.
 
+### Testimonial
+
+The one place this document models prose as data rather than as authored strings living with their
+renderer — the opposite call from the paragraph above, made for the opposite reason. The manifesto is
+one voice saying one thing; a testimonial is many attributed voices, each short, each independent, and
+the renderer must not need to know who any of them are or how many there are. That is a record shape,
+not a paragraph.
+
+| Field | Type | Notes |
+|---|---|---|
+| `quote` | string | The attributed line. Required, non-empty. |
+| `author` | string | Who is credited. Required, non-empty. |
+| `role` | string or absent | A secondary attribution line, under the author. |
+| `organization` | string or absent | A tertiary attribution line, under `role`. |
+
+No `avatar` field and no `source` field. `avatar` would be an image asset, and the brief's
+runtime-request non-goal forbids any load-triggered request after the document — the same rule that
+already rules out webfonts and linked stylesheets in *Presentation*. `source` was considered as an
+outbound citation link, but every candidate rendering either duplicates `organization` as inert text or
+turns a fabricated attribution into a clickable claim, which the *testimonials* carve-out in
+`00-brief.md` § *Source material* does not extend to.
+
+**Order is the data's, not the renderer's.** The renderer preserves the order it is given and sorts
+nothing — the same discipline `ecosystemTree` and `contaminationForest` observe over `Project`, so a
+consumer supplying real customer quotes gets a plain list rather than an editorial one, and so the
+escalation this repository's own collection depends on lives in the committed record order, not in
+component logic that would have to know it exists.
+
 ### Route
 
-Two, and no more. `/` is the document. The miss is the second. A `Route` carries:
+**Three**, not two. `/` is the manifesto document, `/testimonials/` a second, standalone document, and
+the miss route the third. This overturns the previous "two, and no more" and the *One document, rather
+than routes per section* rejection recorded in *Alternatives considered* — both are narrowed below, not
+struck, because the reasoning behind the apex staying one document is unaffected by a second, unrelated
+document existing beside it. `Idea.md`'s testimonials are not a section of the manifesto; they are a
+different kind of page — data-driven, escalating, and not part of the apex's "parent voice unstyled"
+argument in *Data model* § `Testimonial` above. A `Route` carries:
 
 - its **path**. The package's declared path type admits `/` or a trailing-slash path only, so the
   miss route is declared as `/404/` and the package emits it at `404/index.html`. The conventional
@@ -905,6 +939,16 @@ this site exists to solve. This document's own *Data model* already anticipates 
 a project `id` *"the anchor fragment"*. **A single row of links on the one document is in scope**; the
 chrome this paragraph rejects is the kind that only a multi-route site can have. See
 [`90-decisions.md`](90-decisions.md), 2026-08-07.
+
+**Narrowed again on 2026-08-08, for `/testimonials/`.** This section's argument is about the
+*apex's* genre being one document, not about the site having exactly two routes — `A4`'s "exactly
+two" was the sharper claim, and the rejected alternative above (`/manifesto`, `/projects`,
+`/philosophy`) was specifically about slicing the manifesto, which testimonials are not. A testimonial
+collection is not a section of the plain document; it needs its own heading, its own attribution
+layout, and content that would visually or tonally contaminate the apex if inlined into it. Adding it
+as a third, standalone route costs the multi-route chrome this section rejects only if the *apex*
+grows navigation state — it does not: `/testimonials/` carries a single back-link, on the same footing
+as the miss route's, not a persistent nav bar. See [`90-decisions.md`](90-decisions.md), 2026-08-08.
 
 ### One inert script element, rather than none at all
 

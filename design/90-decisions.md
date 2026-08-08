@@ -5,6 +5,15 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
+`tests/helpers/import-graph.ts`'s `listTsFiles` `SKIP_DIRS` set contains the bare name `"build"`,
+intended to skip a build-output directory, but the walker matches directory *names* rather than
+paths — so `tests/build/` (a source directory of committed test files, not build output) is silently
+excluded from every `listTsFiles(repoRoot)` walk. Found 2026-08-08 while adding `S11`'s `C16` import
+check: `tests/build/emitted-document.test.ts` imports `testimonials` (and, pre-existing, `projects`)
+and is invisible to both the new `C16` check and the existing `C14` check as a result — neither names
+it as a permitted call site because neither can see it. Not fixed in this pass: the fix belongs to the
+helper itself and is orthogonal to the testimonials route.
+
 (the three items `/reconcile` staged on 2026-08-08 became
 [#54](https://github.com/The-Running-Dev/SubZeroDev.com/issues/54),
 [#55](https://github.com/The-Running-Dev/SubZeroDev.com/issues/55) and
@@ -19,6 +28,71 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-08 — Two new primitives, `grid` and `card`, close `PrimitiveName` at ten
+Context: the testimonials route (`S11`) needs a responsive multi-column layout and a bordered quote
+container, and neither is expressible with the existing eight primitives without breaking `S4.4`'s
+rule that every selector in a primitive's `rules` is rooted at that primitive's own `className`.
+Chosen: **`grid`**, a `columns`-based responsive flow with `break-inside: avoid` on its direct
+children — the same "reaches a child it does not name" shape `row` already has precedent for — and
+**`card`**, a bordered/padded container reusable outside a grid. Neither references `--font-mono`;
+`P7` still names `meta` as the one primitive that does.
+Rejected: **CSS Grid instead of `columns`** for the `grid` primitive — declined because a card's
+height is its own content, and CSS Grid forces every row to the tallest cell unless every card is
+independently placed, which is more machinery for the same visual result. **A `.grid > .card` selector
+instead of a standalone `card` primitive** — declined because a card is meaningful alone (a future
+single-testimonial consumer), and `S4.4`'s rule already requires every primitive's own selectors to be
+self-rooted, which a compound selector spanning two primitives cannot satisfy cleanly.
+Reversibility: cheap. Two primitive entries and their test-suite extension; nothing downstream depends
+on the internal layout mechanism, only on the class names.
+
+---
+
+### 2026-08-08 — A third route, `/testimonials/`, overturning `A4`'s "exactly two"
+Context: the owner requested a reusable testimonial component and a SubZeroDev testimonials page. The
+apex's "one document" argument in `10-design.md` § *One document, rather than routes per section* is
+about the *manifesto* staying undivided, not about the site staying at two routes — the rejected
+alternative it names (`/manifesto`, `/projects`, `/philosophy`) is specifically about slicing the
+manifesto. A testimonial collection is not a manifesto section: different heading, different layout,
+different content shape, and inlining it would contaminate the apex's genre ("no genre — the plain
+document").
+Chosen: a third `RoutePath` member, `/testimonials/`, with its own `composeTestimonials` entry point,
+own head metadata, and no navigation chrome added to the apex beyond the single link row already there
+— the testimonials page itself carries one back-link, the same footing the miss route's link already
+has, not a persistent nav bar.
+Rejected: **a fourth apex section**, per the *One document* argument above, and because escalating
+absurdity reads better as its own page than as a section competing with the manifesto's tone.
+**A separate subdomain or repository** — rejected outright: the brief's non-goals forbid a new
+cross-repo contract, and a single-purpose page does not need its own deployment target.
+Reversibility: expensive to fully reverse — `A4`, `RoutePath`, and every downstream signature that
+enumerates routes would need to shrink back to two — but cheap to leave dormant: the route can be
+removed without touching `Content`'s `Testimonial` type or `Composition`'s `composeTestimonials`,
+since both are already generic and carry no cost if unused.
+
+---
+
+### 2026-08-08 — Testimonials are exempted from "nothing may be funnier than it is true," scoped to one route
+Context: `00-brief.md` § *Source material* item 2 states the house rule behind the ecosystem list's
+true-status labelling, and `Idea.md` § *Writing Style* ("Never exaggerate. Reality already did.") and
+§ *Company Personality* ("never corporate") describe the same voice everywhere else on the site. A
+testimonials page built as instructed — eighteen fabricated, mostly adversarial quotes attributed to
+everyone from a disappointed customer to God, presented with complete corporate seriousness and no
+"fake"/"satire" label — contradicts all three as written.
+Chosen: a fourth item in `00-brief.md` § *Source material*, naming `/testimonials/` as a bounded
+exception to item 2 rather than a repeal of it. The house rule stays true of the ecosystem list and
+everything else on the apex; the testimonials route is the one place the site is built to say something
+it does not mean, on purpose, without saying so.
+Rejected: **leaving the brief unedited and logging only the conflict** — cheaper, but leaves a brief
+that the shipped page directly contradicts, which `agent.md` § *Drift* names as the exact class of
+defect a `/reconcile` pass exists to catch, manufactured here on purpose rather than found by accident.
+**Arguing the rule already permits it** — that no reader could mistake attribution to Yoda or Lucifer
+for a truth claim, so nothing is "funnier than true" in the relevant sense. Rejected because it is an
+argument, not a decision: it resolves nothing in the document itself, and the next `/reconcile` pass
+would reopen exactly this question with no entry to point to.
+Reversibility: cheap. One list item in `00-brief.md`, reversed by deleting it; nothing downstream reads
+the carve-out's wording, only its existence.
 
 ---
 

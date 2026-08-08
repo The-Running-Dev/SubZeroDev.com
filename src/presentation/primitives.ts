@@ -226,4 +226,45 @@ export const primitives: PrimitiveSet = {
   }
 }`,
   },
+  grid: {
+    className: className("grid"),
+    // `columns` rather than CSS Grid: a card's height is its own content, and
+    // a grid track would force every row to its tallest cell. `break-inside`
+    // is what keeps a card from splitting across the column break — the same
+    // "reaches a child it does not name" shape `row` already has.
+    rules: `.grid {
+  columns: 3 300px;
+  column-gap: clamp(1.1rem, 2.4vw, var(--space-2));
+}
+
+.grid > * {
+  break-inside: avoid;
+  margin-bottom: clamp(1.1rem, 2.4vw, var(--space-2));
+}
+
+@media (max-width: 720px) {
+  .grid {
+    columns: 1;
+  }
+}`,
+  },
+  card: {
+    className: className("card"),
+    rules: `.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.4rem;
+  padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.card blockquote {
+  margin: 0;
+}
+
+.card figcaption {
+  margin: 0;
+}`,
+  },
 };

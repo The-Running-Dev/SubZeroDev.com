@@ -65,6 +65,13 @@ const contaminationSection: Section = {
 
 const sections: readonly Section[] = [manifestoSection, ecosystemSection, contaminationSection];
 
+// A literal, not an import of Adapter's `testimonialsPath` — `X2` confines
+// Composition to Content and Presentation, so Adapter's route constant
+// cannot flow backward into this module. The two spellings are pinned
+// together by `tests/composition/apex-navigation.test.ts`, on the same
+// footing `R5` pins `missEmittedEntry` against `missPath` without an import.
+const testimonialsRoutePath = "/testimonials/";
+
 // Owner-supplied copy, not a transcription from Idea.md — see 90-decisions.md,
 // 2026-08-07, "the manifesto supersedes the Idea.md draft".
 const manifestoParagraphs: readonly string[] = [
@@ -141,7 +148,10 @@ function renderOutbound(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
 }
 
 function renderNav(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
-  const inPage = sections.map((s) => renderLink(`#${s.anchor}`, s.heading)).join(" · ");
+  const inPage = [
+    ...sections.map((s) => renderLink(`#${s.anchor}`, s.heading)),
+    renderLink(testimonialsRoutePath, "Testimonials"),
+  ].join(" · ");
 
   return [
     `<nav class="${primitives.bar.className}">`,

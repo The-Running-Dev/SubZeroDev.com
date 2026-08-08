@@ -13,6 +13,8 @@ import type {
   Project,
   ProjectId,
   Result,
+  Testimonial,
+  Testimonials,
 } from "./types";
 
 const PROJECT_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -272,4 +274,41 @@ export function validateInventory(
   }
 
   return { ok: true, value: projects as Inventory };
+}
+
+export function validateTestimonials(
+  testimonials: readonly Testimonial[],
+): Result<Testimonials, ContentError> {
+  if (testimonials.length === 0) {
+    return {
+      ok: false,
+      errors: [error("EmptyTestimonials", null, null, "The testimonial collection has no entries.")],
+    };
+  }
+
+  const errors: ContentError[] = [];
+
+  testimonials.forEach((testimonial, index) => {
+    if (testimonial.quote.trim() === "") {
+      errors.push(
+        error("TestimonialQuoteEmpty", null, "quote", `quote at index ${index} is empty after trimming.`),
+      );
+    }
+    if (testimonial.author.trim() === "") {
+      errors.push(
+        error(
+          "TestimonialAuthorEmpty",
+          null,
+          "author",
+          `author at index ${index} is empty after trimming.`,
+        ),
+      );
+    }
+  });
+
+  if (errors.length > 0) {
+    return { ok: false, errors: errors as [ContentError, ...ContentError[]] };
+  }
+
+  return { ok: true, value: testimonials as Testimonials };
 }
