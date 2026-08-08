@@ -194,10 +194,7 @@ function renderEcosystem(inventory: Inventory, hrefById: ReadonlyMap<ProjectId, 
 
   const groupHtml = groups.filter((group) => group.projects.length > 0).map((group) => {
     const count = byStage.get(group.stage) ?? 0;
-    const body =
-      group.projects.length > 0
-        ? `<div class="${primitives.stack.className}">${group.projects.map((p) => renderProjectEntry(p, hrefById)).join("")}</div>`
-        : `<p class="${primitives.meta.className}">No projects here yet.</p>`;
+    const body = `<div class="${primitives.stack.className}">${group.projects.map((p) => renderProjectEntry(p, hrefById)).join("")}</div>`;
 
     return [
       `<div class="${primitives.stack.className}">`,
