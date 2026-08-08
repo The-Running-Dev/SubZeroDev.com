@@ -23,10 +23,12 @@ export const origin = "https://subzerodev.com" as const;
 
 // RoutePath (contract § Route, A4) — narrows config.routes' path to the two
 // values this Adapter declares, so a third route path fails typecheck rather
-// than relying on review (issue #52).
+// than relying on review (issue #52). `satisfies` checks membership without
+// widening past the exact literal each constant carries per the contract's
+// own signatures (design/20-contract.md:639-641).
 export type RoutePath = "/" | "/404/";
-export const apexPath: RoutePath = "/";
-export const missPath: RoutePath = "/404/";
+export const apexPath = "/" as const satisfies RoutePath;
+export const missPath = "/404/" as const satisfies RoutePath;
 
 function buildContext(): BuildContext {
   const rawCommit = process.env.GITHUB_SHA ?? "";
