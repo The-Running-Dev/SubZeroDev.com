@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import { missRootEntry } from "../../src/artifact";
 import { composeApex } from "../../src/composition";
 import { projects, validateInventory } from "../../src/content";
 import { iconDataUri } from "../../src/presentation";
@@ -20,7 +21,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 const distDir = resolve(here, "../../site/dist");
 
 const apexHtml = readFileSync(resolve(distDir, "index.html"), "utf8");
-const missHtml = readFileSync(resolve(distDir, "404/index.html"), "utf8");
+// The emitted miss entry (404/index.html) does not survive finalizeArtifact's
+// removal (R2), and this config's global-setup has already run it by the
+// time this suite executes — same convention as tests/build/artifact.test.ts.
+// missRootEntry (404.html) carries the same, byte-identical, marked content.
+const missHtml = readFileSync(resolve(distDir, missRootEntry), "utf8");
 
 describe("S6.9 — the build emits a document for the apex and one at 404/index.html", () => {
   it("both documents exist and are non-empty", () => {

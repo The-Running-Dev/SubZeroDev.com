@@ -1,7 +1,8 @@
-// Verification — `assertEveryDocumentMarked` and `assertRootMissDocument`
-// (contract's Verification § public signatures, V1 and R2's read-back half).
+// Verification — `assertEveryDocumentMarked`, `assertRootMissDocument` and
+// `assertMissEntryRemoved` (contract's Verification § public signatures, V1
+// and R2's read-back half).
 
-import { missRootEntry } from "../artifact";
+import { missEmittedEntry, missRootEntry } from "../artifact";
 import type { EmittedDocument } from "../artifact";
 import type { CommitId, Result } from "../content";
 import { readBuildMarker } from "./build-marker";
@@ -50,6 +51,26 @@ export function assertRootMissDocument(
           detail: `"${missRootEntry}" is absent from the finished tree.`,
           observed: null,
           expected: missRootEntry,
+        },
+      ],
+    };
+  }
+  return { ok: true, value: null };
+}
+
+export function assertMissEntryRemoved(
+  documents: readonly EmittedDocument[],
+): Result<null, VerificationError> {
+  const present = documents.some((document) => document.relativePath === missEmittedEntry);
+  if (present) {
+    return {
+      ok: false,
+      errors: [
+        {
+          code: "MissEntryStillPresent",
+          detail: `"${missEmittedEntry}" survives into the finished tree, so the miss composition is reachable at a 200.`,
+          observed: missEmittedEntry,
+          expected: null,
         },
       ],
     };
