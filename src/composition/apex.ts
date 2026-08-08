@@ -192,7 +192,7 @@ function renderEcosystem(inventory: Inventory, hrefById: ReadonlyMap<ProjectId, 
   const counts = countByStage(inventory);
   const byStage = new Map(counts.map((c) => [c.stage, c.count] as const));
 
-  const groupHtml = groups.map((group) => {
+  const groupHtml = groups.filter((group) => group.projects.length > 0).map((group) => {
     const count = byStage.get(group.stage) ?? 0;
     const body =
       group.projects.length > 0
