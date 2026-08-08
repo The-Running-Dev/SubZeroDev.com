@@ -14,6 +14,7 @@ import type {
   Inventory,
   Project,
   StageCount,
+  Testimonials,
   Year,
 } from "./types";
 
@@ -26,6 +27,10 @@ export function sinceYear(inventory: Inventory): Year {
 
 export function projectTotal(inventory: Inventory): number {
   return inventory.length;
+}
+
+export function testimonialTotal(testimonials: Testimonials): number {
+  return testimonials.length;
 }
 
 export function countByStage(inventory: Inventory): readonly StageCount[] {

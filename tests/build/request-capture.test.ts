@@ -46,6 +46,14 @@ describe("S8.3 — the emitted miss document triggers no request beyond its own 
   });
 });
 
+describe("S11.14 — the emitted testimonials document triggers no request beyond its own navigation (V2)", () => {
+  it("produces exactly one RequestRecord, the navigation, initiatedByTester true", async () => {
+    const records = await captureRequests(server.url + "/testimonials/");
+    expect(records).toHaveLength(1);
+    expect(records[0]!.initiatedByTester).toBe(true);
+  });
+});
+
 describe("S8.4 — assertNoAdditionalRequests", () => {
   const navigation: RequestRecord = {
     url: "http://127.0.0.1/",

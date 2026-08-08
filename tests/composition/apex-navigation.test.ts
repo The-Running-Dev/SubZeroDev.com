@@ -132,6 +132,14 @@ describe("a derived link is dropped — not faked — when its project is absent
   });
 });
 
+describe("the in-page nav row also carries a route link to Testimonials", () => {
+  const { bodyHtml } = composeApex(full, TEST_ORIGIN);
+
+  it('renders a link to "/testimonials/" labelled Testimonials', () => {
+    expect(bodyHtml).toContain(`href="/testimonials/">Testimonials</a>`);
+  });
+});
+
 describe("X4 — the nav does not break markup/stylesheet agreement", () => {
   it("assertStyleAgreement holds for a body carrying the nav", () => {
     const { bodyHtml, stylesheet } = composeApex(full, TEST_ORIGIN);

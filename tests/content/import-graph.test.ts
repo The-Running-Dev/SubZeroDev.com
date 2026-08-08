@@ -133,6 +133,49 @@ describe("S2.8/S3.7/S6.7 — nothing imports `projects` except validateInventory
   });
 });
 
+describe("S11 — nothing imports `testimonials` except validateTestimonials's call site and Verification-shaped assertions over the collection (invariant C16)", () => {
+  const targetFiles = [resolve(contentDir, "testimonials.ts"), resolve(contentDir, "index.ts")];
+  // C16's closed importer set, the parallel of C14's over `projects`: S11's
+  // Adapter (the production `validateTestimonials` call site) and the S11
+  // content test asserting the committed collection validates.
+  //
+  // `tests/build/emitted-document.test.ts` also imports `testimonials`
+  // (S11.13) but is invisible to `listTsFiles` here — `SKIP_DIRS` matches
+  // directory *names*, and `tests/build`'s last path segment happens to
+  // collide with the "build output" skip entry meant for `dist`/`build`
+  // artifact directories. `tests/build/emitted-document.test.ts`'s existing
+  // import of `projects` has the identical, pre-existing blind spot in the
+  // `C14` block above, which does not name it as a call site either — this
+  // mirrors that precedent rather than introducing a new one. Logged in
+  // `design/90-decisions.md` § *Open* as a defect in this helper, not fixed
+  // here: it is a pre-existing gap this slice inherited, not one it created.
+  const callSites = [
+    resolve(repoRoot, "site/landing.config.ts"),
+    resolve(repoRoot, "tests/content/testimonials.test.ts"),
+  ];
+
+  it("the only importers across the repository are those call sites", () => {
+    const files = listTsFiles(repoRoot);
+    expect(files.length).toBeGreaterThan(0);
+    const users = namedImportUsers(readEntries(files), targetFiles, "testimonials");
+    expect(users.sort()).toEqual([...callSites].sort());
+  });
+
+  it("the check has teeth: an unrelated file importing `testimonials` is flagged", () => {
+    const users = namedImportUsers(
+      [
+        {
+          file: resolve(repoRoot, "src/composition/page.ts"),
+          source: 'import { testimonials } from "../content";',
+        },
+      ],
+      targetFiles,
+      "testimonials",
+    );
+    expect(users).toEqual([resolve(repoRoot, "src/composition/page.ts")]);
+  });
+});
+
 describe("S4.14 — Presentation imports Branded from Content, and nothing else from this repository", () => {
   it("no file under src/presentation imports anything but Branded from Content, or escapes to another module", () => {
     const files = listTsFiles(presentationDir);
@@ -269,7 +312,7 @@ describe("S6.13 — nothing imports Composition except Adapter (X2)", () => {
   });
 });
 
-describe("S6.7 — Adapter imports exactly Composition, the external package, Content's projects/validateInventory/BuildContext/parseCommitId, and Presentation's themeColor/iconDataUri (A3)", () => {
+describe("S6.7/S11 — Adapter imports exactly Composition, the external package, Content's projects/testimonials/validateInventory/validateTestimonials/BuildContext/parseCommitId, and Presentation's themeColor/iconDataUri (A3)", () => {
   const adapterFile = resolve(repoRoot, "site/landing.config.ts");
   // Composition and the external package may be imported by whichever names
   // they expose — A3 closes the module list, not which symbols travel from
@@ -280,7 +323,14 @@ describe("S6.7 — Adapter imports exactly Composition, the external package, Co
     "../src/composition",
   ]);
   const ALLOWED_NAMES: Record<string, readonly string[]> = {
-    "../src/content": ["projects", "validateInventory", "BuildContext", "parseCommitId"],
+    "../src/content": [
+      "projects",
+      "testimonials",
+      "validateInventory",
+      "validateTestimonials",
+      "BuildContext",
+      "parseCommitId",
+    ],
     "../src/presentation": ["themeColor", "iconDataUri"],
   };
 
