@@ -17,7 +17,7 @@
 import { defineLandingPage } from "subzerodev-platform-ui-landing-page";
 import type { LandingPageConfig } from "subzerodev-platform-ui-landing-page";
 
-import { composeApex, composeMiss, composeTestimonials } from "../src/composition";
+import { composeMiss, foldRoutes } from "../src/composition";
 import {
   parseCommitId,
   projects,
@@ -70,8 +70,9 @@ if (!validatedInventory.ok || !validatedTestimonials.ok) {
 }
 
 const inventory = validatedInventory.value;
-const apex = composeApex(inventory, origin);
-const testimonialsRoute = composeTestimonials(validatedTestimonials.value);
+const folded = foldRoutes(inventory, validatedTestimonials.value, origin);
+const apex = folded.apex;
+const testimonialsRoute = folded.testimonials;
 const miss = composeMiss();
 
 const config: LandingPageConfig = defineLandingPage({
