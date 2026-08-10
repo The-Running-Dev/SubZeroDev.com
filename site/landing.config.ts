@@ -6,13 +6,9 @@
 // `validateInventory`, `validateTestimonials`, `BuildContext` and
 // `parseCommitId`, and Presentation's `themeColor` and `iconDataUri` (S6.7).
 //
-// PLACEHOLDER COPY: the apex and miss routes' `title`, `description` and
-// Open Graph fields below are placeholders, started on the owner's explicit
-// instruction ahead of final copy (design/90-decisions.md, 2026-08-06 — "S6's
-// route titles and descriptions start as placeholder copy"). Replace before
-// publication. The testimonials route's metadata is authored copy, not a
-// placeholder — S11's `Depends on` line covers only the testimonials
-// themselves and this route's title/description.
+// PLACEHOLDER COPY: the apex route's `title`, `description` and Open Graph
+// fields below are deliberate placeholders. Leave them unchanged. The
+// testimonials and miss routes' metadata is authored copy.
 
 import { defineLandingPage } from "subzerodev-platform-ui-landing-page";
 import type { LandingPageConfig } from "subzerodev-platform-ui-landing-page";
@@ -120,13 +116,12 @@ const config: LandingPageConfig = defineLandingPage({
       body: miss.bodyHtml,
       stylesheet: miss.stylesheet,
       metadata: {
-        title: "404 (placeholder title — replace before publication)",
-        description: "Placeholder description for the miss page — replace before publication.",
+        title: "404 — Nothing Is Missing | SubZeroDev",
+        description: "This page was never built. There was nothing here to begin with.",
         canonicalUrl: `${origin}${missPath}`,
         openGraph: {
-          title: "404 (placeholder Open Graph title — replace before publication)",
-          description:
-            "Placeholder Open Graph description for the miss page — replace before publication.",
+          title: "404 — Nothing Is Missing | SubZeroDev",
+          description: "This page was never built. There was nothing here to begin with.",
           type: "website",
           url: `${origin}${missPath}`,
         },
