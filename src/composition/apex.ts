@@ -56,9 +56,12 @@ const organizationDescription =
 // long joke sentence, and the nav needs a short tab-shaped label distinct
 // from it, exactly as the imported prototype (`SubZeroDev Landing.dc.html`)
 // gives it a "Testimonials" tab pointing at a different heading string.
+// `label` is absent for testimonials alone: the prototype gives the other
+// three an `NN / Name` index line under the heading and gives that one only
+// its count line, which is what every screenshot of the tab shows.
 type Section = {
   readonly anchor: string;
-  readonly label: string;
+  readonly label?: string;
   readonly heading: string;
   readonly navLabel?: string;
 };
@@ -83,7 +86,6 @@ const contaminationSection: Section = {
 
 const testimonialsSection: Section = {
   anchor: "testimonials",
-  label: "04 / Testimonials",
   heading: testimonialsHeading,
   navLabel: "Testimonials",
 };
@@ -118,9 +120,14 @@ const manifestoParagraphs: readonly string[] = [
 // Opens a top-level section: the anchor the nav targets, the index label and
 // the heading, all from the one `Section` record.
 function openSection(section: Section): string {
+  const label =
+    section.label === undefined
+      ? ""
+      : `<p class="${primitives.meta.className}">${section.label}</p>`;
+
   return [
-    `<div class="${primitives.stack.className}" id="${section.anchor}">`,
-    `<p class="${primitives.meta.className}">${section.label}</p>`,
+    `<div class="${primitives.stack.className} ${primitives.view.className}" id="${section.anchor}">`,
+    label,
     `<h2>${section.heading}</h2>`,
   ].join("");
 }
@@ -167,11 +174,11 @@ function renderLink(href: string, text: string): string {
 function renderOutbound(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
   return outboundTargets(hrefById)
     .map((t) => renderLink(escapeHtml(t.url), t.label))
-    .join(" · ");
+    .join("");
 }
 
 function renderNav(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
-  const inPage = sections.map((s) => renderLink(`#${s.anchor}`, s.navLabel ?? s.heading)).join(" · ");
+  const inPage = sections.map((s) => renderLink(`#${s.anchor}`, s.navLabel ?? s.heading)).join("");
 
   return [
     `<nav class="${primitives.bar.className}">`,

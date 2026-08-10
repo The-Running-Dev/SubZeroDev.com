@@ -52,16 +52,30 @@ describe("S12.5 — loading / with the enhancement script executing still trigge
   });
 });
 
-describe("with scripting disabled, every section — manifesto, ecosystem, contamination, testimonials — stays visible on the same page", () => {
-  it("every project, manifesto sentence and testimonial is in the document and visible with no script running", async () => {
+describe("with scripting disabled, the tab switch still selects one section at a time", () => {
+  it("every project, manifesto sentence and testimonial is in the document, and each tab shows its own section with no script running", async () => {
     const noScriptContext = await browser.newContext({ javaScriptEnabled: false });
     try {
       const page = await noScriptContext.newPage();
-      await page.goto(server.url + "/");
+      const ids = ["effortless-action", "echo-system", "contamination", "testimonials"];
 
-      for (const id of ["effortless-action", "echo-system", "contamination", "testimonials"]) {
-        expect(await page.locator(`#${id}`).isVisible()).toBe(true);
+      // The switch is Presentation's `view` primitive, in CSS, so it holds
+      // with this context's JavaScript disabled. Untargeted, the document
+      // opens on the first tab; each anchor then selects its own and only
+      // its own.
+      await page.goto(server.url + "/");
+      for (const id of ids) {
+        expect(await page.locator(`#${id}`).isVisible()).toBe(id === "effortless-action");
       }
+
+      for (const selected of ids) {
+        await page.goto(server.url + "/#" + selected);
+        for (const id of ids) {
+          expect(await page.locator(`#${id}`).isVisible()).toBe(id === selected);
+        }
+      }
+
+      await page.goto(server.url + "/");
 
       const html = await page.content();
       for (const sentence of manifestoSentences) {
@@ -88,7 +102,7 @@ describe("S12.7 — the search box and stage chips only ever hide or reveal ecos
   it("a filter matching nothing leaves every entry in the DOM, hidden, with the empty-result sentence visible", async () => {
     const page = await browser.newPage();
     try {
-      await page.goto(server.url + "/");
+      await page.goto(server.url + "/#echo-system");
       const entries = page.locator("#echo-system .entry");
       const before = await entries.count();
       expect(before).toBeGreaterThan(0);
@@ -111,7 +125,7 @@ describe("S12.7 — the search box and stage chips only ever hide or reveal ecos
   it("a matching search reveals only the matching entries, and clearing it reveals all of them again", async () => {
     const page = await browser.newPage();
     try {
-      await page.goto(server.url + "/");
+      await page.goto(server.url + "/#echo-system");
       const entries = page.locator("#echo-system .entry");
       const total = await entries.count();
 
@@ -138,7 +152,7 @@ describe("S12.8 — the detail overlay is keyboard-reachable, returns focus on c
   it("opens on click, traps Tab within itself, closes on Escape, and returns focus to the trigger", async () => {
     const page = await browser.newPage();
     try {
-      await page.goto(server.url + "/");
+      await page.goto(server.url + "/#echo-system");
       // The prototype binds its detail handler to the entry itself rather
       // than to a button, so the entry is the control that opens the overlay.
       const trigger = page.locator("#echo-system .entry").first();
@@ -180,7 +194,7 @@ describe("S12.9 — under prefers-reduced-motion: reduce, the script applies no 
     const page = await browser.newPage();
     try {
       await page.emulateMedia({ reducedMotion: "reduce" });
-      await page.goto(server.url + "/");
+      await page.goto(server.url + "/#echo-system");
 
       const search = page.locator("#echo-system input[type='search']");
       await search.fill("documentation");
@@ -236,11 +250,14 @@ describe("S12.10 — with the script's own initialisation forced to throw, the d
         expect(html).toContain(testimonial.quote);
       }
 
-      // Every section is still on the page and visible — there is no
-      // hide/show mechanism left for a broken script to have left engaged.
+      // The tab switch is CSS, so a broken script cannot leave the document
+      // showing nothing: it opens on the first tab, and the other three stay
+      // reachable by their anchors.
       for (const id of ["effortless-action", "echo-system", "contamination", "testimonials"]) {
-        expect(await page.locator(`#${id}`).isVisible()).toBe(true);
+        expect(await page.locator(`#${id}`).isVisible()).toBe(id === "effortless-action");
       }
+      await page.goto(server.url + "/#contamination");
+      expect(await page.locator("#contamination").isVisible()).toBe(true);
     } finally {
       await brokenContext.close();
     }
