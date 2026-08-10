@@ -271,8 +271,16 @@ export const primitives: PrimitiveSet = {
     // selector containing the class, not by where in it the class sits.
     // Active is `--fg` against the other three at `--link`: the prototype's
     // `tab.active`/`tab.inactive` pair.
+    //
+    // `margin-top` is zeroed on `.stack > .view`, not bare `.view`: `.stack`'s
+    // own `.stack > .stack` rule has two class selectors, so a one-class
+    // `.view` rule loses to it regardless of source order and the section
+    // still opens with the doubled gap 56470b3 meant to remove.
     rules: `.view {
   display: none;
+}
+
+.stack > .view {
   margin-top: 0;
 }
 
