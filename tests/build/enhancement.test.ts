@@ -110,6 +110,7 @@ describe("S12.7 — the search box and stage chips only ever hide or reveal ecos
     const page = await browser.newPage();
     try {
       await page.goto(server.url + "/");
+      await page.click('nav a[href="#echo-system"]');
       const entries = page.locator("#echo-system .entry");
       const before = await entries.count();
       expect(before).toBeGreaterThan(0);
@@ -133,6 +134,7 @@ describe("S12.7 — the search box and stage chips only ever hide or reveal ecos
     const page = await browser.newPage();
     try {
       await page.goto(server.url + "/");
+      await page.click('nav a[href="#echo-system"]');
       const entries = page.locator("#echo-system .entry");
       const total = await entries.count();
 
@@ -160,7 +162,10 @@ describe("S12.8 — the detail overlay is keyboard-reachable, returns focus on c
     const page = await browser.newPage();
     try {
       await page.goto(server.url + "/");
-      const trigger = page.locator("#echo-system .entry button", { hasText: "Details" }).first();
+      await page.click('nav a[href="#echo-system"]');
+      // The prototype binds its detail handler to the entry itself rather
+      // than to a button, so the entry is the control that opens the overlay.
+      const trigger = page.locator("#echo-system .entry").first();
       await trigger.click();
 
       const dialog = page.locator('[role="dialog"]');
@@ -200,11 +205,12 @@ describe("S12.9 — under prefers-reduced-motion: reduce, the script applies no 
     try {
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.goto(server.url + "/");
+      await page.click('nav a[href="#echo-system"]');
 
       const search = page.locator("#echo-system input[type='search']");
       await search.fill("documentation");
 
-      const trigger = page.locator("#echo-system .entry button", { hasText: "Details" }).first();
+      const trigger = page.locator("#echo-system .entry").first();
       await trigger.click();
 
       const motionFound = await page.evaluate(`(() => {
