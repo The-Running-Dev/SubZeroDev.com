@@ -70,6 +70,7 @@ export type Testimonial = {
   readonly author: string;
   readonly role?: string;
   readonly organization?: string;
+  readonly url?: string;
 };
 
 // The one value only `validateTestimonials` can produce: a non-empty collection.

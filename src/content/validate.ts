@@ -322,6 +322,16 @@ export function validateTestimonials(
         ),
       );
     }
+    if (testimonial.url !== undefined && !isAbsoluteHttpsUrl(testimonial.url)) {
+      errors.push(
+        error(
+          "TestimonialUrlInvalid",
+          null,
+          "url",
+          `url at index ${index} is not an https absolute URL.`,
+        ),
+      );
+    }
   });
 
   if (errors.length > 0) {

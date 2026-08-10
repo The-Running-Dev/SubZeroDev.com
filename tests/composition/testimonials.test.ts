@@ -77,6 +77,14 @@ describe("S11.6 — the metadata line reflects exactly the fields present (X8)",
     expect(metaLines).toHaveLength(1);
     expect(bodyHtml).not.toMatch(/<p class="meta"><\/p>/);
   });
+
+  it("a source URL renders as an escaped Source link", () => {
+    const source = "https://example.test/issues/212?topic=two%20kinds";
+    const { bodyHtml } = composeTestimonials(
+      testimonials(makeTestimonial({ author: "Issue 212", url: source })),
+    );
+    expect(bodyHtml).toContain(`<a class="link" href="${source}">Source</a>`);
+  });
 });
 
 describe("S11.7 — composeTestimonials is deterministic and content-agnostic", () => {
