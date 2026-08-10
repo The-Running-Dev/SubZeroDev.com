@@ -5,14 +5,6 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-`10-design.md`'s *Route* section still reads "a single back-link... not a persistent nav bar" for
-`/testimonials/`, which the testimonials-fold decision below (2026-08-08) narrows a second time without
-editing the doc — this implementation session isn't the right session to rewrite design prose it didn't
-author. `/reconcile` should fold the fold's actual shape (shared nav, CSS-only `:target`/`:has()` view
-toggle, no second document load) back into `10-design.md` and `20-contract.md` (`composeApex`/
-`composeTestimonials` gained no new parameters, but `foldRoutes` is a new Composition export the contract
-doesn't name yet).
-
 (the two items found 2026-08-08 while adding S11's C16 import check and while adjudicating the
 testimonialsPath fix — the SKIP_DIRS/tests/build/ exclusion and the untethered footer back-link —
 became [#68](https://github.com/The-Running-Dev/SubZeroDev.com/issues/68) and
@@ -31,6 +23,53 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-10 — the fold's stylesheet rules are a bounded `P6` extension, not primitives
+Context: `/reconcile` found one contract contradiction after the testimonials fold was written back.
+`stylesheetFor` appends fixed `[data-view]`, `default-apex` and `default-testimonials` rules when their
+body markers occur, while `P6` still said a stylesheet contained the token block and referenced
+primitive rules "and nothing else". The same pass found stale prose counting Adapter's Content imports
+as four and testimonial error codes as three, a "script-free" description of a shell that carries inert
+JSON-LD, and source/test commentary still counting the closed primitive set at six or eight rather than
+ten.
+Chosen: **the contract and stale descriptions move; runtime behaviour does not.** The `stylesheetFor`
+signature paragraph is the canonical rule: token block, referenced primitive rules in declaration
+order, then only the fixed fold base and matching default-view blocks when their body markers occur.
+`P6` references that bounded extension. Fold rules remain Composition wiring rather than reusable
+Presentation primitives, so `PrimitiveName` stays closed at ten. The stale import and error-code prose,
+the inaccurate script wording, and primitive-count comments and tests are corrected to the implemented
+and already-contracted values.
+Rejected: **adding the fold rules as new primitives** — that would widen a closed public set and
+misclassify route-specific Composition wiring as reusable layout. **Removing the fold rules or reverting
+the fold** — that would reverse the owner-approved 2026-08-08 behaviour merely to preserve stale prose.
+**Leaving `P6` broad and relying on `X4` passing** — `X4` checks selector/body agreement, not the closed
+shape of stylesheet assembly, so it cannot make the contradictory contract true.
+Reversibility: cheap for the documents, comments and test fixtures; changing the rule ownership later
+is a public-contract amendment. No runtime behaviour changed.
+
+### 2026-08-10 — the testimonials fold is written back into Design and Contract
+Context: `/reconcile` compared the implementation from #70 and #71 with the design sources after the
+owner's 2026-08-08 fold decision. `10-design.md` still described `/testimonials/` as an independent page
+with one back-link, while `20-contract.md` exposed only the three raw composers and said no contracted
+function throws. The implementation instead exports `foldRoutes`, gives both route documents the same
+apex and testimonials views with shared fragment navigation, and throws when a raw composition loses a
+structural hook required by that fold.
+Chosen: **the documents were stale, and the owner approved changing them.** `10-design.md` now owns the
+fold's route behaviour, Composition and Adapter responsibilities, control flow and structural-drift
+failure mode. `20-contract.md` now declares `FoldedRoutes` and `foldRoutes`, assigns the folded pair to
+Adapter's two content routes, distinguishes raw from folded bodies in `X6`, records the fold invariant in
+`X9`, and names its bare structural exceptions. The resolved fold item was removed from `## Open`.
+Rejected: **changing the code back to two separately navigated pages** — that would reverse the signed
+2026-08-08 owner decision and discard the already-shipped fold merely to make stale prose true.
+**Treating `foldRoutes` as an Adapter-private detail** — it is already a public Composition export and its
+structural guards are observable build-failure semantics, so omitting it would leave the public contract
+knowingly incomplete. **Reporting the drift without choosing a side** — reconciliation requires the
+owner-approved resolution to be written into the owning documents.
+Reversibility: cheap in the documents, but reverting these edits alone would recreate known drift;
+reversing the behaviour remains the cheap code change recorded in the 2026-08-08 decision and was not
+chosen here.
 
 ---
 

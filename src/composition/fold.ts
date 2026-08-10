@@ -1,5 +1,5 @@
-// Composition — folds the apex and testimonials routes into one shared,
-// script-free shell (design/90-decisions.md, 2026-08-08 — "the testimonials
+// Composition — folds the apex and testimonials routes into one shared shell
+// with no executable script (design/90-decisions.md, 2026-08-08 — "the testimonials
 // fold").
 //
 // `composeApex` and `composeTestimonials` are untouched: this module takes

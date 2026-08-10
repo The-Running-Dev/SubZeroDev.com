@@ -1,12 +1,13 @@
 // Presentation — the per-route stylesheet (contract's `stylesheetFor`).
 //
 // The token block is fixed text, built from `palette` rather than a second
-// copy of its values. The six primitives are appended only when their class
+// copy of its values. The ten primitives are appended only when their class
 // is present in `body` — the referenced set is observed, not declared — in
 // `PrimitiveName` declaration order (P6). That is what leaves
 // `assertStyleAgreement`'s `ClassWithoutRule` half checkable against markup
 // Composition wrote by hand, and makes `SelectorWithoutUser` structurally
-// true over the primitives.
+// true over the primitives. Fixed fold-wiring rules follow only when the
+// corresponding `data-view` and default-view markers occur in the body.
 
 import { palette } from "./palette";
 import { primitives } from "./primitives";
