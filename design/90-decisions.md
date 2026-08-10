@@ -26,6 +26,53 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 
 ---
 
+### 2026-08-10 — One inline enhancement script is admitted; the brief's non-goals are untouched
+Context: the owner imported a Claude Design prototype — `SubZeroDev Landing.dc.html`, `support.js`,
+`github.md` — carrying an interactive layer the shipped site does not have: view tabs, a project
+search box, stage filter chips, a project detail modal and scroll reveal. Read rather than assumed:
+`support.js` bundles no runtime. It injects React 18.3.1, ReactDOM 18.3.1 and Babel standalone from
+`unpkg.com` at load, and draws every project, manifesto line and testimonial from arrays held inside
+a `<script type="text/x-dc">` block. Shipping it as imported breaches two **binding** `00-brief.md`
+non-goals outright — *"no third-party script"* and *"No load-triggered network request after the
+initial document request"* — and leaves the apex blank for a crawler, a JS-off visitor, or anyone
+whose network does not reach `unpkg.com`. That blank page is verbatim the condition `00-brief.md`
+§ *Problem* exists to fix: *"The apex is where that belongs and it is empty."*
+Chosen: **the contract moves and the brief does not.** A new `X10` admits **at most one** additional
+script element per content-route body: inline, no `src`, no `</script` sequence, initiating no request
+of any kind. It is constrained to be *strictly additive* — it may reveal, hide, filter, reorder or
+overlay content already in the DOM, and may never be the only source of any content. `X6` gives up its
+closing "no document contains a second script element" to `X10`; `X9` records that the fold emits it;
+`V13` admits exactly two script elements on a content route and none on the miss document, keeping the
+`src` ban whole; `ScriptElementPresent`'s raising conditions widen to match. **`V2` and `V3` are
+untouched, and they are what make this safe rather than merely bounded** — `V2` still asserts zero
+requests beyond the navigation document with a real browser, and `V3` still asserts every manifesto
+sentence and project name is in the built HTML *with scripting never executed*. An enhancement script
+that became load-bearing for content would turn `V3` red, so the constraint is enforced by a gate that
+already exists rather than by review. `P3` and `P4` bind the script as they bind the primitives: no
+motion under `prefers-reduced-motion: reduce`, and the modal must not trap focus or break visual order.
+The CSS-only `:target`/`:has()` fold from the 2026-08-08 entry **stays** and becomes the no-script
+baseline the script enhances, rather than being replaced by it.
+Rejected: **amending `00-brief.md`'s two non-goals and shipping the prototype runtime as imported** —
+the owner's first ruling, reversed by the owner on this entry's evidence. It costs the zero-request
+guarantee, the built-HTML content assertions, ~1 MB of third-party runtime per document, and a CDN
+this repository does not own sitting in front of whether the apex renders at all. **Precompiling React
+and inlining it with hydration** — the shape the owner approved, and abandoned on two facts found
+after: `LandingPageRoute.hydrate` is read by nothing at `0.3.0` (`U1`, verified against the published
+source), so the package cannot hydrate a route and the script must travel in the body regardless; and
+React plus a bundler is ~140 KB inline and two new dependencies, which *Hard rules* requires its own
+entry for, to deliver behaviour that is DOM manipulation over markup the server already rendered.
+**Porting the prototype's behaviour to vanilla over the existing server-rendered DOM** is what was
+built instead: ~4 KB inline, no new dependency, no runtime compilation. **Staying CSS-only and
+declining the import** — offered first and declined by the owner; retained as the cheap reversal.
+**Adding a Verification code for "content present only after script execution"** — declined as
+duplication: `V3` already asserts exactly that, against built HTML, and a second code would give the
+rule two homes.
+Reversibility: cheap. `X10` is one invariant, three amended clauses and one widened error row; the
+script is one Composition module and one fold call. Reverting drops back to the CSS-only fold with no
+change to `composeApex`, `composeTestimonials` or any Content module. Expensive only if the additive
+constraint is later relaxed — content that exists solely in script is what `V3` is holding shut, and
+reopening it reopens the empty-apex failure this entry declined.
+
 ### 2026-08-10 — the fold's stylesheet rules are a bounded `P6` extension, not primitives
 Context: `/reconcile` found one contract contradiction after the testimonials fold was written back.
 `stylesheetFor` appends fixed `[data-view]`, `default-apex` and `default-testimonials` rules when their

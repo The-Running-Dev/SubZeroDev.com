@@ -8,7 +8,9 @@ by people and indexed by crawlers. The landing-page package, as `SubZeroDev.Plat
 today, renders client-side. For a joke status page that trade is invisible. For a manifesto addressed
 to recruiters and clients it is a defect: the page's entire substance would be absent from view
 source. This design therefore **requires that the served document already contain the page**, with no
-hydration script and no linked runtime asset.
+linked runtime asset and nothing rendered client-side. The inline enhancement script `X10` admitted on
+2026-08-10 does not soften this: it may only act on content the served document already carries, and
+`V3` fails the build if any of that content comes to depend on it.
 
 **Where the rendering happens is the second decision, and it moved.** An earlier draft of this
 document required the *package* to render. Verified against
@@ -184,10 +186,12 @@ component logic that would have to know it exists.
 
 **Three**, not two. `/` is the manifesto route, `/testimonials/` the testimonials route, and the miss
 route the third. The first two are independently addressable documents, but they do not carry
-independent bodies: Composition folds the apex and testimonials compositions into one shared shell
-with no executable script and emits that same pair of views at both paths. The path selects only which
-view is visible when no fragment is present. Their shared navigation switches views with `#apex` and
-`#testimonials`, using CSS `:target`/`:has()` rather than a script, fetch or second document load.
+independent bodies: Composition folds the apex and testimonials compositions into one shared shell and
+emits that same pair of views at both paths. The path selects only which view is visible when no
+fragment is present. Their shared navigation switches views with `#apex` and `#testimonials`, using
+CSS `:target`/`:has()` rather than a fetch or a second document load. The fold carries one inline
+enhancement script (`X10`), which upgrades that switch and adds filtering and a detail overlay; the
+CSS path is what runs with the script never executed, and remains the whole of view switching without it.
 
 This overturns the previous "two, and no more" and narrows the *One document, rather than routes per
 section* rejection recorded in *Alternatives considered*. The reasoning behind the apex staying one
@@ -490,17 +494,22 @@ attachment and re-states that exclusion in the same breath.
 
 Pages edge, or the container's file server → prerendered HTML → the manifesto and the ecosystem list
 are **present in the response body**, readable with scripting disabled and by a crawler. The
-stylesheet is inline and the icons are data URIs, and the only script element is an inert
-`application/ld+json` block that no browser executes and none fetches, so loading the document
-triggers no additional request. Nothing is client-computed, so there is no client
-state to be wrong. The folded testimonials view is present in the same response but hidden by default.
+stylesheet is inline and the icons are data URIs, and the two script elements are an inert
+`application/ld+json` block and `X10`'s inline enhancement script — neither fetches anything, so
+loading the document triggers no additional request. No content is client-computed: the script
+filters and overlays what the response body already carries, so a wrong client state can hide
+something the visitor asked to hide, never invent or lose a project, a sentence or a link.
+The folded testimonials view is present in the same response but hidden by default.
 The path is the same on both targets because the bytes are the same.
 
 ### 3a. Visitor switches between the apex and testimonials
 
 The shared navigation changes the fragment to `#testimonials` or `#apex`. CSS `:target`/`:has()`
-reveals the selected folded view and hides the other; no script runs, no request starts and the route
-document is not replaced. Loading `/testimonials/` directly emits the same two views with testimonials
+reveals the selected folded view and hides the other; no request starts and the route document is not
+replaced. With `X10`'s script executing, the same click is intercepted and the view swapped directly,
+which is the same outcome reached without a fragment write; with it absent or failed, the CSS path is
+unchanged and the fold behaves exactly as it did before 2026-08-10.
+Loading `/testimonials/` directly emits the same two views with testimonials
 as the no-fragment default, so both addresses remain independently loadable and crawlable while the
 in-page switch stays within the document already served.
 
@@ -553,12 +562,14 @@ preload hint, a linked stylesheet, a rewritten asset URL. This is the failure mo
 assumed away: the package hands the generated HTML to a bundler, and what a bundler adds to a
 document is its business, not this design's.
 
-**Detected by:** an assertion over the built output that no **executable** script element, no
-stylesheet link and no external asset reference survives — the single `application/ld+json` block is
-the one permitted element and any other `type`, any missing `type` and any `src` fails — followed by a
-browser network capture that allows the navigation document and rejects every additional load-triggered
-request. **Both are required.** Source inspection cannot prove runtime behaviour, and a network capture
-alone does not name what leaked.
+**Detected by:** an assertion over the built output that no stylesheet link, no external asset
+reference and no script element carrying `src` survives — the inert `application/ld+json` block and
+`X10`'s inline enhancement script are the two permitted elements on a content route, the miss document
+permits neither, and a third of any kind fails — followed by a browser network capture that allows the
+navigation document and rejects every additional load-triggered request. **Both are required.** Source
+inspection cannot prove runtime behaviour, and a network capture alone does not name what leaked. The
+capture is now also what proves the enhancement script fetches nothing, which source inspection of a
+script cannot settle.
 
 **Response:** build failure before publication.
 
@@ -991,8 +1002,10 @@ composition. See [`90-decisions.md`](90-decisions.md), 2026-08-08 and 2026-08-10
 ### One inert script element, rather than none at all
 
 **Chosen:** the apex body carries a single `<script type="application/ld+json">` block holding an
-`Organization` object. Every other script element stays forbidden, and the self-containment assertion
-narrows from *no script element* to *no executable script element*.
+`Organization` object, and the self-containment assertion narrows from *no script element* to *no
+executable script element*. **Superseded in part on 2026-08-10**, when `X10` admitted a second,
+executing but request-free script; the section below records that change and this one is retained as
+the record of the narrowing it built on.
 
 **Rejected — the blanket ban, which is what this design shipped until 2026-08-07.** It is simpler,
 trivially checkable, and impossible to erode, which is a real argument and the reason it was written
@@ -1010,6 +1023,28 @@ release wait for nothing.
 **Rejected — permitting the element and emitting nothing.** Keeps the option without spending it, and
 produces a permission with no user — which is the shape this design elsewhere calls an inert
 declaration and refuses.
+
+### One inline enhancement script, rather than a client runtime or nothing
+
+**Chosen:** a single inline, request-free script (`X10`) that upgrades the fold's view switch and adds
+project filtering and a detail overlay, over markup the response body already carries in full. The
+CSS-only fold stays as the no-script baseline. `V2` and `V3` are unchanged and are what bound it: zero
+requests measured in a real browser, and every manifesto sentence and project name present in built
+HTML with scripting never executed.
+
+**Rejected — the imported prototype's runtime**, which injects React, ReactDOM and Babel from a CDN
+and renders the page from data held in a script block. It breaches two binding `00-brief.md`
+non-goals — no third-party script, no load-triggered request — and renders a blank apex for a
+crawler, a JS-off visitor, or a blocked CDN, which is the exact condition § *Problem* exists to fix.
+
+**Rejected — precompiling that runtime and inlining it with hydration.** It keeps the zero-request
+property and the server-rendered baseline, and was declined on two facts: `LandingPageRoute.hydrate`
+is read by nothing at `0.3.0`, so the package cannot hydrate a route; and ~140 KB of inlined framework
+plus two new dependencies is a large price for DOM manipulation over markup already rendered.
+
+**Rejected — staying CSS-only.** What shipped on 2026-08-08, and still the cheap reversal. Declined
+because `:target`/`:has()` cannot express filtering over a searched string or a focus-managed overlay,
+which is the whole of what the import adds.
 
 **The cost, stated plainly:** the assertion is now a rule about `type` attributes rather than about
 element names, and a rule with one carve-out is a rule the next author looks for a second carve-out in.

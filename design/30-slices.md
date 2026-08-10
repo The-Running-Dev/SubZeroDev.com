@@ -480,6 +480,46 @@ suite is what keeps the door open for one later.
 
 ---
 
+## S12 — The inline enhancement script
+
+Delivers: The folded content routes gain the interactive layer the imported Claude Design prototype
+specified — the view switch upgraded from a fragment write to a direct swap, a search box and stage
+filter chips over the ecosystem list, and a project detail overlay — carried by one inline,
+request-free script (`X10`). Everything it touches is already in the response body, so the page a
+crawler and a JS-off visitor receive is byte-for-byte the page that shipped before this slice, and the
+CSS-only fold remains the whole of view switching without the script.
+
+Touches: Composition — `enhancementScript`, and `foldRoutes` emitting it into both folded bodies.
+Verification — `assertSelfContained`'s script-element check widened to `X10`'s second element, and
+`ScriptElementPresent`'s raising conditions with it. CI — the existing `build` job's offline
+assertions and browser capture now cover a document that executes something.
+
+Depends on: S11, and on the 2026-08-10 decision-log entry admitting `X10`. **No new dependency**: the
+script is hand-written and inlined, and an implementing agent that reaches for a framework, a bundler
+or a minifier stops and asks, because *Hard rules* requires a decision-log entry naming the
+alternatives before one is added.
+
+Acceptance:
+  - S12.1 `enhancementScript()` returns text containing no `</script` sequence in any case, asserted over the returned string and over both folded bodies (`X10`, `P5`'s shape applied to script rather than style).
+  - S12.2 The script source interpolates **no** Content value — no project name, `line`, `question`, quote, author or derived figure appears in it, asserted by a check over the module source against the committed inventory and testimonials. It reads the DOM instead, which is what keeps `X5` out of this element entirely rather than needing `X6`'s JSON-escaping exception.
+  - S12.3 Each folded content-route body carries exactly two script elements — the JSON-LD block and the enhancement script — neither carrying `src`; the miss document carries none; `assertSelfContained` returns `{ ok: true }` for all three emitted documents and returns `ScriptElementPresent` for a document carrying a third (`V13`, `X10`).
+  - S12.4 `assertContentPresent` still returns `{ ok: true }` for the emitted apex **with scripting never executed**, and the emitted `bodyHtml` for both content routes is byte-identical to its pre-S12 form except for the added script element — asserted by removing the element and comparing byte for byte, the same shape `S7.14` uses for the build marker (`V3`).
+  - S12.5 Loading `/` and `/testimonials/` in a real browser with the script executing produces exactly one `RequestRecord` each — the navigation document — extending `S8`'s capture rather than replacing it (`V2`, `X10`).
+  - S12.6 With scripting disabled, clicking the shared navigation still switches views by `:target`/`:has()` and every project, manifesto sentence and testimonial remains reachable — asserted in the same browser harness with JavaScript turned off, so the baseline is measured rather than argued.
+  - S12.7 The search box and stage chips only ever hide or reveal ecosystem entries already in the DOM; a filter matching nothing leaves the empty-result sentence visible and removes no element from the document, asserted by comparing element counts before and after filtering.
+  - S12.8 The detail overlay is keyboard-reachable, returns focus to the control that opened it on close, closes on `Escape`, and traps focus while open (`P4`) — asserted in the browser harness.
+  - S12.9 Under `prefers-reduced-motion: reduce` the script applies no transform, translation, scale, rotation, position change or scroll behaviour, and any reveal it performs leaves content visible rather than hidden (`P3`) — asserted with the media feature emulated, and demonstrated red by a temporary unguarded transform, verified and reverted before merge.
+  - S12.10 With the script's own initialisation forced to throw, the document still renders every project, manifesto sentence and testimonial and the CSS fold still switches views — so a script failure degrades to the pre-S12 page rather than to a broken one.
+
+Out of scope: Any framework, bundler, minifier or compilation step — see *Depends on*. Rendering any
+content from script, which `X10` forbids and `V3` fails. A second enhancement script. The scroll-reveal
+animation as the prototype expresses it, which sets `opacity: 0` before observing and is what `S12.9`'s
+second clause rules out; a reveal that only ever adds visibility is in scope. Changing `composeApex`,
+`composeTestimonials` or any Content module — this slice is additive at the fold, exactly as the
+2026-08-08 fold was additive at the Adapter wiring.
+
+---
+
 ## Blocked
 
 Nothing below is a slice. Each names what is missing and the condition that releases it. No slice
@@ -592,5 +632,5 @@ than a warning in prose.
 
 ## Next
 
-Run `/track` in a fresh session to open the issues and milestone for `S4`–`S11`. This document opens
+Run `/track` in a fresh session to open the issues and milestone for `S4`–`S12`. This document opens
 none. `S1`–`S3` already have issues and are closed.
