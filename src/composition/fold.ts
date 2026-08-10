@@ -20,7 +20,13 @@ import type { BodyHtml } from "../presentation";
 import type { Inventory, Testimonials } from "../content";
 import { composeApex } from "./apex";
 import { composeTestimonials } from "./testimonials";
+import { enhancementScript } from "./enhancement";
 import type { ComposedRoute } from "./types";
+
+// X10 — one inline, src-free, request-free enhancement script per
+// content-route body, in addition to the apex's JSON-LD block. Built once:
+// `enhancementScript()` is pure and both folded documents carry the same text.
+const ENHANCEMENT_SCRIPT_TAG = `<script>${enhancementScript()}</script>`;
 
 const PAGE_PREFIX = `<div class="${primitives.page.className}">`;
 const STACK_PREFIX = `<div class="${primitives.stack.className}">`;
@@ -109,6 +115,7 @@ export function foldRoutes(
       ),
       `</div>`,
       script,
+      ENHANCEMENT_SCRIPT_TAG,
     ].join("") as BodyHtml;
 
     return { bodyHtml, stylesheet: stylesheetFor(bodyHtml) };

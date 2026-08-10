@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import { foldRoutes } from "../../src/composition";
+import { enhancementScript } from "../../src/composition/enhancement";
 import type { Inventory, Project, Testimonials } from "../../src/content";
 import { assertSelfContained, assertStyleAgreement } from "../../src/verification";
 import { makeProject, makeTestimonial, pid, TEST_ORIGIN } from "../content/fixtures";
@@ -69,7 +70,7 @@ describe("foldRoutes — each document defaults to its own route's view", () => 
 });
 
 describe("foldRoutes — the hard gates the fold must not touch (X6, V13, X4)", () => {
-  it("each route still carries exactly one script element, the apex's JSON-LD block", () => {
+  it("each route carries exactly the two permitted script elements — the JSON-LD block and the enhancement script (S12.3)", () => {
     for (const route of [apex, testimonialsRoute]) {
       expect(assertSelfContained(route.bodyHtml)).toEqual({ ok: true, value: null });
     }
@@ -82,5 +83,39 @@ describe("foldRoutes — the hard gates the fold must not touch (X6, V13, X4)", 
         value: null,
       });
     }
+  });
+});
+
+describe("S12.3/S12.4 — the enhancement script is strictly additive over the pre-S12 fold", () => {
+  const scriptTag = `<script>${enhancementScript()}</script>`;
+
+  it("each route's bodyHtml ends with exactly one occurrence of the enhancement script tag", () => {
+    for (const route of [apex, testimonialsRoute]) {
+      expect(route.bodyHtml.endsWith(scriptTag)).toBe(true);
+      expect(route.bodyHtml.split(scriptTag)).toHaveLength(2);
+    }
+  });
+
+  it("removing the enhancement script tag reproduces the pre-S12 fold byte for byte — same views, same nav, same single script", () => {
+    for (const route of [apex, testimonialsRoute]) {
+      const withoutScript = route.bodyHtml.slice(0, -scriptTag.length);
+
+      // Every property tests/composition/fold.test.ts asserted about the
+      // fold before S12 still holds of the residual — this is what "byte for
+      // byte, except for the added script element" means operationally, the
+      // same shape S7.14 uses for the build marker.
+      expect(withoutScript).toContain('data-view="apex"');
+      expect(withoutScript).toContain('data-view="testimonials"');
+      expect(withoutScript).toContain('href="#testimonials">Testimonials</a>');
+      expect(withoutScript).toContain('href="#apex">Back to');
+      expect(assertSelfContained(withoutScript)).toEqual({ ok: true, value: null });
+    }
+  });
+
+  it("the apex document's residual (script removed) still defaults to the apex view; the testimonials document's still defaults to testimonials", () => {
+    const apexResidual = apex.bodyHtml.slice(0, -scriptTag.length);
+    const testimonialsResidual = testimonialsRoute.bodyHtml.slice(0, -scriptTag.length);
+    expect(apexResidual).toContain("default-apex");
+    expect(testimonialsResidual).toContain("default-testimonials");
   });
 });

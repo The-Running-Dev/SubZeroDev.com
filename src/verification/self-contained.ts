@@ -2,10 +2,11 @@
 // signatures, `V13`).
 //
 // Three faults, each independent of the other two: a `<script>` element that
-// is not the single permitted `application/ld+json` block, a linked
-// stylesheet rather than an inlined one, and any other element that loads a
-// resource by URL rather than by data URI. `<link rel="canonical">` is
-// excluded — it names the document's own address and the browser never
+// is neither of the two permitted kinds — the single `application/ld+json`
+// block (`X6`) and the single inline enhancement script `X10` admits — a
+// linked stylesheet rather than an inlined one, and any other element that
+// loads a resource by URL rather than by data URI. `<link rel="canonical">`
+// is excluded — it names the document's own address and the browser never
 // fetches it — and `<a href>` is excluded outright, since an outbound link a
 // reader might click is not an asset the page loads. Every fault found is
 // reported; the function never stops at the first.
@@ -40,7 +41,8 @@ export function assertSelfContained(documentHtml: string): Result<null, Verifica
 
   const openCount = (documentHtml.match(SCRIPT_OPEN_PATTERN) ?? []).length;
   let matchedCount = 0;
-  let permittedCount = 0;
+  let ldJsonCount = 0;
+  let enhancementCount = 0;
 
   for (const match of documentHtml.matchAll(SCRIPT_TAG_PATTERN)) {
     matchedCount++;
@@ -49,16 +51,25 @@ export function assertSelfContained(documentHtml: string): Result<null, Verifica
     const type = TYPE_ATTR_PATTERN.exec(attrs)?.[1];
     const hasSrc = SRC_ATTR_PATTERN.test(attrs);
     const hasForbiddenCloseSequence = CLOSE_SCRIPT_SEQUENCE.test(content);
-    const isPermitted = type === LD_JSON_TYPE && !hasSrc && !hasForbiddenCloseSequence;
+    const isLdJsonKind = type === LD_JSON_TYPE;
+    // The enhancement script (X10) carries no `type` attribute at all — a
+    // third, unrecognised `type` (the imported prototype's own
+    // `text/x-dc` block is exactly this case) is neither kind and is flagged.
+    const isEnhancementKind = type === undefined;
+    const isPermittedShape = (isLdJsonKind || isEnhancementKind) && !hasSrc && !hasForbiddenCloseSequence;
 
-    if (isPermitted) {
-      permittedCount++;
-    }
-    if (!isPermitted || permittedCount > 1) {
+    if (isPermittedShape && isLdJsonKind) ldJsonCount++;
+    if (isPermittedShape && isEnhancementKind) enhancementCount++;
+
+    const withinLimit =
+      isPermittedShape && (isLdJsonKind ? ldJsonCount <= 1 : enhancementCount <= 1);
+
+    if (!withinLimit) {
       errors.push({
         code: "ScriptElementPresent",
         detail:
-          "the document contains a <script> element that is not the single permitted application/ld+json block.",
+          "the document contains a <script> element that is neither the single permitted " +
+          "application/ld+json block nor the single permitted inline enhancement script.",
         observed: null,
         expected: null,
       });
