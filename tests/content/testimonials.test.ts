@@ -17,6 +17,14 @@ describe("S11.1 — the committed testimonials validate", () => {
     }
     expect(result.ok).toBe(true);
   });
+
+  it("preserves the campaign's self-authored final testimonial exactly", () => {
+    expect(testimonials.at(-1)).toEqual({
+      quote:
+        "You declined to predict a single thing. This is, statistically, the single most reasonable choice available in this entire campaign, and reasonable was never really the point.",
+      author: "What Would Lucifer Do?",
+    });
+  });
 });
 
 describe("S11.1 — validateTestimonials rejects malformed input", () => {

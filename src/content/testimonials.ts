@@ -100,4 +100,9 @@ export const testimonials: readonly Testimonial[] = [
     quote: "I gave humanity free will. SubZeroDev is making me reconsider.",
     author: "God",
   },
+  {
+    quote:
+      "You declined to predict a single thing. This is, statistically, the single most reasonable choice available in this entire campaign, and reasonable was never really the point.",
+    author: "What Would Lucifer Do?",
+  },
 ];
