@@ -1,19 +1,18 @@
 // Adapter — the module the package CLI loads (contract's Adapter section;
-// S6, S11). It is the sole `validateInventory` and `validateTestimonials`
-// call site (A5) and the only importer of Composition and of
+// S6). It is the sole `validateInventory` and `validateTestimonials` call
+// site (A5) and the only importer of Composition and of
 // `themeColor`/`iconDataUri` from Presentation (A3). Imports exactly:
 // Composition, the external package, Content's `projects`, `testimonials`,
 // `validateInventory`, `validateTestimonials`, `BuildContext` and
 // `parseCommitId`, and Presentation's `themeColor` and `iconDataUri` (S6.7).
 //
 // PLACEHOLDER COPY: the apex route's `title`, `description` and Open Graph
-// fields below are deliberate placeholders. Leave them unchanged. The
-// testimonials and miss routes' metadata is authored copy.
+// fields below are deliberate placeholders. Leave them unchanged.
 
 import { defineLandingPage } from "subzerodev-platform-ui-landing-page";
 import type { LandingPageConfig } from "subzerodev-platform-ui-landing-page";
 
-import { composeMiss, foldRoutes } from "../src/composition";
+import { composeApex, composeMiss } from "../src/composition";
 import {
   parseCommitId,
   projects,
@@ -26,14 +25,13 @@ import { iconDataUri, themeColor } from "../src/presentation";
 
 export const origin = "https://subzerodev.com" as const;
 
-// RoutePath (contract § Route, A4) — narrows config.routes' path to the three
-// values this Adapter declares, so a fourth route path fails typecheck rather
+// RoutePath (contract § Route, A4) — narrows config.routes' path to the two
+// values this Adapter declares, so a third route path fails typecheck rather
 // than relying on review (issue #52). `satisfies` checks membership without
 // widening past the exact literal each constant carries per the contract's
 // own signatures (design/20-contract.md:639-641).
-export type RoutePath = "/" | "/404/" | "/testimonials/";
+export type RoutePath = "/" | "/404/";
 export const apexPath = "/" as const satisfies RoutePath;
-export const testimonialsPath = "/testimonials/" as const satisfies RoutePath;
 export const missPath = "/404/" as const satisfies RoutePath;
 
 function buildContext(): BuildContext {
@@ -66,9 +64,7 @@ if (!validatedInventory.ok || !validatedTestimonials.ok) {
 }
 
 const inventory = validatedInventory.value;
-const folded = foldRoutes(inventory, validatedTestimonials.value, origin);
-const apex = folded.apex;
-const testimonialsRoute = folded.testimonials;
+const apex = composeApex(inventory, validatedTestimonials.value, origin);
 const miss = composeMiss();
 
 const config: LandingPageConfig = defineLandingPage({
@@ -88,24 +84,6 @@ const config: LandingPageConfig = defineLandingPage({
             "Placeholder Open Graph description for the SubZeroDev apex — replace before publication.",
           type: "website",
           url: `${origin}${apexPath}`,
-        },
-        themeColor,
-        icons: [{ rel: "icon", href: iconDataUri }],
-      },
-    },
-    {
-      path: testimonialsPath,
-      body: testimonialsRoute.bodyHtml,
-      stylesheet: testimonialsRoute.stylesheet,
-      metadata: {
-        title: "Testimonials — SubZeroDev",
-        description: "What people are saying about SubZeroDev.",
-        canonicalUrl: `${origin}${testimonialsPath}`,
-        openGraph: {
-          title: "Testimonials — SubZeroDev",
-          description: "What people are saying about SubZeroDev.",
-          type: "website",
-          url: `${origin}${testimonialsPath}`,
         },
         themeColor,
         icons: [{ rel: "icon", href: iconDataUri }],

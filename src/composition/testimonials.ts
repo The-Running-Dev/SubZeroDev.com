@@ -1,20 +1,17 @@
-// Composition — the testimonials route (contract's `composeTestimonials`).
+// Composition — the testimonials section, rendered inline on the apex page
+// rather than as its own route (design/90-decisions.md — "testimonials folds
+// into the apex").
 //
-// Deterministic and total on `Testimonials`: renders every entry in input
-// order (X8) and knows nothing about who is being quoted — it takes the data
-// as a parameter exactly as `composeApex` takes `Inventory` (C16), and
-// carries no testimonial content of its own — the heading and the back-link
-// below are this site's words, not any quoted person's, on the same footing as
-// `composeApex`'s copy. `testimonialTotal` is the one figure
-// on the page, derived rather than typed (X1). No script element (X6): this
-// route emits none.
+// Deterministic and content-agnostic: renders every entry in input order
+// (X8) and knows nothing about who is being quoted — it takes the data as a
+// parameter exactly as `composeApex` takes `Inventory` (C16), and carries no
+// testimonial content of its own — the heading below is this site's words,
+// not any quoted person's.
 
 import { escapeHtml } from "./escape-html";
-import { primitives, stylesheetFor } from "../presentation";
-import type { BodyHtml } from "../presentation";
+import { primitives } from "../presentation";
 import { testimonialTotal } from "../content";
 import type { Testimonial, Testimonials } from "../content";
-import type { ComposedRoute } from "./types";
 
 const heading = "You Can Absolutely 1,000% Believe Something Written on a Page of Internet.";
 
@@ -45,31 +42,17 @@ function renderCard(testimonial: Testimonial): string {
   ].join("");
 }
 
-export function composeTestimonials(testimonials: Testimonials): ComposedRoute {
-  const bodyHtml = [
-    `<div class="${primitives.page.className}">`,
-    `<div class="${primitives.stack.className}">`,
-    `<header class="${primitives.stack.className}">`,
-    `<h1>${heading}</h1>`,
-    `</header>`,
-    `<hr class="${primitives.rule.className}" />`,
-    `<div class="${primitives.stack.className}">`,
-    `<h2>Testimonials</h2>`,
+// Renders the section's contents only — the `<div class="stack" id="...">`
+// wrapper is `apex.ts`'s `openSection`, on the same footing every other
+// section on the page uses, so the nav's fragment link and this section's id
+// stay one fact rather than two.
+export function renderTestimonials(testimonials: Testimonials): string {
+  return [
     `<p class="${primitives.meta.className}">${testimonialTotal(testimonials)} testimonials.</p>`,
     `<div class="${primitives.grid.className}">`,
     testimonials.map(renderCard).join(""),
     `</div>`,
-    `</div>`,
-    `<hr class="${primitives.rule.className}" />`,
-    `<footer class="${primitives.stack.className}">`,
-    `<p><a class="${primitives.link.className}" href="/">Back to SubZeroDev</a></p>`,
-    `</footer>`,
-    `</div>`,
-    `</div>`,
-  ].join("") as BodyHtml;
-
-  return {
-    bodyHtml,
-    stylesheet: stylesheetFor(bodyHtml),
-  };
+  ].join("");
 }
+
+export const testimonialsHeading = heading;

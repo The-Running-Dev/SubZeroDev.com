@@ -21,12 +21,25 @@ import {
   sinceYear,
   sourceUrl,
 } from "../content";
-import type { AbsoluteUrl, ContaminationNode, Inventory, Project, ProjectId } from "../content";
+import type {
+  AbsoluteUrl,
+  ContaminationNode,
+  Inventory,
+  Project,
+  ProjectId,
+  Testimonials,
+} from "../content";
 import { primitives, stylesheetFor } from "../presentation";
 import type { BodyHtml } from "../presentation";
+import { enhancementScript } from "./enhancement";
 import { escapeHtml } from "./escape-html";
 import { organizationJsonLd } from "./json-ld";
+import { renderTestimonials, testimonialsHeading } from "./testimonials";
 import type { ComposedRoute } from "./types";
+
+// X10 — one inline, src-free, request-free enhancement script, in addition
+// to the ld+json block (X6). Built once: `enhancementScript()` is pure.
+const ENHANCEMENT_SCRIPT_TAG = `<script>${enhancementScript()}</script>`;
 
 // PLACEHOLDER COPY: the Organization block's `name` and `description` are
 // placeholders, started on the owner's explicit instruction ahead of final
@@ -38,11 +51,16 @@ const organizationDescription =
 
 // A section's anchor, its `meta` index label and its heading, in one place.
 // The header nav links to the same three headings, and a second copy of the
-// heading text is a promise the nav and the h2 will drift.
+// heading text is a promise the nav and the h2 will drift. `navLabel` is the
+// one deliberate exception: the testimonials section's own heading is the
+// long joke sentence, and the nav needs a short tab-shaped label distinct
+// from it, exactly as the imported prototype (`SubZeroDev Landing.dc.html`)
+// gives it a "Testimonials" tab pointing at a different heading string.
 type Section = {
   readonly anchor: string;
   readonly label: string;
   readonly heading: string;
+  readonly navLabel?: string;
 };
 
 const manifestoSection: Section = {
@@ -63,14 +81,19 @@ const contaminationSection: Section = {
   heading: "Contamination",
 };
 
-const sections: readonly Section[] = [manifestoSection, ecosystemSection, contaminationSection];
+const testimonialsSection: Section = {
+  anchor: "testimonials",
+  label: "04 / Testimonials",
+  heading: testimonialsHeading,
+  navLabel: "Testimonials",
+};
 
-// A literal, not an import of Adapter's `testimonialsPath` — `X2` confines
-// Composition to Content and Presentation, so Adapter's route constant
-// cannot flow backward into this module. The two spellings are pinned
-// together by `tests/composition/apex-navigation.test.ts`, on the same
-// footing `R5` pins `missEmittedEntry` against `missPath` without an import.
-const testimonialsRoutePath = "/testimonials/";
+const sections: readonly Section[] = [
+  manifestoSection,
+  ecosystemSection,
+  contaminationSection,
+  testimonialsSection,
+];
 
 // Owner-supplied copy, not a transcription from Idea.md — see 90-decisions.md,
 // 2026-08-07, "the manifesto supersedes the Idea.md draft".
@@ -148,10 +171,7 @@ function renderOutbound(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
 }
 
 function renderNav(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
-  const inPage = [
-    ...sections.map((s) => renderLink(`#${s.anchor}`, s.heading)),
-    renderLink(testimonialsRoutePath, "Testimonials"),
-  ].join(" · ");
+  const inPage = sections.map((s) => renderLink(`#${s.anchor}`, s.navLabel ?? s.heading)).join(" · ");
 
   return [
     `<nav class="${primitives.bar.className}">`,
@@ -254,7 +274,15 @@ function renderContamination(inventory: Inventory, hrefById: ReadonlyMap<Project
   ].join("");
 }
 
-export function composeApex(inventory: Inventory, origin: string): ComposedRoute {
+function renderTestimonialsSection(testimonials: Testimonials): string {
+  return [openSection(testimonialsSection), renderTestimonials(testimonials), `</div>`].join("");
+}
+
+export function composeApex(
+  inventory: Inventory,
+  testimonials: Testimonials,
+  origin: string,
+): ComposedRoute {
   const hrefById = new Map(resolvedHomes(inventory).map((h) => [h.projectId, h.url] as const));
 
   const bodyHtml = [
@@ -274,6 +302,7 @@ export function composeApex(inventory: Inventory, origin: string): ComposedRoute
     `</div>`,
     renderEcosystem(inventory, hrefById),
     `</div>`,
+    renderTestimonialsSection(testimonials),
     `<hr class="${primitives.rule.className}" />`,
     `<footer class="${primitives.stack.className}">`,
     `<div class="${primitives.bar.className}">`,
@@ -284,6 +313,7 @@ export function composeApex(inventory: Inventory, origin: string): ComposedRoute
     `</div>`,
     `</div>`,
     `<script type="application/ld+json">${organizationJsonLd(organizationName, organizationDescription, origin)}</script>`,
+    ENHANCEMENT_SCRIPT_TAG,
   ].join("") as BodyHtml;
 
   return {

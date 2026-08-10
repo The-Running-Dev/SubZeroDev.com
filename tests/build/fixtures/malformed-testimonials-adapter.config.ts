@@ -43,7 +43,7 @@ if (!validatedInventory.ok || !validatedTestimonials.ok) {
   process.exit(1);
 }
 
-const apex = composeApex(validatedInventory.value, "https://subzerodev.com");
+const apex = composeApex(validatedInventory.value, validatedTestimonials.value, "https://subzerodev.com");
 const miss = composeMiss();
 
 export default defineLandingPage({

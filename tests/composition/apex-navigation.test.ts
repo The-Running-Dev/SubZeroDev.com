@@ -8,19 +8,10 @@ import { describe, expect, it } from "vitest";
 
 import { composeApex } from "../../src/composition";
 import { sourceUrl } from "../../src/content";
-import type { Inventory, Project } from "../../src/content";
+import type { Inventory, Project, Testimonials } from "../../src/content";
 import { primitives } from "../../src/presentation";
 import { assertStyleAgreement } from "../../src/verification";
-import { makeProject, pid, TEST_ORIGIN, url } from "../content/fixtures";
-
-// Adapter's route constant, so the Testimonials nav case below pins the
-// composition-local literal against it rather than against a third spelling
-// that nothing pins in turn. GITHUB_SHA is forced to a valid commit id before
-// the import because Adapter's module-level code calls `process.exit` on an
-// invalid one (A5) — the same guard, for the same reason, as
-// tests/build/adapter-config.test.ts.
-process.env.GITHUB_SHA ??= "a".repeat(40);
-const { testimonialsPath } = await import("../../site/landing.config");
+import { makeProject, makeTestimonial, pid, TEST_ORIGIN, url } from "../content/fixtures";
 
 const publishing = makeProject({
   id: pid("publishing"),
@@ -40,8 +31,10 @@ const inventory = (...ps: readonly [Project, ...Project[]]): Inventory => ps;
 
 const full: Inventory = inventory(publishing, portfolio);
 
+const testimonials: Testimonials = [makeTestimonial()];
+
 describe("the nav bar renders through the `bar` primitive", () => {
-  const { bodyHtml } = composeApex(full, TEST_ORIGIN);
+  const { bodyHtml } = composeApex(full, testimonials, TEST_ORIGIN);
 
   it("carries the bar class", () => {
     expect(bodyHtml).toContain(`class="${primitives.bar.className}"`);
@@ -59,14 +52,14 @@ describe("the nav bar renders through the `bar` primitive", () => {
 });
 
 describe("every in-page anchor resolves to a section that exists in the same document", () => {
-  const { bodyHtml } = composeApex(full, TEST_ORIGIN);
+  const { bodyHtml } = composeApex(full, testimonials, TEST_ORIGIN);
   const anchors = [...bodyHtml.matchAll(/href="#([^"]+)"/g)].map((m) => m[1]!);
 
-  it("emits three in-page anchors", () => {
-    expect(anchors).toHaveLength(3);
+  it("emits four in-page anchors — Effortless Action, The Echo System, Contamination and Testimonials, all on the same document", () => {
+    expect(anchors).toHaveLength(4);
   });
 
-  it.each(["effortless-action", "echo-system", "contamination"])(
+  it.each(["effortless-action", "echo-system", "contamination", "testimonials"])(
     "#%s has a matching id in the body",
     (anchor) => {
       expect(anchors).toContain(anchor);
@@ -79,10 +72,16 @@ describe("every in-page anchor resolves to a section that exists in the same doc
       expect(bodyHtml).toContain(`id="${anchor}"`);
     }
   });
+
+  it("none of the four sections carries a hidden attribute — all stay visible on the one page", () => {
+    for (const anchor of anchors) {
+      expect(bodyHtml).not.toMatch(new RegExp(`id="${anchor}"[^>]*\\shidden`));
+    }
+  });
 });
 
 describe("the nav link text is the section heading, not a second copy of it", () => {
-  const { bodyHtml } = composeApex(full, TEST_ORIGIN);
+  const { bodyHtml } = composeApex(full, testimonials, TEST_ORIGIN);
 
   it.each(["Effortless Action", "The Echo System", "Contamination"])(
     "%s appears as both a heading and a nav link",
@@ -93,8 +92,22 @@ describe("the nav link text is the section heading, not a second copy of it", ()
   );
 });
 
+describe("the testimonials nav link is a short label, distinct from its own heading", () => {
+  const { bodyHtml } = composeApex(full, testimonials, TEST_ORIGIN);
+
+  it("the nav carries a #testimonials link labelled Testimonials", () => {
+    expect(bodyHtml).toContain(`href="#testimonials">Testimonials</a>`);
+  });
+
+  it("the section's own heading is the long joke sentence, not the nav's short label", () => {
+    expect(bodyHtml).toContain(
+      "<h2>You Can Absolutely 1,000% Believe Something Written on a Page of Internet.</h2>",
+    );
+  });
+});
+
 describe("the outbound group carries Blog, Projects and Portfolio", () => {
-  const { bodyHtml } = composeApex(full, TEST_ORIGIN);
+  const { bodyHtml } = composeApex(full, testimonials, TEST_ORIGIN);
 
   it("Blog's href is the publishing project's own home, not a restated URL", () => {
     expect(bodyHtml).toContain(`href="https://blog.example.test">Blog</a>`);
@@ -125,7 +138,7 @@ describe("the outbound group carries Blog, Projects and Portfolio", () => {
 // renamed record drops its link with no error. This is what that looks like.
 describe("a derived link is dropped — not faked — when its project is absent", () => {
   it("no Blog link when nothing carries the publishing id", () => {
-    const { bodyHtml } = composeApex(inventory(portfolio), TEST_ORIGIN);
+    const { bodyHtml } = composeApex(inventory(portfolio), testimonials, TEST_ORIGIN);
     expect(bodyHtml).not.toContain(">Blog</a>");
     expect(bodyHtml).toContain(">Portfolio</a>");
   });
@@ -133,6 +146,7 @@ describe("a derived link is dropped — not faked — when its project is absent
   it("Projects survives regardless, being a constant rather than a lookup", () => {
     const { bodyHtml } = composeApex(
       inventory(makeProject({ id: pid("unrelated") })),
+      testimonials,
       TEST_ORIGIN,
     );
     expect(bodyHtml).toContain(`href="${sourceUrl}">Projects</a>`);
@@ -141,17 +155,9 @@ describe("a derived link is dropped — not faked — when its project is absent
   });
 });
 
-describe("the in-page nav row also carries a route link to Testimonials", () => {
-  const { bodyHtml } = composeApex(full, TEST_ORIGIN);
-
-  it("renders a link to Adapter's testimonialsPath, labelled Testimonials", () => {
-    expect(bodyHtml).toContain(`href="${testimonialsPath}">Testimonials</a>`);
-  });
-});
-
 describe("X4 — the nav does not break markup/stylesheet agreement", () => {
   it("assertStyleAgreement holds for a body carrying the nav", () => {
-    const { bodyHtml, stylesheet } = composeApex(full, TEST_ORIGIN);
+    const { bodyHtml, stylesheet } = composeApex(full, testimonials, TEST_ORIGIN);
     expect(assertStyleAgreement(bodyHtml, stylesheet)).toEqual({ ok: true, value: null });
   });
 });

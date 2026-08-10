@@ -16,32 +16,26 @@ process.env.GITHUB_SHA ??= "a".repeat(40);
 const adapter = await import("../../site/landing.config");
 const { iconDataUri, themeColor } = await import("../../src/presentation");
 
-const { default: config, origin, apexPath, testimonialsPath, missPath } = adapter;
+const { default: config, origin, apexPath, missPath } = adapter;
 
 const here = dirname(fileURLToPath(import.meta.url));
 const adapterSource = readFileSync(resolve(here, "../../site/landing.config.ts"), "utf8");
 
-describe("S6.3/S11.11 — config.routes has exactly three entries, apex then testimonials then miss", () => {
-  it("has exactly three routes", () => {
-    expect(config.routes).toHaveLength(3);
+describe("S6.3 — config.routes has exactly two entries, apex then miss", () => {
+  it("has exactly two routes", () => {
+    expect(config.routes).toHaveLength(2);
   });
 
-  it("the order is apex, testimonials, miss", () => {
+  it("the order is apex, miss", () => {
     expect(config.routes[0]!.path).toBe(apexPath);
-    expect(config.routes[1]!.path).toBe(testimonialsPath);
-    expect(config.routes[2]!.path).toBe(missPath);
-  });
-
-  it('testimonialsPath is "/testimonials/", matching the literal composeApex\'s nav links to', () => {
-    expect(testimonialsPath).toBe("/testimonials/");
+    expect(config.routes[1]!.path).toBe(missPath);
   });
 });
 
 describe("S6.4 — canonicalUrl and openGraph.url are origin concatenated with the route's path", () => {
   it.each([
     [0, apexPath],
-    [1, testimonialsPath],
-    [2, missPath],
+    [1, missPath],
   ] as const)("route %i", (index, path) => {
     const route = config.routes[index]!;
     expect(route.metadata.canonicalUrl).toBe(`${origin}${path}`);
@@ -58,7 +52,7 @@ describe("S6.4 — canonicalUrl and openGraph.url are origin concatenated with t
 });
 
 describe("S6.5 — themeColor and the icon are Presentation's, by reference", () => {
-  it.each([0, 1, 2] as const)("route %i", (index) => {
+  it.each([0, 1] as const)("route %i", (index) => {
     const route = config.routes[index]!;
     expect(route.metadata.themeColor).toBe(themeColor);
     expect(route.metadata.icons).toHaveLength(1);
@@ -72,7 +66,7 @@ describe("S6.5 — themeColor and the icon are Presentation's, by reference", ()
 });
 
 describe("S6.6 — no route declares entry, hydrate or noScript; config declares no styles, publicDir or allow", () => {
-  it.each([0, 1, 2] as const)("route %i", (index) => {
+  it.each([0, 1] as const)("route %i", (index) => {
     const route = config.routes[index]!;
     expect("entry" in route).toBe(false);
     expect("hydrate" in route).toBe(false);
@@ -87,7 +81,7 @@ describe("S6.6 — no route declares entry, hydrate or noScript; config declares
 });
 
 describe("U6 — no social image asset is declared", () => {
-  it.each([0, 1, 2] as const)("route %i", (index) => {
+  it.each([0, 1] as const)("route %i", (index) => {
     const route = config.routes[index]!;
     expect(route.metadata.socialImageUrl).toBeUndefined();
     expect(route.metadata.openGraph?.imageUrl).toBeUndefined();
@@ -95,7 +89,7 @@ describe("U6 — no social image asset is declared", () => {
   });
 });
 
-// S11.12's full claim — that Adapter itself reports every ContentError from
+// A5's full claim — that Adapter itself reports every ContentError from
 // either validator and produces no route when either fails — needs a fixture
 // substituted for the module-level `testimonials`/`projects` imports before
 // Adapter runs, which this file's already-imported, already-passing config

@@ -26,21 +26,15 @@ const apexHtml = readFileSync(resolve(distDir, "index.html"), "utf8");
 // time this suite executes — same convention as tests/build/artifact.test.ts.
 // missRootEntry (404.html) carries the same, byte-identical, marked content.
 const missHtml = readFileSync(resolve(distDir, missRootEntry), "utf8");
-const testimonialsHtml = readFileSync(resolve(distDir, "testimonials/index.html"), "utf8");
 
-describe("S6.9/S11.13 — the build emits a document for the apex, the testimonials route, and one at 404/index.html", () => {
-  it("all three documents exist and are non-empty", () => {
+describe("S6.9 — the build emits a document for the apex and one at 404/index.html", () => {
+  it("both documents exist and are non-empty", () => {
     expect(apexHtml.length).toBeGreaterThan(0);
-    expect(testimonialsHtml.length).toBeGreaterThan(0);
     expect(missHtml.length).toBeGreaterThan(0);
   });
 
   it("assertSelfContained returns ok: true for the apex", () => {
     expect(assertSelfContained(apexHtml)).toEqual({ ok: true, value: null });
-  });
-
-  it("assertSelfContained returns ok: true for the testimonials document", () => {
-    expect(assertSelfContained(testimonialsHtml)).toEqual({ ok: true, value: null });
   });
 
   it("assertSelfContained returns ok: true for the miss document", () => {
@@ -63,13 +57,13 @@ function escapedForCompare(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
-describe("S11.13 — the emitted testimonials document carries every committed quote and author", () => {
+describe("the emitted apex document carries every committed testimonial quote and author", () => {
   it("every quote and author appears in the built HTML, HTML-escaped (X5)", () => {
     const validated = validateTestimonials(testimonials);
     if (!validated.ok) throw new Error("committed testimonials failed to validate");
     for (const t of validated.value) {
-      expect(testimonialsHtml).toContain(escapedForCompare(t.quote));
-      expect(testimonialsHtml).toContain(escapedForCompare(t.author));
+      expect(apexHtml).toContain(escapedForCompare(t.quote));
+      expect(apexHtml).toContain(escapedForCompare(t.author));
     }
   });
 });
@@ -111,7 +105,9 @@ describe("S6.11 — assertContentPresent holds for the emitted apex", () => {
       makeProject({ id: pid("alpha"), name: "Alpha Systems" }),
       makeProject({ id: pid("bravo"), name: "Bravo Labs" }),
     ] as const;
-    const { bodyHtml } = composeApex(fixtureInventory, TEST_ORIGIN);
+    const validated = validateTestimonials(testimonials);
+    if (!validated.ok) throw new Error("committed testimonials failed to validate");
+    const { bodyHtml } = composeApex(fixtureInventory, validated.value, TEST_ORIGIN);
     expect(assertContentPresent(bodyHtml, manifestoSentences, fixtureInventory)).toEqual({
       ok: true,
       value: null,
