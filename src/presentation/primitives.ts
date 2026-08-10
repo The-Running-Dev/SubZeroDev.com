@@ -63,7 +63,7 @@ export const primitives: PrimitiveSet = {
 }
 
 .page h2 {
-  max-width: 42ch;
+  max-width: 56ch;
   font-size: clamp(1.3rem, 1.7vw, 1.75rem);
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -273,6 +273,7 @@ export const primitives: PrimitiveSet = {
     // `tab.active`/`tab.inactive` pair.
     rules: `.view {
   display: none;
+  margin-top: 0;
 }
 
 #effortless-action.view:target,
