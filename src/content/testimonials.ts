@@ -8,8 +8,9 @@
 //
 // Order is the escalation (00-brief.md § Source material item 4,
 // 90-decisions.md 2026-08-08): credibility decays from the first entry to the
-// last, and `composeTestimonials` renders in input order without sorting
-// anything, so this array's order **is** the page's order.
+// last, and `renderTestimonials` (src/composition/testimonials.ts) renders in
+// input order without sorting anything, so this array's order **is** the
+// page's order.
 
 import type { Testimonial } from "./types";
 

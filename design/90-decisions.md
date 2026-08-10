@@ -26,6 +26,65 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 
 ---
 
+### 2026-08-10 — Testimonials merges into the apex as an always-visible section; the fold and the tab-hiding view switch are removed
+Context: the owner supplied a second Claude Design handoff bundle (`Landing page UI extraction-handoff.zip`,
+carrying the same `SubZeroDev Landing.dc.html`/`support.js` prototype the 2026-08-08 fold decision and the
+same day's enhancement-script decision below were both built from) with two explicit instructions: adapt
+the prototype's visual design and copy verbatim, but (1) all four of its `view`-switched sections —
+Effortless Action, The Echo System, Contamination, Testimonials — stay visible on one page at once rather
+than hiding all but one, and (2) testimonials no longer needs its own route or the brief's "one route that
+breaks character" carve-out — the content stays, folded into the apex as a normal section, and the framing
+that required it to be an isolated page is dropped. Confirmed with the owner before touching code (this
+session's transcript), since the standing `00-brief.md` Definition of Done named a `/testimonials/` route
+by contract, not as an implementation detail free to change without sign-off.
+
+This reverses two pieces of prior, deliberate work: S11 (the testimonials route) and half of S12/the
+2026-08-08 fold (the CSS `:target`/`:has()` view switch and the JS tab-activation layer built on top of it).
+Both were correct given the requirements they were built against; the requirement itself changed.
+
+Chosen: `composeApex(inventory, testimonials, origin)` gains a fourth section — Testimonials — rendered by
+`renderTestimonials` (`src/composition/testimonials.ts`, formerly `composeTestimonials`, no longer a
+route composer). The header nav's four links (`#effortless-action`, `#echo-system`, `#contamination`,
+`#testimonials`) are now plain same-document anchors with no click interception: nothing hides a section
+once the document has rendered it, with or without the enhancement script running. `foldRoutes`,
+`FoldedRoutes`, `composeTestimonials`, `testimonialsPath` and the `/testimonials/` route are deleted
+outright, along with `stylesheetFor`'s fold-specific `data-view`/`default-apex`/`default-testimonials` CSS
+rules. Adapter (`site/landing.config.ts`) now declares exactly two routes — apex and miss — and
+`RoutePath` narrows to `"/" | "/404/"`. The enhancement script keeps everything from S12 that was never
+about hiding sections: the heading-above-label reorder (now applied to all four sections, including
+Testimonials), the manifesto's numbered layout, the ecosystem search box and stage chips, and the
+keyboard-accessible detail overlay. `00-brief.md`'s Definition of Done and *Source material* item 4 are
+amended in the same commit to describe testimonials as a section rather than a route — the exception to
+the "nothing funnier than true" house rule is unchanged in substance, just no longer tied to a route.
+
+Rejected — leaving `/testimonials/` as a route reachable by URL but dropping it from the nav. Cheaper and
+fully reversible, but it does not honour "testimonials is gone" as a tab/page — the owner explicitly chose
+the merge over this when asked.
+
+Rejected — stripping the enhancement script back to plain server-rendered HTML while merging testimonials.
+The owner explicitly asked to keep the filter, the overlay and the manifesto layout; only the view-switch
+half of S12 was in scope for removal.
+
+Rejected — keeping `foldRoutes` and just widening its `defaultView` union to a permanent no-op. The fold's
+entire reason to exist was reconciling *two* routes into shared-view documents; with one route there is
+nothing left to fold, and keeping the module would be dead structure pretending to still do work.
+
+Reversibility: expensive. Reintroducing `/testimonials/` as a separate route, or the tab-hiding view
+switch, means re-deriving the CSS `:target`/`:has()` fold and the JS tab-activation layer this entry
+removes — both are recoverable from git history, but neither is a small patch on top of the merged shape.
+
+**Known debt, not resolved here:** `design/10-design.md` and `design/20-contract.md` still describe the
+three-route fold architecture in detail — the *Route*, *Composition* and *Adapter* sections, the `A4`/`A6`/
+`V2`/`C16`/`X8` invariant table entries naming `foldRoutes`/`testimonialsPath`, and the whole *Fold*
+narrative in `10-design.md` — and `design/30-slices.md`'s S11/S12 acceptance criteria still read as if that
+architecture ships. None of that is rewritten in this entry: the surface area is large, session boundaries
+put doc-reconciliation after implementation on purpose (`AGENTS.md` § *Session boundaries*), and a rushed
+inline rewrite of a contract document risks introducing exactly the drift `agent.md` already warns against.
+A `/reconcile` pass (fresh session, sonnet/medium) is the next step and should treat this entry as its
+starting brief.
+
+---
+
 ### 2026-08-10 — One inline enhancement script is admitted; the brief's non-goals are untouched
 Context: the owner imported a Claude Design prototype — `SubZeroDev Landing.dc.html`, `support.js`,
 `github.md` — carrying an interactive layer the shipped site does not have: view tabs, a project

@@ -1,8 +1,7 @@
 // Composition — the inline enhancement script (contract's `X10`, `X9`).
 //
 // Not part of Composition's public surface (the contract closes that to
-// `composeApex`, `composeMiss`, `composeTestimonials` and `foldRoutes`) — this
-// is `foldRoutes`'s own internal helper, imported by `./fold` alone.
+// `composeApex` and `composeMiss`) — imported by `apex.ts` alone.
 //
 // The returned string is plain, hand-written vanilla JavaScript with no
 // import, no template compilation and no build step (S12's *Depends on*
@@ -11,25 +10,22 @@
 // the DOM the response body already carries, never interpolated, so this
 // module imports nothing from Content and the string below names no project,
 // no quote and no author (S12.2). It is wrapped in its own `try`/`catch` so a
-// defect in it degrades to the pre-S12, CSS-only fold rather than to a
-// broken page (S12.10), and it never writes a literal class attribute into
+// defect in it degrades to the plain server-rendered page rather than to a
+// broken one (S12.10), and it never writes a literal class attribute into
 // markup it builds — every element it creates is styled with inline `style`
 // properties drawn from the token custom properties already declared on
 // `:root`, so nothing here is visible to `stylesheetFor` or
 // `assertStyleAgreement`'s class scan (both read the same raw body text this
 // script travels inside of).
 //
-// Six behaviours, each additive over markup already in the DOM, and each a
+// Four behaviours, each additive over markup already in the DOM, and each a
 // transcription of the imported prototype (`SubZeroDev Landing.dc.html`)
-// rather than an invention of this module:
-//   - the shared nav's four links — the three in-page section anchors plus
-//     `#testimonials` — become the prototype's `navTabs`: exactly one of
-//     Effortless Action / The Echo System / Contamination / Testimonials is
-//     shown at a time, `role="tab"`/`aria-selected` mark which, and the active
-//     tab differs from the inactive ones by colour alone (`--fg` against
-//     `--link`), both underlined, exactly as the prototype styles them. The
-//     manifesto tab is the default, matching the prototype's initial
-//     `state.view`; `#apex` (the testimonials view's back-link) returns to it;
+// rather than an invention of this module — with one deliberate departure:
+// the prototype's nav shows exactly one section at a time by toggling a
+// `view` state; this site keeps Effortless Action, The Echo System,
+// Contamination and Testimonials all visible on the same page at once, so the
+// nav's four links are plain same-document anchors and nothing here
+// intercepts their click:
 //   - each section's heading is moved above its index label, the order the
 //     prototype uses — a reorder of nodes already present, never a rewrite;
 //   - the manifesto's lines are numbered and alternated left/right, and its
@@ -79,75 +75,11 @@ export function enhancementScript(): string {
       return out;
     }
 
-    // ---- the prototype's navTabs ---------------------------------------
-
-    var sectionTabs = ["#effortless-action", "#echo-system", "#contamination"];
-    var allTabs = sectionTabs.concat(["#testimonials"]);
-
-    function views() {
-      return {
-        apex: doc.querySelector('[data-view="apex"]'),
-        testimonials: doc.querySelector('[data-view="testimonials"]'),
-      };
-    }
-
-    function styleTab(href, active) {
-      var links = doc.querySelectorAll('a[href="' + href + '"]');
-      for (var i = 0; i < links.length; i++) {
-        links[i].setAttribute("role", "tab");
-        links[i].setAttribute("aria-selected", active ? "true" : "false");
-        // Active and inactive differ by colour alone in the prototype; both
-        // stay underlined.
-        links[i].style.color = active ? "var(--fg)" : "var(--link)";
-      }
-    }
-
-    function markActiveTab(href) {
-      allTabs.forEach(function (h) {
-        styleTab(h, h === href);
-      });
-    }
-
-    function selectSection(href) {
-      sectionTabs.forEach(function (h) {
-        var el = doc.getElementById(h.slice(1));
-        if (el) el.hidden = h !== href;
-      });
-    }
-
-    function switchView(name) {
-      var v = views();
-      if (!v.apex || !v.testimonials) return;
-      var showApex = name === "apex";
-      v.apex.hidden = !showApex;
-      v.testimonials.hidden = showApex;
-    }
-
-    function activateTab(href) {
-      markActiveTab(href);
-      if (href === "#testimonials") {
-        switchView("testimonials");
-      } else {
-        switchView("apex");
-        selectSection(href);
-      }
-    }
-
-    doc.addEventListener("click", function (event) {
-      var el = event.target;
-      if (!el || typeof el.closest !== "function") return;
-      var link = el.closest(
-        'a[href="#apex"], a[href="#testimonials"], a[href="#effortless-action"], a[href="#echo-system"], a[href="#contamination"]'
-      );
-      if (!link) return;
-      event.preventDefault();
-      var href = link.getAttribute("href");
-      activateTab(href === "#apex" ? sectionTabs[0] : href);
-    });
-
     // ---- heading above index label, the prototype's section order -------
 
-    sectionTabs.forEach(function (h) {
+    var sectionAnchors = ["#effortless-action", "#echo-system", "#contamination", "#testimonials"];
+
+    sectionAnchors.forEach(function (h) {
       var section = doc.getElementById(h.slice(1));
       if (!section) return;
       var heading = section.querySelector("h2");
@@ -529,15 +461,9 @@ export function enhancementScript(): string {
 
       searchInput.addEventListener("input", applyFilter);
     }
-
-    // The prototype opens on its manifesto tab.
-    var startingView = views();
-    var startsOnTestimonials = !!(startingView.testimonials && !startingView.testimonials.hidden);
-    selectSection(sectionTabs[0]);
-    markActiveTab(startsOnTestimonials ? "#testimonials" : sectionTabs[0]);
   } catch (err) {
-    /* additive only — a failure here must leave the server-rendered,
-       CSS-only page exactly as it was before this script ran. */
+    /* additive only — a failure here must leave the server-rendered page
+       exactly as it was before this script ran. */
   }
 })();`;
 }

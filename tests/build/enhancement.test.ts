@@ -1,10 +1,6 @@
-// S12's browser-driven coverage (S12.5–S12.10) — reads the real output of
-// `npm run build` off disk and drives Chromium against it, the same
-// convention request-capture.test.ts and emitted-document.test.ts already
-// use. This file lives under tests/build/ on the same footing those two do —
-// see issue #68 for why that directory is currently invisible to the C14/C16
-// import-graph check, which is what lets it import `projects`/`testimonials`
-// directly for the content-reachability assertions below.
+// S12's browser-driven coverage — reads the real output of `npm run build`
+// off disk and drives Chromium against it, the same convention
+// request-capture.test.ts and emitted-document.test.ts already use.
 
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -39,11 +35,10 @@ afterAll(async () => {
 // surface carries no manifesto export.
 const manifestoSentences = [
   "SubZeroDev was always meant to be a business.",
-  "We just never decided what kind.",
   "There was no master plan.",
 ] as const;
 
-describe("S12.5 — loading / and /testimonials/ with the enhancement script executing still triggers exactly one request", () => {
+describe("S12.5 — loading / with the enhancement script executing still triggers exactly one request", () => {
   it("the apex", async () => {
     const page = await browser.newPage();
     try {
@@ -55,34 +50,18 @@ describe("S12.5 — loading / and /testimonials/ with the enhancement script exe
       await page.close();
     }
   });
-
-  it("the testimonials route", async () => {
-    const page = await browser.newPage();
-    try {
-      const requests: string[] = [];
-      page.on("request", (r) => requests.push(r.url()));
-      await page.goto(server.url + "/testimonials/", { waitUntil: "networkidle" });
-      expect(requests).toHaveLength(1);
-    } finally {
-      await page.close();
-    }
-  });
 });
 
-describe("S12.6 — with scripting disabled, the CSS-only fold alone still switches views and everything stays reachable", () => {
-  it("clicking the shared nav toggles view visibility via :target/:has(), and every project, manifesto sentence and testimonial is in the document", async () => {
+describe("with scripting disabled, every section — manifesto, ecosystem, contamination, testimonials — stays visible on the same page", () => {
+  it("every project, manifesto sentence and testimonial is in the document and visible with no script running", async () => {
     const noScriptContext = await browser.newContext({ javaScriptEnabled: false });
     try {
       const page = await noScriptContext.newPage();
       await page.goto(server.url + "/");
 
-      expect(await page.locator('[data-view="apex"]').isVisible()).toBe(true);
-      expect(await page.locator('[data-view="testimonials"]').isVisible()).toBe(false);
-
-      await page.click('nav a[href="#testimonials"]');
-
-      expect(await page.locator('[data-view="testimonials"]').isVisible()).toBe(true);
-      expect(await page.locator('[data-view="apex"]').isVisible()).toBe(false);
+      for (const id of ["effortless-action", "echo-system", "contamination", "testimonials"]) {
+        expect(await page.locator(`#${id}`).isVisible()).toBe(true);
+      }
 
       const html = await page.content();
       for (const sentence of manifestoSentences) {
@@ -110,7 +89,6 @@ describe("S12.7 — the search box and stage chips only ever hide or reveal ecos
     const page = await browser.newPage();
     try {
       await page.goto(server.url + "/");
-      await page.click('nav a[href="#echo-system"]');
       const entries = page.locator("#echo-system .entry");
       const before = await entries.count();
       expect(before).toBeGreaterThan(0);
@@ -134,7 +112,6 @@ describe("S12.7 — the search box and stage chips only ever hide or reveal ecos
     const page = await browser.newPage();
     try {
       await page.goto(server.url + "/");
-      await page.click('nav a[href="#echo-system"]');
       const entries = page.locator("#echo-system .entry");
       const total = await entries.count();
 
@@ -162,7 +139,6 @@ describe("S12.8 — the detail overlay is keyboard-reachable, returns focus on c
     const page = await browser.newPage();
     try {
       await page.goto(server.url + "/");
-      await page.click('nav a[href="#echo-system"]');
       // The prototype binds its detail handler to the entry itself rather
       // than to a button, so the entry is the control that opens the overlay.
       const trigger = page.locator("#echo-system .entry").first();
@@ -205,7 +181,6 @@ describe("S12.9 — under prefers-reduced-motion: reduce, the script applies no 
     try {
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.goto(server.url + "/");
-      await page.click('nav a[href="#echo-system"]');
 
       const search = page.locator("#echo-system input[type='search']");
       await search.fill("documentation");
@@ -234,13 +209,12 @@ describe("S12.9 — under prefers-reduced-motion: reduce, the script applies no 
   });
 });
 
-describe("S12.10 — with the script's own initialisation forced to throw, the document still renders and the CSS fold still switches views", () => {
-  it("degrades to the pre-S12 page rather than a broken one", async () => {
+describe("S12.10 — with the script's own initialisation forced to throw, the document still renders in full", () => {
+  it("degrades to the plain server-rendered page rather than a broken one", async () => {
     const brokenContext = await browser.newContext();
     try {
       // Forces the enhancement script's very first DOM call to throw, before
-      // it registers any listener or touches the document — without
-      // disabling scripting altogether, which S12.6 already covers.
+      // it registers any listener or touches the document.
       await brokenContext.addInitScript(
         `document.querySelector = () => { throw new Error("forced failure for S12.10"); };`,
       );
@@ -262,11 +236,11 @@ describe("S12.10 — with the script's own initialisation forced to throw, the d
         expect(html).toContain(testimonial.quote);
       }
 
-      // The CSS fold still switches views — the click handler never
-      // registered, so this is a genuine, unintercepted fragment navigation.
-      await page.click('nav a[href="#testimonials"]');
-      expect(await page.locator('[data-view="testimonials"]').isVisible()).toBe(true);
-      expect(await page.locator('[data-view="apex"]').isVisible()).toBe(false);
+      // Every section is still on the page and visible — there is no
+      // hide/show mechanism left for a broken script to have left engaged.
+      for (const id of ["effortless-action", "echo-system", "contamination", "testimonials"]) {
+        expect(await page.locator(`#${id}`).isVisible()).toBe(true);
+      }
     } finally {
       await brokenContext.close();
     }

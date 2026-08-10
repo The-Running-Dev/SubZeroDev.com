@@ -1,6 +1,8 @@
-// S11.5–S11.10 — composeTestimonials. Fixtures only, never
-// `src/content/testimonials.ts` (S11.7's content-agnosticism half) — the
-// committed collection has its own coverage in
+// Coverage for the testimonials section, rendered inline on the apex page by
+// `renderTestimonials` (src/composition/testimonials.ts) rather than as its
+// own route (design/90-decisions.md — "testimonials folds into the apex").
+// Fixtures only, never `src/content/testimonials.ts` (content-agnosticism) —
+// the committed collection has its own coverage in
 // tests/content/testimonials.test.ts and tests/build/emitted-document.test.ts.
 
 import { readFileSync } from "node:fs";
@@ -9,18 +11,12 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { composeTestimonials } from "../../src/composition";
-import type { Testimonials } from "../../src/content";
+import { composeApex } from "../../src/composition";
+import type { Inventory, Testimonials } from "../../src/content";
 import { assertStyleAgreement } from "../../src/verification";
-import { makeTestimonial } from "../content/fixtures";
+import { makeProject, makeTestimonial, pid, TEST_ORIGIN } from "../content/fixtures";
 
-// Adapter's apex route constant, so the footer back-link below is pinned to it
-// rather than to a second untethered spelling of "/". GITHUB_SHA is forced to a
-// valid commit id before the import because Adapter's module-level code calls
-// `process.exit` on an invalid one (A5) — the same guard, for the same reason,
-// as tests/build/adapter-config.test.ts.
-process.env.GITHUB_SHA ??= "a".repeat(40);
-const { apexPath } = await import("../../site/landing.config");
+const inventory: Inventory = [makeProject({ id: pid("alpha"), name: "Alpha" })];
 
 function testimonials(...ts: readonly [ReturnType<typeof makeTestimonial>, ...ReturnType<typeof makeTestimonial>[]]): Testimonials {
   return ts;
@@ -34,9 +30,22 @@ const second = makeTestimonial({
 });
 const sample = testimonials(first, second);
 
-describe("S11.5 — composeTestimonials renders every quote and author, in input order", () => {
+// The testimonials section is the last one composeApex renders before the
+// footer's rule (apex.ts) — extracting up to that `<hr` is what lets the
+// no-form/no-iframe/no-image cases below scope to the section itself rather
+// than the whole document, which legitimately carries other markup (the
+// ld+json script) these checks would otherwise trip on.
+function testimonialsSectionOf(bodyHtml: string): string {
+  const start = bodyHtml.indexOf('id="testimonials"');
+  expect(start).toBeGreaterThan(-1);
+  const end = bodyHtml.indexOf("<hr", start);
+  expect(end).toBeGreaterThan(start);
+  return bodyHtml.slice(start, end);
+}
+
+describe("composeApex renders every testimonial quote and author, in input order", () => {
   it("contains every quote and author", () => {
-    const { bodyHtml } = composeTestimonials(sample);
+    const { bodyHtml } = composeApex(inventory, sample, TEST_ORIGIN);
     for (const t of sample) {
       expect(bodyHtml).toContain(t.quote);
       expect(bodyHtml).toContain(t.author);
@@ -44,7 +53,7 @@ describe("S11.5 — composeTestimonials renders every quote and author, in input
   });
 
   it("author offsets ascend in input order", () => {
-    const { bodyHtml } = composeTestimonials(sample);
+    const { bodyHtml } = composeApex(inventory, sample, TEST_ORIGIN);
     const firstIndex = bodyHtml.indexOf(first.author);
     const secondIndex = bodyHtml.indexOf(second.author);
     expect(firstIndex).toBeGreaterThan(-1);
@@ -52,24 +61,30 @@ describe("S11.5 — composeTestimonials renders every quote and author, in input
   });
 });
 
-describe("S11.6 — the metadata line reflects exactly the fields present (X8)", () => {
+describe("the metadata line reflects exactly the fields present (X8)", () => {
   it("role but no organization renders role, omits an organization line", () => {
-    const { bodyHtml } = composeTestimonials(
+    const { bodyHtml } = composeApex(
+      inventory,
       testimonials(makeTestimonial({ author: "Has Role", role: "A Role" })),
+      TEST_ORIGIN,
     );
     expect(bodyHtml).toContain(`<p class="meta">A Role</p>`);
   });
 
   it("organization but no role renders organization", () => {
-    const { bodyHtml } = composeTestimonials(
+    const { bodyHtml } = composeApex(
+      inventory,
       testimonials(makeTestimonial({ author: "Has Org", organization: "An Org" })),
+      TEST_ORIGIN,
     );
     expect(bodyHtml).toContain(`<p class="meta">An Org</p>`);
   });
 
   it("neither role nor organization renders only the author line — no empty metadata line", () => {
-    const { bodyHtml } = composeTestimonials(
+    const { bodyHtml } = composeApex(
+      inventory,
       testimonials(makeTestimonial({ author: "Solo Author" })),
+      TEST_ORIGIN,
     );
     const figcaptionMatch = bodyHtml.match(/<figcaption>(.*?)<\/figcaption>/s);
     expect(figcaptionMatch).not.toBeNull();
@@ -80,17 +95,19 @@ describe("S11.6 — the metadata line reflects exactly the fields present (X8)",
 
   it("a source URL renders as an escaped Source link", () => {
     const source = "https://example.test/issues/212?topic=two%20kinds";
-    const { bodyHtml } = composeTestimonials(
+    const { bodyHtml } = composeApex(
+      inventory,
       testimonials(makeTestimonial({ author: "Issue 212", url: source })),
+      TEST_ORIGIN,
     );
     expect(bodyHtml).toContain(`<a class="link" href="${source}">Source</a>`);
   });
 });
 
-describe("S11.7 — composeTestimonials is deterministic and content-agnostic", () => {
+describe("composeApex is deterministic and testimonials rendering is content-agnostic", () => {
   it("returns byte-identical bodyHtml and stylesheet for the same input on repeated calls", () => {
-    const a = composeTestimonials(sample);
-    const b = composeTestimonials(sample);
+    const a = composeApex(inventory, sample, TEST_ORIGIN);
+    const b = composeApex(inventory, sample, TEST_ORIGIN);
     expect(a.bodyHtml).toBe(b.bodyHtml);
     expect(a.stylesheet).toBe(b.stylesheet);
   });
@@ -116,7 +133,7 @@ describe("S11.7 — composeTestimonials is deterministic and content-agnostic", 
   });
 });
 
-describe("S11.8 — every interpolated field is HTML-escaped in text position (X5)", () => {
+describe("every interpolated field is HTML-escaped in text position (X5)", () => {
   it("quote, author, role and organization each escape all five characters", () => {
     const dangerous = `<script>&"'>`;
     const fixture = testimonials(
@@ -127,38 +144,28 @@ describe("S11.8 — every interpolated field is HTML-escaped in text position (X
         organization: dangerous,
       }),
     );
-    const { bodyHtml } = composeTestimonials(fixture);
+    const { bodyHtml } = composeApex(inventory, fixture, TEST_ORIGIN);
     expect(bodyHtml).not.toContain(dangerous);
     expect(bodyHtml).toContain("&lt;script&gt;&amp;&quot;&#39;&gt;");
   });
 });
 
-describe("S11.9 — no form, iframe, on* attribute or script element; no avatar-shaped asset", () => {
-  const { bodyHtml } = composeTestimonials(sample);
-
-  it("carries none of form, iframe, on* attributes or a script element", () => {
-    expect(bodyHtml).not.toContain("<form");
-    expect(bodyHtml).not.toContain("<iframe");
-    expect(bodyHtml).not.toMatch(/\son[a-z]+=/i);
-    expect(bodyHtml).not.toContain("<script");
-  });
-
-  it("carries no img element and no data: URI", () => {
-    expect(bodyHtml).not.toContain("<img");
-    expect(bodyHtml).not.toContain("data:");
+describe("the testimonials section carries no form, iframe, on* attribute, image or embedded script", () => {
+  it("carries none of them within the section itself", () => {
+    const { bodyHtml } = composeApex(inventory, sample, TEST_ORIGIN);
+    const section = testimonialsSectionOf(bodyHtml);
+    expect(section).not.toContain("<form");
+    expect(section).not.toContain("<iframe");
+    expect(section).not.toMatch(/\son[a-z]+=/i);
+    expect(section).not.toContain("<script");
+    expect(section).not.toContain("<img");
+    expect(section).not.toContain("data:");
   });
 });
 
-describe("the footer back-link targets Adapter's apexPath", () => {
-  it("renders the back-link at apexPath rather than a second spelling of it", () => {
-    const { bodyHtml } = composeTestimonials(sample);
-    expect(bodyHtml).toContain(`href="${apexPath}">Back to`);
-  });
-});
-
-describe("S11.10 — assertStyleAgreement holds (X4)", () => {
-  it("returns ok: true for composeTestimonials(sample)", () => {
-    const { bodyHtml, stylesheet } = composeTestimonials(sample);
+describe("assertStyleAgreement holds for composeApex with a testimonials section (X4)", () => {
+  it("returns ok: true for composeApex(inventory, sample, origin)", () => {
+    const { bodyHtml, stylesheet } = composeApex(inventory, sample, TEST_ORIGIN);
     expect(assertStyleAgreement(bodyHtml, stylesheet)).toEqual({ ok: true, value: null });
   });
 });

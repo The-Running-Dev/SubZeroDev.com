@@ -93,10 +93,11 @@ The binding list. Out of scope for every agent, permanently, until this file cha
   precisely when scripting is off, and on a document that needs no scripting there is no fallback for
   it to describe.
 - A 404 route exists, is on-voice, and is served for an unknown path at the apex.
-- **A `/testimonials/` route exists**, carrying a fixed collection of fabricated testimonials,
-  presented with the same corporate seriousness as the rest of the site. This is the one route the
-  house rule in *Source material* item 4 exempts — the page names nothing on it as fictional, satirical
-  or fake.
+- **The apex carries a fixed collection of fabricated testimonials as one of its always-visible
+  sections** — not a separate route, and not hidden behind a tab: Effortless Action, The Echo System,
+  Contamination and Testimonials all render on the same document at once (2026-08-10, "merge
+  testimonials into the apex"). The section is presented with the same corporate seriousness as the
+  rest of the site and names nothing on it as fictional, satirical or fake.
 - The page is legible in greyscale, **moves** nothing under `prefers-reduced-motion: reduce`, and is
   keyboard-traversable in visual order. Moves means no transform, translation, scale, rotation,
   position change or scroll behaviour, animated or transitioned. A transition of a non-positional
@@ -146,10 +147,12 @@ Four things about it are settled here rather than there:
 3. **`Idea.md` lines 540–604 are an unresolved chat transcript**, not specification. They contain
    three competing drafts of an *Effortless Action* section. None is chosen. Nothing may treat any of
    them as settled copy.
-4. **The testimonials route is a bounded exception to item 2's house rule, not a repeal of it.**
+4. **The testimonials section is a bounded exception to item 2's house rule, not a repeal of it.**
    `Idea.md` § *Company Personality* and § *Writing Style* ("Never exaggerate. Reality already did.")
-   describe the voice everywhere else on the site, and item 2 holds everywhere else. `/testimonials/`
-   is the one page built the opposite way on purpose: every quote on it is fabricated, most of them
+   describe the voice everywhere else on the site, and item 2 holds everywhere else. Testimonials is
+   the one section built the opposite way on purpose: every quote in it is fabricated, most of them
    adversarial to SubZeroDev, and the page never says so. The joke depends on the page never breaking
-   character — no "fake", "satire", "not real" or "for entertainment" label anywhere on it. Scoped to
-   this one route; the ecosystem list and everything else on the apex still answer to item 2 as written.
+   character — no "fake", "satire", "not real" or "for entertainment" label anywhere on it. It no
+   longer needs its own route to carry that exception — it is one always-visible section of the single
+   apex document (2026-08-10) — but the exception itself is unchanged and still scoped to it alone; the
+   ecosystem list and everything else on the apex still answer to item 2 as written.

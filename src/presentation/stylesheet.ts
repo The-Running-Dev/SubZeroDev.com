@@ -6,8 +6,7 @@
 // `PrimitiveName` declaration order (P6). That is what leaves
 // `assertStyleAgreement`'s `ClassWithoutRule` half checkable against markup
 // Composition wrote by hand, and makes `SelectorWithoutUser` structurally
-// true over the primitives. Fixed fold-wiring rules follow only when the
-// corresponding `data-view` and default-view markers occur in the body.
+// true over the primitives.
 
 import { palette } from "./palette";
 import { primitives } from "./primitives";
@@ -41,40 +40,6 @@ function tokenBlock(): string {
 }`;
 }
 
-// The testimonials fold's view-toggle rules (design/90-decisions.md,
-// 2026-08-08). Not a primitive: `[data-view]` is Composition's fold.ts
-// wiring, not a reusable layout utility, so it is appended by its own gate
-// below rather than folded into `primitives` (P6's closed set stays closed).
-// CSS-only — `:has()`/`:target` — because `X6`/`V13` permit exactly one
-// script element and this design does not touch that cap.
-const FOLD_BASE_RULES = `.page [data-view] {
-  display: none;
-}
-
-.page:has(#apex:target, [data-view="apex"] :target) [data-view="apex"] {
-  display: flex;
-}
-
-.page:has(#apex:target, [data-view="apex"] :target) [data-view="testimonials"] {
-  display: none;
-}
-
-.page:has(#testimonials:target) [data-view="testimonials"] {
-  display: flex;
-}
-
-.page:has(#testimonials:target) [data-view="apex"] {
-  display: none;
-}`;
-
-const FOLD_DEFAULT_APEX_RULES = `.page.default-apex [data-view="apex"] {
-  display: flex;
-}`;
-
-const FOLD_DEFAULT_TESTIMONIALS_RULES = `.page.default-testimonials [data-view="testimonials"] {
-  display: flex;
-}`;
-
 const CLASS_ATTR_PATTERN = /(?:^|\s)class="([^"]*)"/g;
 
 function referencedClasses(body: string): Set<string> {
@@ -93,8 +58,5 @@ export function stylesheetFor(body: BodyHtml): StylesheetText {
   for (const primitive of Object.values(primitives)) {
     if (referenced.has(primitive.className)) parts.push(primitive.rules);
   }
-  if (body.includes("data-view=")) parts.push(FOLD_BASE_RULES);
-  if (referenced.has("default-apex")) parts.push(FOLD_DEFAULT_APEX_RULES);
-  if (referenced.has("default-testimonials")) parts.push(FOLD_DEFAULT_TESTIMONIALS_RULES);
   return parts.join("\n\n") as StylesheetText;
 }
