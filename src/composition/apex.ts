@@ -295,13 +295,14 @@ export function composeApex(
     `</header>`,
     renderNav(hrefById),
     `<hr class="${primitives.rule.className}" />`,
-    `<div class="${primitives.row.className}">`,
-    `<div class="${primitives.stack.className}">`,
+    // The four sections stack in their own numbered order — 01 through 04 —
+    // rather than sharing a `row`. The row was survivable only while the CSS
+    // fold hid all but one section, so it never had two visible children;
+    // with every section always visible it put 02 beside 01 and 03, which
+    // reads out of order and leaves a column of void next to the ecosystem.
     renderManifesto(),
-    renderContamination(inventory, hrefById),
-    `</div>`,
     renderEcosystem(inventory, hrefById),
-    `</div>`,
+    renderContamination(inventory, hrefById),
     renderTestimonialsSection(testimonials),
     `<hr class="${primitives.rule.className}" />`,
     `<footer class="${primitives.stack.className}">`,
