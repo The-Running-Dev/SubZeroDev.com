@@ -89,6 +89,56 @@ describe("S6.10 — assertSelfContained", () => {
     expect(result.errors.some((e) => e.code === "ScriptElementPresent")).toBe(true);
   });
 
+  it("a single inline enhancement script with no type attribute is permitted (X10)", () => {
+    const doc = `${CLEAN_DOCUMENT}<script>console.log("hi");</script>`;
+    expect(assertSelfContained(doc)).toEqual({ ok: true, value: null });
+  });
+
+  it("the JSON-LD block and one inline enhancement script together are permitted (S12.3)", () => {
+    const doc =
+      `${CLEAN_DOCUMENT}` +
+      `<script type="application/ld+json">{"@type":"Organization"}</script>` +
+      `<script>console.log("hi");</script>`;
+    expect(assertSelfContained(doc)).toEqual({ ok: true, value: null });
+  });
+
+  it("a second inline enhancement script is flagged — only one is permitted", () => {
+    const oneScript = `<script>console.log("hi");</script>`;
+    const doc = `${CLEAN_DOCUMENT}${oneScript}${oneScript}`;
+    const result = assertSelfContained(doc);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.filter((e) => e.code === "ScriptElementPresent")).toHaveLength(1);
+  });
+
+  it("an inline enhancement script carrying a src attribute is flagged", () => {
+    const doc = `${CLEAN_DOCUMENT}<script src="/enhance.js"></script>`;
+    const result = assertSelfContained(doc);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.some((e) => e.code === "ScriptElementPresent")).toBe(true);
+  });
+
+  it("an inline enhancement script whose content carries a </script sequence in any case is flagged", () => {
+    const doc = `${CLEAN_DOCUMENT}<script>var s = "</scriptTag>";</script>`;
+    const result = assertSelfContained(doc);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.some((e) => e.code === "ScriptElementPresent")).toBe(true);
+  });
+
+  it("a third script element — beyond one ld+json and one enhancement script — is flagged", () => {
+    const doc =
+      `${CLEAN_DOCUMENT}` +
+      `<script type="application/ld+json">{"@type":"Organization"}</script>` +
+      `<script>console.log("hi");</script>` +
+      `<script type="text/x-dc">{}</script>`;
+    const result = assertSelfContained(doc);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.filter((e) => e.code === "ScriptElementPresent")).toHaveLength(1);
+  });
+
   it("a document carrying all three faults returns three errors in one Result", () => {
     const doc =
       `${CLEAN_DOCUMENT}` +
