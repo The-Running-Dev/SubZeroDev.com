@@ -8,8 +8,8 @@
 import { defineLandingPage } from "subzerodev-platform-ui-landing-page";
 
 import { composeApex, composeMiss } from "../../../src/composition";
-import { parseCommitId, validateInventory } from "../../../src/content";
-import type { BuildContext, Project } from "../../../src/content";
+import { parseCommitId, validateInventory, validateTestimonials } from "../../../src/content";
+import type { BuildContext, Project, Testimonial } from "../../../src/content";
 import { iconDataUri, themeColor } from "../../../src/presentation";
 
 // Four faults at once: a malformed id, an empty name, an out-of-range year and
@@ -26,15 +26,22 @@ const malformedProjects = [
   },
 ] as unknown as readonly Project[];
 
+const validTestimonials: readonly Testimonial[] = [{ quote: "Fine.", author: "Someone" }];
+
 const context: BuildContext = {
   commit: parseCommitId("a".repeat(40))!,
   utcYear: new Date().getUTCFullYear() as BuildContext["utcYear"],
 };
 
-const validated = validateInventory(malformedProjects, context);
+const validatedInventory = validateInventory(malformedProjects, context);
+const validatedTestimonials = validateTestimonials(validTestimonials);
 
-if (!validated.ok) {
-  for (const error of validated.errors) {
+if (!validatedInventory.ok || !validatedTestimonials.ok) {
+  const errors = [
+    ...(validatedInventory.ok ? [] : validatedInventory.errors),
+    ...(validatedTestimonials.ok ? [] : validatedTestimonials.errors),
+  ];
+  for (const error of errors) {
     console.error(
       `${error.code} (project: ${error.projectId ?? "-"}, field: ${error.field ?? "-"}): ${error.detail}`,
     );
@@ -42,7 +49,7 @@ if (!validated.ok) {
   process.exit(1);
 }
 
-const inventory = validated.value;
+const inventory = validatedInventory.value;
 const apex = composeApex(inventory, "https://subzerodev.com");
 const miss = composeMiss();
 

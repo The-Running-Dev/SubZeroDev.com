@@ -62,3 +62,48 @@ describe("S6.8 — a malformed inventory fails the build with every ContentError
     expect(emitted.filter((entry) => String(entry).endsWith(".html"))).toEqual([]);
   });
 });
+
+describe("S11.12 — either invalid Content collection prevents Adapter from declaring routes", () => {
+  it("reports inventory errors while valid testimonials add none, then writes no document", () => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        cliPath,
+        "build",
+        "--adapter",
+        "tests/build/fixtures/malformed-adapter.config.ts",
+        "--out-dir",
+        outDir,
+      ],
+      { cwd: repoRoot, encoding: "utf8" },
+    );
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("MalformedProjectId");
+    expect(result.stderr).not.toContain("Testimonial");
+    const emitted = existsSync(outDir) ? readdirSync(outDir, { recursive: true }) : [];
+    expect(emitted.filter((entry) => String(entry).endsWith(".html"))).toEqual([]);
+  });
+
+  it("reports testimonial errors while a valid inventory adds none, then writes no document", () => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        cliPath,
+        "build",
+        "--adapter",
+        "tests/build/fixtures/malformed-testimonials-adapter.config.ts",
+        "--out-dir",
+        outDir,
+      ],
+      { cwd: repoRoot, encoding: "utf8" },
+    );
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("TestimonialQuoteEmpty");
+    expect(result.stderr).toContain("TestimonialAuthorEmpty");
+    expect(result.stderr).not.toContain("MalformedProjectId");
+    const emitted = existsSync(outDir) ? readdirSync(outDir, { recursive: true }) : [];
+    expect(emitted.filter((entry) => String(entry).endsWith(".html"))).toEqual([]);
+  });
+});
