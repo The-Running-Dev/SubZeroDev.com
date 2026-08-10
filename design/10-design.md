@@ -182,13 +182,18 @@ component logic that would have to know it exists.
 
 ### Route
 
-**Three**, not two. `/` is the manifesto document, `/testimonials/` a second, standalone document, and
-the miss route the third. This overturns the previous "two, and no more" and the *One document, rather
-than routes per section* rejection recorded in *Alternatives considered* — both are narrowed below, not
-struck, because the reasoning behind the apex staying one document is unaffected by a second, unrelated
-document existing beside it. `Idea.md`'s testimonials are not a section of the manifesto; they are a
-different kind of page — data-driven, escalating, and not part of the apex's "parent voice unstyled"
-argument in *Data model* § `Testimonial` above. A `Route` carries:
+**Three**, not two. `/` is the manifesto route, `/testimonials/` the testimonials route, and the miss
+route the third. The first two are independently addressable documents, but they do not carry
+independent bodies: Composition folds the apex and testimonials compositions into one shared shell
+with no executable script and emits that same pair of views at both paths. The path selects only which
+view is visible when no fragment is present. Their shared navigation switches views with `#apex` and
+`#testimonials`, using CSS `:target`/`:has()` rather than a script, fetch or second document load.
+
+This overturns the previous "two, and no more" and narrows the *One document, rather than routes per
+section* rejection recorded in *Alternatives considered*. The reasoning behind the apex staying one
+manifesto is unchanged: testimonials are different data and a different composition, but folding the
+two completed compositions lets navigation replace the visible root content without turning either
+into a manifesto section or introducing a client runtime. A `Route` carries:
 
 - its **path**. The package's declared path type admits `/` or a trailing-slash path only, so the
   miss route is declared as `/404/` and the package emits it at `404/index.html`. The conventional
@@ -281,20 +286,30 @@ Per `Idea.md`: minimal, dark, typography-first, large whitespace, no gradients, 
 illustrations, no webfont. The stylesheet is a value this module produces, not a file another tool
 discovers, because it has to be handed to the package as a string.
 
-**Composition** — owns both page compositions and the prose. Depends on **Content** and
-**Presentation**. Exposes, per route, the **prerendered body HTML**, plus the stylesheet that body
-requires. It exposes nothing else. It is the only module that turns data and tokens into markup.
+**Composition** — owns the three page compositions, the prose, and the fold that combines the apex and
+testimonials compositions into their two emitted route bodies. Depends on **Content** and
+**Presentation**. Each raw composition exposes prerendered body HTML plus the stylesheet that body
+requires. The fold consumes the already-composed apex and testimonials routes, preserves both views,
+reuses the apex navigation, rewrites its route links to fragments, and derives a fresh stylesheet from
+each folded body. It is the only module that turns data and tokens into markup.
+
+The fold deliberately fails loudly if a composer stops producing the structural envelope it needs —
+the `page > stack` wrapper, the apex navigation and testimonials link, or the testimonials header and
+back-link. Those are bare build-time exceptions rather than content errors: validated content cannot
+cause them, and recovering would mean guessing how to fold a composition whose contract has changed.
 
 **Adapter** — owns the route declarations, their static head metadata, and the single origin constant
-those URLs are built from. Depends on **Composition**, the **external package**, **Content** for four
-named things only — `projects`, `validateInventory`, `BuildContext` and `parseCommitId` — and
-**Presentation** for two: `themeColor` and `iconDataUri`. It is the
+those URLs are built from. Depends on **Composition**, the **external package**, **Content** for six
+named things only — `projects`, `testimonials`, `validateInventory`, `validateTestimonials`,
+`BuildContext` and `parseCommitId` — and **Presentation** for two: `themeColor` and `iconDataUri`. It is the
 module the package CLI loads, so it is the one place in the import graph where the build reads its
 entry conditions and the last point at which it can still refuse to produce anything — it validates
-the inventory exactly once and, on failure, reports every error and exits non-zero, rendering nothing.
-Everything **renderable** still comes from Composition, and nothing renderable comes from Presentation
-— its two imports there are head-metadata values, neither derived from Content — so there is exactly
-one path from data to markup. Exposes the adapter configuration the package's CLI consumes.
+the inventory and testimonial collection exactly once each and, on either failure, reports every error
+and exits non-zero, rendering nothing. Once both validate, it asks Composition to fold the apex and
+testimonials routes, declares those two folded bodies plus the miss route, and exposes the adapter
+configuration the package's CLI consumes. Everything **renderable** still comes from Composition, and
+nothing renderable comes from Presentation — its two imports there are head-metadata values, neither
+derived from Content — so there is exactly one path from data to markup.
 
 **Artifact** — owns everything that turns the package's emitted output into a publishable tree,
 performed as file operations after the build:
@@ -387,9 +402,11 @@ asserted. That is why byte identity is checked at the image gate rather than arg
 
 ### 1. Author changes content, and the site redeploys
 
-The only content write path. Author edits a `Project` record, a stage, or copy → the network-free
-build recomputes Content's derivations → Composition renders the body and the stylesheet → Adapter
-declares the routes carrying them → the package CLI emits the documents → **Artifact** produces root
+The only content write path. Author edits a `Project`, a `Testimonial`, a stage, or copy → the
+network-free build validates both content sets and recomputes Content's derivations → Composition
+renders the three raw compositions and folds the apex and testimonials into their two shared-view
+bodies → Adapter declares those two plus the miss route → the package CLI emits the documents →
+**Artifact** produces root
 `404.html`, injects the commit marker and emits the server configuration → offline Verification
 asserts against the finished output, not intent. The flow then forks. Pages publishes and is read back
 as preview/development output immediately from that finished build. In parallel, the image gate and
@@ -476,7 +493,16 @@ are **present in the response body**, readable with scripting disabled and by a 
 stylesheet is inline and the icons are data URIs, and the only script element is an inert
 `application/ld+json` block that no browser executes and none fetches, so loading the document
 triggers no additional request. Nothing is client-computed, so there is no client
-state to be wrong. The path is the same on both targets because the bytes are the same.
+state to be wrong. The folded testimonials view is present in the same response but hidden by default.
+The path is the same on both targets because the bytes are the same.
+
+### 3a. Visitor switches between the apex and testimonials
+
+The shared navigation changes the fragment to `#testimonials` or `#apex`. CSS `:target`/`:has()`
+reveals the selected folded view and hides the other; no script runs, no request starts and the route
+document is not replaced. Loading `/testimonials/` directly emits the same two views with testimonials
+as the no-fragment default, so both addresses remain independently loadable and crawlable while the
+in-page switch stays within the document already served.
 
 ### 4. Visitor requests an unknown path
 
@@ -551,6 +577,18 @@ is otherwise indistinguishable from a page that never had any.
 
 **Response:** build failure. **Not a warning** — an unstyled apex is the failure this whole design
 exists to prevent, and a warning in a log nobody reads is how it would ship.
+
+### A composition's fold envelope drifts
+
+**What fails:** the apex or testimonials composer stops producing the `page > stack` envelope or the
+navigation/header/back-link hooks the fold reuses. Continuing would either duplicate navigation,
+discard content or emit fragment links that cannot switch views.
+
+**Detected by:** `foldRoutes` checks each required structural hook before rewriting it and throws a
+bare `Error` at build time when one is absent. This is an authored-code defect, not malformed content,
+so it has no `ContentError` variant and no fallback composition.
+
+**Response:** build failure before Adapter can declare a route. Nothing is emitted or published.
 
 ### Artifact's post-build step does not run, or runs on the wrong output
 
@@ -940,15 +978,15 @@ a project `id` *"the anchor fragment"*. **A single row of links on the one docum
 chrome this paragraph rejects is the kind that only a multi-route site can have. See
 [`90-decisions.md`](90-decisions.md), 2026-08-07.
 
-**Narrowed again on 2026-08-08, for `/testimonials/`.** This section's argument is about the
-*apex's* genre being one document, not about the site having exactly two routes — `A4`'s "exactly
-two" was the sharper claim, and the rejected alternative above (`/manifesto`, `/projects`,
-`/philosophy`) was specifically about slicing the manifesto, which testimonials are not. A testimonial
-collection is not a section of the plain document; it needs its own heading, its own attribution
-layout, and content that would visually or tonally contaminate the apex if inlined into it. Adding it
-as a third, standalone route costs the multi-route chrome this section rejects only if the *apex*
-grows navigation state — it does not: `/testimonials/` carries a single back-link, on the same footing
-as the miss route's, not a persistent nav bar. See [`90-decisions.md`](90-decisions.md), 2026-08-08.
+**Narrowed again on 2026-08-08, for `/testimonials/`, and reconciled to the later fold decision on
+2026-08-10.** This section's argument is about the *apex's* genre being one manifesto, not about the
+site having exactly two routes — `A4`'s "exactly two" was the sharper claim, and the rejected
+alternative above (`/manifesto`, `/projects`, `/philosophy`) was specifically about slicing the
+manifesto, which testimonials are not. Testimonials keep their own composition and route, but the two
+completed compositions are folded into one shared body per route so the common navigation changes the
+visible root content by fragment and CSS rather than by loading another document. The apex therefore
+gains navigation state without a client runtime, persistent route-aware script or duplicated
+composition. See [`90-decisions.md`](90-decisions.md), 2026-08-08 and 2026-08-10.
 
 ### One inert script element, rather than none at all
 
@@ -975,8 +1013,9 @@ declaration and refuses.
 
 **The cost, stated plainly:** the assertion is now a rule about `type` attributes rather than about
 element names, and a rule with one carve-out is a rule the next author looks for a second carve-out in.
-`X6` bounds it to exactly one element in exactly one composition, which is the narrowest form that
-still admits the block.
+`X6` bounds it to exactly one element in the raw apex composition. The fold reuses that same block in
+each independently emitted shared-view document; it never introduces a second block into either
+document. That is the narrowest form that still admits the block.
 
 ### A fixed slogan, rather than rotation
 

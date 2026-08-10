@@ -1,4 +1,4 @@
-// Presentation — the eight layout primitives (contract's `primitives`).
+// Presentation — the ten layout primitives (contract's `primitives`).
 //
 // Every selector in a primitive's `rules` is rooted at that primitive's own
 // `className` (P6/S4.4): a selector that could match without the class
@@ -12,7 +12,8 @@
 // `row` and `bar` are the two horizontal primitives and are not variants of
 // one another: `row` divides a width into equal columns, `bar` leaves its
 // children at content width and puts the free space between them. `row` is
-// the only primitive whose rules reach a child it does not name.
+// the only primitive that sizes an unnamed child; `grid` also reaches one to
+// prevent a card from breaking across columns.
 
 import type { ClassName, PrimitiveSet } from "./types";
 
