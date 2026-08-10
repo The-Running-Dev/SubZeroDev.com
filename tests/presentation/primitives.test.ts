@@ -14,10 +14,11 @@ const EXPECTED_NAMES: PrimitiveName[] = [
   "row",
   "bar",
   "grid",
+  "view",
   "card",
 ];
 
-describe("S4.3/S11.3 — primitives has exactly the ten PrimitiveName keys, valid classNames, no duplicates", () => {
+describe("S4.3/S11.3 — primitives has exactly the eleven PrimitiveName keys, valid classNames, no duplicates", () => {
   it("has exactly the expected keys", () => {
     expect(Object.keys(primitives).sort()).toEqual([...EXPECTED_NAMES].sort());
   });

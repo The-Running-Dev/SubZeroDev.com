@@ -1,4 +1,4 @@
-// Presentation — the ten layout primitives (contract's `primitives`).
+// Presentation — the eleven layout primitives (contract's `primitives`).
 //
 // Every selector in a primitive's `rules` is rooted at that primitive's own
 // `className` (P6/S4.4): a selector that could match without the class
@@ -63,7 +63,7 @@ export const primitives: PrimitiveSet = {
 }
 
 .page h2 {
-  max-width: 20ch;
+  max-width: 42ch;
   font-size: clamp(1.3rem, 1.7vw, 1.75rem);
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -212,7 +212,11 @@ export const primitives: PrimitiveSet = {
     // Children keep their content width — that is the flex default, and it is
     // the whole of what separates this from `row`. The gap is a floor while
     // unwrapped, since `space-between` supplies the actual separation.
-    rules: `.bar {
+    rules: `.bar .link + .link {
+  margin-left: 0.9rem;
+}
+
+.bar {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -249,6 +253,47 @@ export const primitives: PrimitiveSet = {
   }
 }`,
   },
+  view: {
+    className: className("view"),
+    // The tab switch. The prototype (`SubZeroDev Landing.dc.html`) puts each
+    // of the four sections behind its own `sc-if` and shows exactly one at a
+    // time; these rules are that, in CSS, so the switch holds with the
+    // enhancement script absent or broken. It is its own primitive rather
+    // than part of `page` for the reason `stylesheetFor` exists: these
+    // selectors name the apex's four anchors, and the miss route carries
+    // `.page` without them — emitting them there would leave a selector with
+    // no user, which `assertStyleAgreement` rejects (S4.11).
+    //
+    // Each id is repeated on the `:target` rule rather than written as a bare
+    // `.view:target`, so the selected rule carries an id and outweighs the
+    // hiding rule. The nav rules reach a link rather than a section, and
+    // still name `.view` in the `:has()` — P6/S4.4 is satisfied by the
+    // selector containing the class, not by where in it the class sits.
+    // Active is `--fg` against the other three at `--link`: the prototype's
+    // `tab.active`/`tab.inactive` pair.
+    rules: `.view {
+  display: none;
+}
+
+#effortless-action.view:target,
+#echo-system.view:target,
+#contamination.view:target,
+#testimonials.view:target {
+  display: flex;
+}
+
+.page:not(:has(.view:target)) #effortless-action.view {
+  display: flex;
+}
+
+.page:not(:has(.view:target)) nav [href="#effortless-action"],
+.page:has(#effortless-action.view:target) nav [href="#effortless-action"],
+.page:has(#echo-system.view:target) nav [href="#echo-system"],
+.page:has(#contamination.view:target) nav [href="#contamination"],
+.page:has(#testimonials.view:target) nav [href="#testimonials"] {
+  color: var(--fg);
+}`,
+  },
   card: {
     className: className("card"),
     rules: `.card {
@@ -258,6 +303,20 @@ export const primitives: PrimitiveSet = {
   border: 1px solid var(--rule);
   border-radius: 0.4rem;
   padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.card:hover {
+  border-color: var(--fg-muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card {
+    transition: border-color 140ms ease, transform 140ms ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+  }
 }
 
 .card blockquote {

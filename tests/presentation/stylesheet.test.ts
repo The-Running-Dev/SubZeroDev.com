@@ -101,12 +101,12 @@ describe("S4.7 — no StylesheetText contains </style in any case", () => {
     expect(composeMiss().stylesheet.toLowerCase()).not.toContain("</style");
   });
 
-  it("a fixture body referencing all ten primitives carries none", () => {
+  it("a fixture body referencing all eleven primitives carries none", () => {
     expect(stylesheetFor(ALL_TEN).toLowerCase()).not.toContain("</style");
   });
 });
 
-describe("S4.8 — the stylesheet for a body referencing all ten primitives carries no forbidden construct", () => {
+describe("S4.8 — the stylesheet for a body referencing all eleven primitives carries no forbidden construct", () => {
   const sheet = stylesheetFor(ALL_TEN);
 
   it("no @font-face", () => {

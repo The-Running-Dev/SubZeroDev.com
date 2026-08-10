@@ -66,6 +66,17 @@ export function enhancementScript(): string {
       "font-size:0.8rem;color:var(--fg-muted);letter-spacing:0.1em;" +
       "line-height:1.4;text-transform:uppercase;";
 
+    // ---- keep a tab switch at the top of the document -------------------
+    //
+    // The switch itself is Presentation's, in CSS, so it works with this
+    // script absent. What the CSS cannot do is stop the browser scrolling
+    // the newly targeted section under the masthead — a tab is a view
+    // change, not a jump to a place further down. Resetting on hashchange
+    // covers the tab buttons and the back/forward that pairs with them.
+    window.addEventListener("hashchange", function () {
+      window.scrollTo(0, 0);
+    });
+
     function directChildren(node, tag) {
       var out = [];
       var kids = node.children;

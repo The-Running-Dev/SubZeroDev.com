@@ -28,6 +28,7 @@ export type PrimitiveName =
   | "row"
   | "bar"
   | "grid"
+  | "view"
   | "card";
 
 export type Primitive = {

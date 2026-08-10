@@ -1,17 +1,16 @@
-// Browser-driven geometry coverage for the apex's section stack — reads the
-// real output of `npm run build` off disk and drives Chromium against it, the
-// same convention enhancement.test.ts and emitted-document.test.ts already
-// use.
+// Browser-driven coverage for the apex's tab switch — reads the real output
+// of `npm run build` off disk and drives Chromium against it, the same
+// convention enhancement.test.ts and emitted-document.test.ts already use.
 //
-// This exists because the defect it guards was invisible to every other gate.
-// While the CSS fold hid all but one section, `composeApex` could wrap the
-// sections in a `row` and never show two visible children, so the row read as
-// a single column. Removing the fold made the row's real geometry apparent —
-// 02 rendered beside 01 and 03 — and no assertion over markup, class names or
-// text could see it, because the markup was unchanged and correct. Only a
-// laid-out page has an answer. Position, not presence, is the whole subject
-// here; what each section *contains* is enhancement.test.ts's and
-// emitted-document.test.ts's.
+// This measures rendered state rather than markup, because markup cannot see
+// what this guards. All four sections are always in the document; which one
+// a reader can see is decided by CSS `:target` and by nothing an assertion
+// over class names or text could reach. The defect that produced this file
+// was exactly that shape — the sections rendered correctly and all at once,
+// and every existing gate stayed green while the page did the wrong thing.
+//
+// enhancement.test.ts covers the same switch with JavaScript disabled. This
+// file covers it as a reader meets it: clicking the tabs.
 
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -41,79 +40,73 @@ afterAll(async () => {
 
 // Duplicated from src/composition/apex.ts, the same accepted exception
 // enhancement.test.ts already names — Composition's public surface carries no
-// export of the section anchors. In the order their `NN /` index labels
-// claim, which is the order this file is about.
+// export of the section anchors. First is the tab the document opens on.
 const anchors = ["effortless-action", "echo-system", "contamination", "testimonials"] as const;
-
-type Box = { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
 
 // Passed to `page.evaluate` as a string, the form enhancement.test.ts already
 // uses — the project's `lib` is ES2022 with no `dom`, so a callback naming
 // `document` would not typecheck. The only interpolation is this file's own
 // anchor constants.
-const measure = `(() => {
-  return ${JSON.stringify(anchors)}.map((id) => {
-    const element = document.getElementById(id);
-    if (element === null) throw new Error("no element with id " + id);
-    const rect = element.getBoundingClientRect();
-    return {
-      x: Math.round(rect.x),
-      y: Math.round(rect.y + window.scrollY),
-      width: Math.round(rect.width),
-      height: Math.round(rect.height),
-    };
-  });
+const probe = `(() => {
+  const ids = ${JSON.stringify(anchors)};
+  return {
+    visible: ids.filter((id) => document.getElementById(id).offsetParent !== null),
+    scrollY: Math.round(window.scrollY),
+    navColors: ids.map((id) =>
+      getComputedStyle(document.querySelector('nav [href="#' + id + '"]')).color,
+    ),
+  };
 })()`;
 
-async function boxes(width: number, height: number): Promise<readonly Box[]> {
-  const page = await browser.newPage({ viewport: { width, height } });
-  try {
-    await page.goto(server.url + "/", { waitUntil: "networkidle" });
-    return (await page.evaluate(measure)) as readonly Box[];
-  } finally {
-    await page.close();
-  }
-}
+type Probe = {
+  readonly visible: readonly string[];
+  readonly scrollY: number;
+  readonly navColors: readonly string[];
+};
 
-// Two desktop widths and one just above the 720px breakpoint at which the
-// primitives collapse to a column anyway — the failure was widest where the
-// viewport was widest, and a single width would not have caught it moving.
-const widths = [1440, 1280, 900] as const;
+// --fg and --link, resolved. Named here rather than imported because this
+// reads what the browser computed, not what Presentation declared — a test
+// that took both sides from `palette` could not see the two diverge.
+const ACTIVE = "rgb(243, 241, 236)";
+const INACTIVE = "rgb(111, 211, 255)";
 
-describe("the apex's four sections stack in one column, in their numbered order", () => {
-  for (const width of widths) {
-    it(`at ${width}px every section starts at the same left edge and spans the same width`, async () => {
-      const laidOut = await boxes(width, 900);
-      const [first] = laidOut;
-      if (first === undefined) throw new Error("no sections were measured");
+describe("the apex is a tab switch: one section visible at a time", () => {
+  it("opens on the first tab, with only that tab active", async () => {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    try {
+      await page.goto(server.url + "/", { waitUntil: "networkidle" });
+      const state = (await page.evaluate(probe)) as Probe;
 
-      for (const box of laidOut) {
-        expect(box.x).toBe(first.x);
-        expect(box.width).toBe(first.width);
+      expect(state.visible).toStrictEqual(["effortless-action"]);
+      expect(state.navColors).toStrictEqual([ACTIVE, INACTIVE, INACTIVE, INACTIVE]);
+    } finally {
+      await page.close();
+    }
+  });
+
+  for (const [index, anchor] of anchors.entries()) {
+    it(`clicking ${anchor} shows only ${anchor}, marks only its tab active, and does not scroll`, async () => {
+      const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+      try {
+        await page.goto(server.url + "/", { waitUntil: "networkidle" });
+        await page.click(`nav a[href="#${anchor}"]`);
+        // Off the link and past the 120ms `.link` transition: a cursor left
+        // resting on the tab reads as `--fg` through `:hover` and would make
+        // the active-tab assertion below pass for the wrong reason.
+        await page.mouse.move(0, 0);
+        await page.waitForTimeout(250);
+        const state = (await page.evaluate(probe)) as Probe;
+
+        expect(state.visible).toStrictEqual([anchor]);
+        expect(state.navColors).toStrictEqual(
+          anchors.map((_, i) => (i === index ? ACTIVE : INACTIVE)),
+        );
+        // A tab is a view change, not a jump to a place further down the
+        // page: the masthead stays where it is.
+        expect(state.scrollY).toBe(0);
+      } finally {
+        await page.close();
       }
-    });
-
-    it(`at ${width}px no section overlaps the one before it vertically`, async () => {
-      const laidOut = await boxes(width, 900);
-
-      for (let index = 1; index < laidOut.length; index += 1) {
-        const previous = laidOut[index - 1];
-        const current = laidOut[index];
-        if (previous === undefined || current === undefined) {
-          throw new Error("a section was not measured");
-        }
-        // `>=` rather than `>`: sections abut when the gap resolves to zero,
-        // which is a stack; what this rejects is one starting before the
-        // previous one has ended, which is a column split.
-        expect(current.y).toBeGreaterThanOrEqual(previous.y + previous.height);
-      }
-    });
-
-    it(`at ${width}px the sections appear top to bottom in the order 01, 02, 03, 04`, async () => {
-      const laidOut = await boxes(width, 900);
-      const tops = laidOut.map((box) => box.y);
-
-      expect(tops).toStrictEqual([...tops].sort((a, b) => a - b));
     });
   }
 });
