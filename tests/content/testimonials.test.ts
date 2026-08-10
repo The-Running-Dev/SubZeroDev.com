@@ -18,12 +18,30 @@ describe("S11.1 — the committed testimonials validate", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("preserves the campaign's self-authored final testimonial exactly", () => {
-    expect(testimonials.at(-1)).toEqual({
-      quote:
-        "You declined to predict a single thing. This is, statistically, the single most reasonable choice available in this entire campaign, and reasonable was never really the point.",
-      author: "What Would Lucifer Do?",
-    });
+  it("preserves the canonical campaign sequence exactly", () => {
+    expect(testimonials.slice(-6)).toEqual([
+      {
+        quote: "Vision doc says \"two kinds ship in v1\"; the repository ships three",
+        author: "SubZeroDev.GameEngine — GitHub Issue #212",
+        url: "https://github.com/The-Running-Dev/SubZeroDev.GameEngine/issues/212",
+      },
+      {
+        quote:
+          "You declined to predict a single thing. This is, statistically, the single most reasonable choice available in this entire campaign, and reasonable was never really the point.",
+        author: "What Would Lucifer Do?",
+      },
+      {
+        quote:
+          "Lucifer, for what it's worth, would probably respect this. Briefly. Then he'd build something about it.",
+        author: "What Would Lucifer Do?",
+      },
+      { quote: "PROGRAM LOADED. YOUR STORY BEGINS HERE.", author: "What Would Lucifer Do?" },
+      {
+        quote: "THIS MATTER HAS BEEN CONCLUDED WITH EXCESSIVE CEREMONY.",
+        author: "What Would Lucifer Do?",
+      },
+      { quote: "START ANOTHER RUN", author: "What Would Lucifer Do?" },
+    ]);
   });
 });
 
@@ -88,6 +106,23 @@ describe("S11.1 — validateTestimonials rejects malformed input", () => {
         field: "organization",
       });
       expect(result.errors[0].detail).toContain("0");
+    }
+  });
+
+  it("rejects a present URL that is not an https absolute URL", () => {
+    const result = validateTestimonials([
+      { quote: "Fine.", author: "Someone", url: "http://example.test/source" },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual([
+        {
+          code: "TestimonialUrlInvalid",
+          projectId: null,
+          field: "url",
+          detail: expect.stringContaining("0"),
+        },
+      ]);
     }
   });
 

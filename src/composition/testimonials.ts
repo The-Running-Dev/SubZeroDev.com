@@ -20,11 +20,20 @@ const heading = "You Can Absolutely 1,000% Believe Something Written on a Page o
 
 function renderAttribution(testimonial: Testimonial): string {
   const lines = [
-    escapeHtml(testimonial.author),
-    ...(testimonial.role !== undefined ? [escapeHtml(testimonial.role)] : []),
-    ...(testimonial.organization !== undefined ? [escapeHtml(testimonial.organization)] : []),
+    `<p class="${primitives.meta.className}">${escapeHtml(testimonial.author)}</p>`,
+    ...(testimonial.role !== undefined
+      ? [`<p class="${primitives.meta.className}">${escapeHtml(testimonial.role)}</p>`]
+      : []),
+    ...(testimonial.organization !== undefined
+      ? [`<p class="${primitives.meta.className}">${escapeHtml(testimonial.organization)}</p>`]
+      : []),
+    ...(testimonial.url !== undefined
+      ? [
+          `<p class="${primitives.meta.className}"><a class="${primitives.link.className}" href="${escapeHtml(testimonial.url)}">Source</a></p>`,
+        ]
+      : []),
   ];
-  return `<figcaption>${lines.map((line) => `<p class="${primitives.meta.className}">${line}</p>`).join("")}</figcaption>`;
+  return `<figcaption>${lines.join("")}</figcaption>`;
 }
 
 function renderCard(testimonial: Testimonial): string {

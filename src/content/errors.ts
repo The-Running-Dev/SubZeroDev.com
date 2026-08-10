@@ -23,7 +23,8 @@ export type ContentErrorCode =
   | "TestimonialQuoteEmpty"
   | "TestimonialAuthorEmpty"
   | "TestimonialRoleEmpty"
-  | "TestimonialOrganizationEmpty";
+  | "TestimonialOrganizationEmpty"
+  | "TestimonialUrlInvalid";
 
 export type ContentError = {
   readonly code: ContentErrorCode;

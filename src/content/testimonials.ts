@@ -101,8 +101,30 @@ export const testimonials: readonly Testimonial[] = [
     author: "God",
   },
   {
+    quote: "Vision doc says \"two kinds ship in v1\"; the repository ships three",
+    author: "SubZeroDev.GameEngine — GitHub Issue #212",
+    url: "https://github.com/The-Running-Dev/SubZeroDev.GameEngine/issues/212",
+  },
+  {
     quote:
       "You declined to predict a single thing. This is, statistically, the single most reasonable choice available in this entire campaign, and reasonable was never really the point.",
+    author: "What Would Lucifer Do?",
+  },
+  {
+    quote:
+      "Lucifer, for what it's worth, would probably respect this. Briefly. Then he'd build something about it.",
+    author: "What Would Lucifer Do?",
+  },
+  {
+    quote: "PROGRAM LOADED. YOUR STORY BEGINS HERE.",
+    author: "What Would Lucifer Do?",
+  },
+  {
+    quote: "THIS MATTER HAS BEEN CONCLUDED WITH EXCESSIVE CEREMONY.",
+    author: "What Would Lucifer Do?",
+  },
+  {
+    quote: "START ANOTHER RUN",
     author: "What Would Lucifer Do?",
   },
 ];
