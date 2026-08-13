@@ -5,6 +5,21 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
+- **The JSON migration changed Content's public surface without a contract amendment.** Landed by
+  [#83](https://github.com/The-Running-Dev/SubZeroDev.com/pull/83) with `design/` unfrozen, so the
+  usual "state it in the PR and leave the document alone" route did not apply — it was deferred
+  deliberately, not overlooked. Six divergences, all in `design/20-contract.md`: the `projects` and
+  `testimonials` exports it describes at § Content ("the **only unvalidated export in this
+  contract**") no longer exist; `projectsDocumentValidator` and `testimonialsDocumentValidator` are
+  exported but undeclared; `A3`'s enumerated Adapter import list names four symbols Adapter no longer
+  imports; `C14` and `C16` govern modules that are gone, and `tests/content/import-graph.test.ts` was
+  repointed at the validator symbols, which guards a function rather than the unvalidated records the
+  invariants were written for; `V16` cites `C14` and `A3` as describing the import graph; and
+  `UnauthorizedInventoryImport` (already contract-only, never implemented) now also names a module
+  that does not exist. Each is a **decision** — a public interface or an invariant — not a
+  transcription correction, so `/reconcile` (`opus`, `high`) adjudicates rather than the
+  implementing session. Issues are currently disabled on the repository, so this stays staged here.
+
 - **Route-documentation drift remains unresolved.** `design/10-design.md`, `design/20-contract.md`
   and S11/S12 in `design/30-slices.md` describe a three-route testimonial fold, while the shipped
   implementation declares only `/` and `/404/` and renders testimonials inline on the apex. This is

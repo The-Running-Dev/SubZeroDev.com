@@ -69,9 +69,12 @@ const testimonialsDocumentSchema = z
   .strict()
   .transform(({ testimonials }) => testimonials as readonly Testimonial[]);
 
-function semanticValidator<T>(
-  structural: Validator<readonly Project[]> | Validator<readonly Testimonial[]>,
-  validate: (value: readonly Project[] | readonly Testimonial[]) =>
+// `S` ties the structural decoder's output to the semantic validator's input, so
+// pairing one document's decoder with the other's validator fails to typecheck
+// rather than relying on the two call sites below being written carefully.
+function semanticValidator<S, T>(
+  structural: Validator<S>,
+  validate: (value: S) =>
     | { readonly ok: true; readonly value: T }
     | { readonly ok: false; readonly errors: readonly { readonly code: string; readonly detail: string }[] },
 ): Validator<T> {
@@ -86,11 +89,11 @@ function semanticValidator<T>(
 
 export function projectsDocumentValidator(context: BuildContext): Validator<Inventory> {
   return semanticValidator(zodValidator(projectsDocumentSchema), (projects) =>
-    validateInventory(projects as readonly Project[], context),
+    validateInventory(projects, context),
   );
 }
 
 export const testimonialsDocumentValidator: Validator<Testimonials> = semanticValidator(
   zodValidator(testimonialsDocumentSchema),
-  (testimonials) => validateTestimonials(testimonials as readonly Testimonial[]),
+  (testimonials) => validateTestimonials(testimonials),
 );

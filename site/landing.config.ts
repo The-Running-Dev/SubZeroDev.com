@@ -1,10 +1,18 @@
 // Adapter — the module the package CLI loads (contract's Adapter section;
-// S6). It is the sole `validateInventory` and `validateTestimonials` call
-// site (A5) and the only importer of Composition and of
-// `themeColor`/`iconDataUri` from Presentation (A3). Imports exactly:
+// S6). It is the only importer of Composition and of
+// `themeColor`/`iconDataUri` from Presentation. Imports exactly:
 // Composition, the external package, Content's document validators,
 // `BuildContext`, `Inventory`, `Testimonials` and `parseCommitId`, and
-// Presentation's `themeColor` and `iconDataUri` (S6.7).
+// Presentation's `themeColor` and `iconDataUri`.
+//
+// Adapter declares the two build-time JSON sources and hands each its
+// validator; the package's loader is what invokes them, once per document,
+// before `compose` runs. So Adapter no longer *calls* `validateInventory` or
+// `validateTestimonials` itself — `src/content/documents.ts` holds those call
+// sites, inside the validators declared here. `design/20-contract.md` still
+// describes the pre-migration arrangement (`A3`, `A5`, `C14`, `C16`, `V16`);
+// that divergence is staged in `design/90-decisions.md` § Open for a later
+// `/reconcile` and is deliberately not resolved here.
 //
 // PLACEHOLDER COPY: the apex route's `title`, `description` and Open Graph
 // fields below are deliberate placeholders. Leave them unchanged.
