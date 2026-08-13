@@ -2728,3 +2728,9 @@ Context: `/install SubZeroDev.com` was run before the repository existed. It was
 Chosen: Installed `AGENTS.md`, `CLAUDE.md`, `agent.md` (seed kept in full, see below), all `.claude/commands/*.md`, `tools/Measure-Session.ps1` and `tools/Wait-PullRequestCheck.ps1` (with their `.Tests.ps1` companions), `design/` seeded from `templates/design/`, `.github/ISSUE_TEMPLATE/{bug,story}.md`. `codex/PROFILES.md` skipped — no evidence of Codex use.
 Rejected: n/a — nothing diverged, nothing was occupied.
 Reversibility: cheap
+
+### 2026-08-13 — Kit upgrade from 3624e16 to 6bdd8dc
+Context: `/install SubZeroDev.com` re-run to bring the target current with the kit. Since the 2026-08-05 install the kit added the core/companion split for command files, the design-freeze mechanism, `/done`, `/kit-sync`, vendor model aliases, and several `AGENTS.md` clarifications.
+Chosen: Took every core command file and `.claude/COMPANIONS.md` outright per `Sync-Kit.ps1`'s report. Merged `AGENTS.md` additively — every kit addition since `3624e16` was new content; none conflicted with the target's existing project-specific rules, so nothing was dropped or overridden.
+Rejected: n/a — no target rule conflicted with a kit update; this was a clean upgrade, not a fork.
+Reversibility: cheap
