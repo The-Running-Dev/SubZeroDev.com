@@ -135,6 +135,7 @@ function openSection(section: Section): string {
 type NavTarget = {
   readonly label: string;
   readonly url: AbsoluteUrl;
+  readonly current?: boolean;
 };
 
 // Blog and Portfolio are the inventory's own homes, found by id rather than
@@ -159,31 +160,43 @@ function target(label: string, url: AbsoluteUrl | undefined): NavTarget | null {
 
 // `sourceUrl` addresses the account rather than a project, so it produces no
 // `ResolvedHome` and no gate checks it — the cost `20-contract.md` states.
-function outboundTargets(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): readonly NavTarget[] {
+//
+// The self entry is built directly rather than through `target()`, which
+// exists to drop an *optional* inventory lookup — this entry is always
+// present, so there is nothing for it to drop.
+function outboundTargets(
+  hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>,
+  origin: string,
+): readonly NavTarget[] {
   return [
+    { label: "SubZeroDev.com", url: `${origin}/` as AbsoluteUrl, current: true },
     target("Blog", homeOf(hrefById, "publishing")),
     target("Projects", sourceUrl),
     target("Portfolio", homeOf(hrefById, "portfolio")),
   ].filter((t): t is NavTarget => t !== null);
 }
 
-function renderLink(href: string, text: string): string {
-  return `<a class="${primitives.link.className}" href="${href}">${text}</a>`;
+function renderLink(href: string, text: string, current?: boolean): string {
+  const classAttr = current
+    ? `${primitives.link.className} ${primitives["link-current"].className}`
+    : primitives.link.className;
+  const currentAttr = current ? ` aria-current="page"` : "";
+  return `<a class="${classAttr}" href="${href}"${currentAttr}>${text}</a>`;
 }
 
-function renderOutbound(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
-  return outboundTargets(hrefById)
-    .map((t) => renderLink(escapeHtml(t.url), t.label))
+function renderOutbound(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>, origin: string): string {
+  return outboundTargets(hrefById, origin)
+    .map((t) => renderLink(escapeHtml(t.url), t.label, t.current))
     .join("");
 }
 
-function renderNav(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>): string {
+function renderNav(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>, origin: string): string {
   const inPage = sections.map((s) => renderLink(`#${s.anchor}`, s.navLabel ?? s.heading)).join("");
 
   return [
     `<nav class="${primitives.bar.className}">`,
     `<p class="${primitives.meta.className}">${inPage}</p>`,
-    `<p class="${primitives.meta.className}">${renderOutbound(hrefById)}</p>`,
+    `<p class="${primitives.meta.className}">${renderOutbound(hrefById, origin)}</p>`,
     `</nav>`,
   ].join("");
 }
@@ -300,7 +313,7 @@ export function composeApex(
     `<p class="${primitives.meta.className}">Professional uncertainty since ${sinceYear(inventory)}.</p>`,
     `<p>${primarySlogan}</p>`,
     `</header>`,
-    renderNav(hrefById),
+    renderNav(hrefById, origin),
     `<hr class="${primitives.rule.className}" />`,
     // The four sections stack in their own numbered order — 01 through 04 —
     // rather than sharing a `row`. The row was survivable only while the CSS
@@ -315,7 +328,7 @@ export function composeApex(
     `<footer class="${primitives.stack.className}">`,
     `<div class="${primitives.bar.className}">`,
     `<p>${apexFooterQuote}</p>`,
-    `<p class="${primitives.meta.className}">${renderOutbound(hrefById)}</p>`,
+    `<p class="${primitives.meta.className}">${renderOutbound(hrefById, origin)}</p>`,
     `</div>`,
     `</footer>`,
     `</div>`,

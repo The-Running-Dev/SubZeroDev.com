@@ -25,6 +25,7 @@ export type PrimitiveName =
   | "meta"
   | "rule"
   | "link"
+  | "link-current"
   | "row"
   | "bar"
   | "grid"

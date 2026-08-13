@@ -48,6 +48,40 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 
 ---
 
+### 2026-08-13 — `PrimitiveName` gains `link-current`, for apex/blog outbound navigation parity
+
+Context: a reconciliation session rooted in `SubZeroDev.Blog` found the apex's outbound nav group
+(header and footer bars) missing a self-referencing "SubZeroDev.com" entry that the blog's own masthead
+already carries for its own site, with the active member visually distinguished. Bringing the apex in
+line means one more outbound `NavTarget` and a way to mark it current. `design/20-contract.md` states
+`PrimitiveName` is closed and that a further member is a contract amendment (§ *Presentation's token set
+and primitives*), not a class composed markup adds unilaterally — this entry is that amendment, written
+in the same implementing session rather than a preceding `/contract` pass, on the owner's explicit
+instruction to proceed and record it here.
+
+Chosen: a twelfth primitive, `link-current` (`.link-current { color: var(--fg); }`), applied alongside
+`link`'s own class — `class="link link-current"` — on the one outbound entry naming the current site,
+plus `aria-current="page"` on that same anchor. `outboundTargets` prepends a `NavTarget` labelled
+`SubZeroDev.com`, its URL the passed-in `origin` with a trailing slash appended and `current: true` set,
+built directly rather than through the existing `target()` helper, since `target()` exists to drop an
+*optional* inventory lookup and this entry is always present. The trailing slash mirrors the blog's own
+literal in
+`docs/docusaurus.config.ts`; every other use of `origin` in this codebase (the JSON-LD block) stays
+bare — this is the one deliberately slashed instance, because it names a navigable link rather than an
+identifier.
+
+Rejected — folding the current-state rule into `link` itself. The miss route's body carries `.link`
+with no current entry, and `assertStyleAgreement`'s `SelectorWithoutUser` check would then reject the
+unreachable half of a combined rule; two primitives keep each one's selectors matched to a body that
+actually uses them. Rejected — a data attribute or inline style instead of a class, since every other
+current-vs-inactive distinction in this codebase (the fold's `view` primitive) is expressed as a
+primitive class, and a one-off mechanism here would be a second pattern for the same kind of state.
+
+Reversibility: cheap. One primitive entry, one `NavTarget` field, and the test-suite extensions that
+pin both; nothing downstream depends on `link-current` existing.
+
+---
+
 ### 2026-08-13 — Local versioned JSON documents use Data.Json and Zod
 
 Chosen: projects and testimonials are owned by two strict, versioned JSON documents loaded only at

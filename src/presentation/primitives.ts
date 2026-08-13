@@ -1,4 +1,4 @@
-// Presentation — the eleven layout primitives (contract's `primitives`).
+// Presentation — the twelve layout primitives (contract's `primitives`).
 //
 // Every selector in a primitive's `rules` is rooted at that primitive's own
 // `className` (P6/S4.4): a selector that could match without the class
@@ -186,6 +186,10 @@ export const primitives: PrimitiveSet = {
 .link:focus-visible {
   color: var(--fg);
 }`,
+  },
+  "link-current": {
+    className: className("link-current"),
+    rules: `.link-current { color: var(--fg); }`,
   },
   row: {
     className: className("row"),

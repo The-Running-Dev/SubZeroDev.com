@@ -1,7 +1,7 @@
 // Presentation — the per-route stylesheet (contract's `stylesheetFor`).
 //
 // The token block is fixed text, built from `palette` rather than a second
-// copy of its values. The eleven primitives are appended only when their class
+// copy of its values. The twelve primitives are appended only when their class
 // is present in `body` — the referenced set is observed, not declared — in
 // `PrimitiveName` declaration order (P6). That is what leaves
 // `assertStyleAgreement`'s `ClassWithoutRule` half checkable against markup
