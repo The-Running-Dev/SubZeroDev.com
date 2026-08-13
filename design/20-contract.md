@@ -216,10 +216,16 @@ export type PrimitiveSet = { readonly [N in PrimitiveName]: Primitive };
 
 `PrimitiveName` is **closed at ten** as of the 2026-08-08 amendment adding `grid` and `card` for the
 testimonials route, which followed the 2026-08-07 amendment adding `bar` and, before it, `row`; see
-[`90-decisions.md`](90-decisions.md). Composition references a primitive through `primitives`, so an
-eleventh is a further contract amendment rather than a class someone adds to markup. `rule` and `link`
+[`90-decisions.md`](90-decisions.md). Composition references a primitive through `primitives`, so a
+further member is a contract amendment rather than a class someone adds to markup. `rule` and `link`
 appear in both `ColorToken` and `PrimitiveName` and are different things in each — a colour custom
 property in the first, a class in the second.
+
+`PrimitiveName` gains `link-current` as of the 2026-08-13 amendment for apex/blog outbound navigation
+parity (see [`90-decisions.md`](90-decisions.md)): `.link-current { color: var(--fg); }`, applied
+alongside `link`'s own class on the outbound nav entry that names the current site, so that entry
+resolves to `--fg` rather than `--link` by source order in `stylesheetFor`'s output. It carries no
+selector beyond that one declaration and reaches no element `link` does not already reach.
 
 `grid` lays its direct children out in a responsive multi-column flow — CSS `columns`, not `grid`
 layout, chosen so a card's height is its own and the flow reads top-to-bottom within a column rather

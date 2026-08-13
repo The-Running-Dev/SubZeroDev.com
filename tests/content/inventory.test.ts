@@ -141,6 +141,10 @@ describe("S5.1 — sinceYear over the committed inventory", () => {
     const min = Math.min(...projects.map((p) => p.year));
     expect(sinceYear(committed)).toBe(min);
   });
+
+  it("equals 2026 — mirrored as a literal in SubZeroDev.Blog's Navbar and Test-DocumentationArtifact.ps1; this pin exists so a year change here is caught on the side where it originates", () => {
+    expect(sinceYear(committed)).toBe(2026);
+  });
 });
 
 describe("S5.4 — contaminationForest over the committed inventory", () => {

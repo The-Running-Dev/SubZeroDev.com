@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { composeMiss } from "../../src/composition";
+import { primitives } from "../../src/presentation";
 
 describe("S4.13 — composeMiss() takes no argument and is deterministic", () => {
   it("returns byte-identical bodyHtml and stylesheet on repeated calls", () => {
@@ -28,5 +29,13 @@ describe("S4.13 — composeMiss()'s bodyHtml contains no form, script, iframe or
 
   it("no on* attribute", () => {
     expect(bodyHtml).not.toMatch(/\son[a-zA-Z]+\s*=/i);
+  });
+});
+
+describe("S4.11 — the miss route's stylesheet omits link-current, which its body never uses", () => {
+  it("carries link's rules but not link-current's", () => {
+    const { stylesheet } = composeMiss();
+    expect(stylesheet).toContain(primitives.link.rules);
+    expect(stylesheet).not.toContain(primitives["link-current"].rules);
   });
 });

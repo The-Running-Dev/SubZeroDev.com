@@ -106,8 +106,27 @@ describe("the testimonials nav link is a short label, distinct from its own head
   });
 });
 
-describe("the outbound group carries Blog, Projects and Portfolio", () => {
+describe("the outbound group carries SubZeroDev.com, Blog, Projects and Portfolio", () => {
   const { bodyHtml } = composeApex(full, testimonials, TEST_ORIGIN);
+
+  it("SubZeroDev.com's href is the origin, slashed", () => {
+    expect(bodyHtml).toContain(`href="${TEST_ORIGIN}/" aria-current="page">SubZeroDev.com</a>`);
+  });
+
+  it("SubZeroDev.com renders first, ahead of Blog, Projects and Portfolio", () => {
+    const bars = [...bodyHtml.matchAll(/<(nav|div) class="bar">(.*?)<\/\1>/gs)].map((m) => m[2]!);
+    expect(bars).toHaveLength(2);
+    for (const bar of bars) {
+      const selfIndex = bar.indexOf(">SubZeroDev.com</a>");
+      const blogIndex = bar.indexOf(">Blog</a>");
+      const projectsIndex = bar.indexOf(">Projects</a>");
+      const portfolioIndex = bar.indexOf(">Portfolio</a>");
+      expect(selfIndex).toBeGreaterThanOrEqual(0);
+      expect(selfIndex).toBeLessThan(blogIndex);
+      expect(selfIndex).toBeLessThan(projectsIndex);
+      expect(selfIndex).toBeLessThan(portfolioIndex);
+    }
+  });
 
   it("Blog's href is the publishing project's own home, not a restated URL", () => {
     expect(bodyHtml).toContain(`href="https://blog.example.test">Blog</a>`);
@@ -124,11 +143,34 @@ describe("the outbound group carries Blog, Projects and Portfolio", () => {
   // Counted inside the two bars rather than over the whole document: a label
   // like "Portfolio" is also a project `name`, so it legitimately renders a
   // third time in the ecosystem list and a naive count over bodyHtml is wrong.
-  it.each(["Blog", "Projects", "Portfolio"])("%s appears in both the header nav and the footer", (label) => {
-    const bars = [...bodyHtml.matchAll(/<(nav|div) class="bar">(.*?)<\/\1>/gs)].map((m) => m[2]!);
-    expect(bars).toHaveLength(2);
-    for (const bar of bars) {
-      expect(bar).toContain(`>${label}</a>`);
+  it.each(["SubZeroDev.com", "Blog", "Projects", "Portfolio"])(
+    "%s appears in both the header nav and the footer",
+    (label) => {
+      const bars = [...bodyHtml.matchAll(/<(nav|div) class="bar">(.*?)<\/\1>/gs)].map((m) => m[2]!);
+      expect(bars).toHaveLength(2);
+      for (const bar of bars) {
+        expect(bar).toContain(`>${label}</a>`);
+      }
+    },
+  );
+
+  it("SubZeroDev.com carries link-current and aria-current=page in both bars", () => {
+    expect(bodyHtml).toContain(
+      `class="${primitives.link.className} ${primitives["link-current"].className}" href="${TEST_ORIGIN}/" aria-current="page">SubZeroDev.com</a>`,
+    );
+    const occurrences = bodyHtml.split(">SubZeroDev.com</a>").length - 1;
+    expect(occurrences).toBe(2);
+    expect(
+      bodyHtml.split(
+        `class="${primitives.link.className} ${primitives["link-current"].className}"`,
+      ).length - 1,
+    ).toBe(2);
+  });
+
+  it.each(["Blog", "Projects", "Portfolio"])("%s does not carry link-current or aria-current", (label) => {
+    for (const match of bodyHtml.matchAll(new RegExp(`<a class="([^"]*)"[^>]*>${label}</a>`, "g"))) {
+      expect(match[1]).not.toContain(primitives["link-current"].className);
+      expect(match[0]).not.toContain("aria-current");
     }
   });
 });

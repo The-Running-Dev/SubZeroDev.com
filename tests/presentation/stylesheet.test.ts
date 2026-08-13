@@ -4,8 +4,8 @@ import { palette, primitives, stylesheetFor } from "../../src/presentation";
 import type { HexColor, PrimitiveName } from "../../src/presentation";
 import { bodyHtml } from "./fixtures";
 
-const ALL_TEN = bodyHtml(
-  '<div class="page"><nav class="bar"></nav><div class="row"><div class="stack"><div class="entry"><span class="meta"></span><hr class="rule" /><a class="link">x</a></div></div></div><div class="grid"><figure class="card"></figure></div></div>',
+const ALL_TWELVE = bodyHtml(
+  '<div class="page"><nav class="bar"></nav><div class="row"><div class="stack"><div class="entry"><span class="meta"></span><hr class="rule" /><a class="link">x</a><a class="link-current">y</a></div></div></div><div class="grid"><figure class="card"></figure></div></div>',
 );
 
 // The contract's token-block table: property name and expected literal value
@@ -83,7 +83,7 @@ describe("S4.6 — stylesheetFor on a two-primitive body returns the token block
     expect(sheet).toContain(primitives.page.rules);
     expect(sheet).toContain(primitives.link.rules);
     expect(sheet.indexOf(primitives.page.rules)).toBeLessThan(sheet.indexOf(primitives.link.rules));
-    for (const name of ["stack", "entry", "meta", "rule", "row", "bar", "grid", "card"] as PrimitiveName[]) {
+    for (const name of ["stack", "entry", "meta", "rule", "link-current", "row", "bar", "grid", "card"] as PrimitiveName[]) {
       expect(sheet).not.toContain(primitives[name].rules);
     }
   });
@@ -101,13 +101,13 @@ describe("S4.7 — no StylesheetText contains </style in any case", () => {
     expect(composeMiss().stylesheet.toLowerCase()).not.toContain("</style");
   });
 
-  it("a fixture body referencing all eleven primitives carries none", () => {
-    expect(stylesheetFor(ALL_TEN).toLowerCase()).not.toContain("</style");
+  it("a fixture body referencing all twelve primitives carries none", () => {
+    expect(stylesheetFor(ALL_TWELVE).toLowerCase()).not.toContain("</style");
   });
 });
 
-describe("S4.8 — the stylesheet for a body referencing all eleven primitives carries no forbidden construct", () => {
-  const sheet = stylesheetFor(ALL_TEN);
+describe("S4.8 — the stylesheet for a body referencing all twelve primitives carries no forbidden construct", () => {
+  const sheet = stylesheetFor(ALL_TWELVE);
 
   it("no @font-face", () => {
     expect(sheet).not.toMatch(/@font-face/i);
