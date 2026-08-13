@@ -1,0 +1,249 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "id": "documentation",
+      "name": "Documentation",
+      "year": 2026,
+      "stage": "Prototype",
+      "line": "Documentation infrastructure for projects that would otherwise eventually contain a README written under duress.",
+      "question": "I wonder if documentation could maintain itself.",
+      "home": {
+        "kind": "own",
+        "url": "https://docs-template.subzerodev.com"
+      },
+      "genre": "Evidence"
+    },
+    {
+      "id": "data-json-provider",
+      "name": "JSON Data Provider",
+      "year": 2026,
+      "stage": "Reusable",
+      "line": "Loads structured data from HTTP or files. Started inside Docs Template and escaped into its own package when apparently reading JSON needed infrastructure.",
+      "question": "Why does every project eventually need to load the same JSON in a slightly different way?",
+      "home": {
+        "kind": "none"
+      },
+      "escapedFrom": "documentation"
+    },
+    {
+      "id": "publishing",
+      "name": "Publishing",
+      "year": 2026,
+      "stage": "Reusable",
+      "line": "Started as somewhere to publish a blog post. Acquired workflows, automation and infrastructure before anyone intervened.",
+      "question": "I need somewhere to publish my blog.",
+      "home": {
+        "kind": "own",
+        "url": "https://blog.subzerodev.com"
+      },
+      "genre": "Journal"
+    },
+    {
+      "id": "blog-mcp",
+      "name": "Blog MCP",
+      "year": 2026,
+      "stage": "Infrastructure",
+      "line": "A control plane for publishing because apparently writing a blog post eventually requires a server protocol.",
+      "question": "Why shouldn't an agent be able to publish this?",
+      "home": {
+        "kind": "own",
+        "url": "https://blogging.subzerodev.com"
+      },
+      "escapedFrom": "publishing"
+    },
+    {
+      "id": "lucifer-chronicles",
+      "name": "Lucifer Chronicles",
+      "year": 2026,
+      "stage": "Escaped",
+      "line": "Field reports from reality, narrated by Lucifer because ordinary documentation proved inadequate.",
+      "question": "What if the absurd parts of life were documented completely seriously?",
+      "home": {
+        "kind": "within",
+        "parent": "publishing",
+        "path": "/lucifer-chronicles"
+      },
+      "genre": "Field Reports",
+      "escapedFrom": "publishing"
+    },
+    {
+      "id": "game-engine",
+      "name": "Game Engine",
+      "year": 2026,
+      "stage": "Reusable",
+      "line": "Started with one question about an old game. Somehow became a deterministic engine for building mechanics once and games repeatedly.",
+      "question": "I wonder how Jones in the Fast Lane actually works.",
+      "home": {
+        "kind": "own",
+        "url": "https://game-engine.subzerodev.com"
+      },
+      "genre": "Documentary",
+      "escapedFrom": "lucifer-chronicles"
+    },
+    {
+      "id": "suntrap",
+      "name": "Sun Trap",
+      "year": 2026,
+      "stage": "Prototype",
+      "line": "A resort-management satire where guests, plumbing, weather and basic geometry have formed an alliance against management.",
+      "question": "What happens when a resort simulation is allowed to behave like an actual resort?",
+      "home": {
+        "kind": "own",
+        "url": "https://suntrap.subzerodev.com"
+      },
+      "escapedFrom": "game-engine"
+    },
+    {
+      "id": "build-agent",
+      "name": "Build Agent",
+      "year": 2026,
+      "stage": "Infrastructure",
+      "line": "Build and release automation extracted from repeatedly teaching repositories how to perform the same ceremony.",
+      "question": "Why does every repository need to relearn how to build itself?",
+      "home": {
+        "kind": "own",
+        "url": "https://build-agent.subzerodev.com"
+      }
+    },
+    {
+      "id": "psgenerator",
+      "name": "PSGenerator",
+      "year": 2026,
+      "stage": "Reusable",
+      "line": "Turns container commands into PowerShell modules because remembering docker run arguments is not a personality trait.",
+      "question": "Why am I typing this command again?",
+      "home": {
+        "kind": "own",
+        "url": "https://psgenerator.subzerodev.com"
+      }
+    },
+    {
+      "id": "plugins-github",
+      "name": "GitHub Plugin",
+      "year": 2026,
+      "stage": "Infrastructure",
+      "line": "The first implementation of the plugin contract, subsequently sentenced to becoming the template for all the others.",
+      "question": "What if GitHub were just another capability behind a contract?",
+      "home": {
+        "kind": "own",
+        "url": "https://plugins-github.subzerodev.com"
+      }
+    },
+    {
+      "id": "platform",
+      "name": "Platform",
+      "year": 2026,
+      "stage": "Infrastructure",
+      "line": "Hosting, configuration, identity, notifications and observability extracted when several unrelated projects independently demanded the same machinery.",
+      "question": "Why am I building this again?",
+      "home": {
+        "kind": "own",
+        "url": "https://platform.subzerodev.com"
+      },
+      "genre": "Status Page"
+    },
+    {
+      "id": "workspace",
+      "name": "Workspace",
+      "year": 2026,
+      "stage": "Reusable",
+      "line": "The environment every new machine receives before it's trusted with repositories, tools or opinions.",
+      "question": "Why does setting up a development machine still involve archaeology?",
+      "home": {
+        "kind": "own",
+        "url": "https://workspace.subzerodev.com"
+      }
+    },
+    {
+      "id": "agentkit",
+      "name": "AgentKit",
+      "year": 2026,
+      "stage": "Reusable",
+      "line": "Repository-installed agent infrastructure that eventually became capable of finding bugs in itself and filing the paperwork.",
+      "question": "What if the repository could tell the agent how to work here?",
+      "home": {
+        "kind": "none"
+      }
+    },
+    {
+      "id": "git-service",
+      "name": "Git Service",
+      "year": 2026,
+      "stage": "Prototype",
+      "line": "Turns Git repositories into an API, workflow surface and MCP capability because apparently Git needed another abstraction layer.",
+      "question": "What if agents didn't need direct filesystem access to work with repositories?",
+      "home": {
+        "kind": "none"
+      }
+    },
+    {
+      "id": "review-agent",
+      "name": "Review Agent",
+      "year": 2026,
+      "stage": "Curiosity",
+      "line": "An attempt to replace an increasingly expensive stream of automated code reviews with an increasingly elaborate stream of our own.",
+      "question": "Why am I paying this much for something an agent can probably do?",
+      "home": {
+        "kind": "none"
+      }
+    },
+    {
+      "id": "container-manager",
+      "name": "Container Manager",
+      "year": 2026,
+      "stage": "Prototype",
+      "line": "Container management tooling for the point where remembering which machine is running what stops being a viable operating model.",
+      "question": "What's actually running where?",
+      "home": {
+        "kind": "none"
+      }
+    },
+    {
+      "id": "docker-watchdog",
+      "name": "Docker Watchdog",
+      "year": 2026,
+      "stage": "Reusable",
+      "line": "Watches containers because apparently keeping software alive also became software.",
+      "question": "Who watches the containers?",
+      "home": {
+        "kind": "none"
+      }
+    },
+    {
+      "id": "winget",
+      "name": "WinGet",
+      "year": 2026,
+      "stage": "Reusable",
+      "line": "A C# wrapper around the WinGet COM API because parsing winget.exe output was never going to become less ridiculous.",
+      "question": "There is a COM API. Why are we parsing console output?",
+      "home": {
+        "kind": "own",
+        "url": "https://winget.subzerodev.com"
+      }
+    },
+    {
+      "id": "portfolio",
+      "name": "Portfolio",
+      "year": 2026,
+      "stage": "Curiosity",
+      "line": "Evidence that a conventional portfolio was considered before considerably less conventional things happened.",
+      "question": "I suppose I should have a portfolio?",
+      "home": {
+        "kind": "own",
+        "url": "https://portfolio.subzerodev.com"
+      }
+    },
+    {
+      "id": "ogres-kitchen",
+      "name": "Ogre's Kitchen",
+      "year": 2026,
+      "stage": "Curiosity",
+      "line": "No repository. No subdomain. No implementation. The name has nevertheless survived every opportunity to kill it.",
+      "question": "I wonder what happens if an ogre opens a restaurant.",
+      "home": {
+        "kind": "none"
+      }
+    }
+  ]
+}

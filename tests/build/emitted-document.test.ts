@@ -12,10 +12,11 @@ import { describe, expect, it } from "vitest";
 
 import { missRootEntry } from "../../src/artifact";
 import { composeApex } from "../../src/composition";
-import { projects, testimonials, validateInventory, validateTestimonials } from "../../src/content";
+import { validateInventory, validateTestimonials } from "../../src/content";
 import { iconDataUri } from "../../src/presentation";
 import { assertContentPresent, assertSelfContained } from "../../src/verification";
 import { context, makeProject, pid, TEST_ORIGIN } from "../content/fixtures";
+import { projects, testimonials } from "../helpers/site-data";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const distDir = resolve(here, "../../site/dist");

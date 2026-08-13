@@ -4,8 +4,9 @@
 
 import { describe, expect, it } from "vitest";
 
-import { testimonialTotal, testimonials, validateTestimonials } from "../../src/content";
+import { testimonialTotal, validateTestimonials } from "../../src/content";
 import type { Testimonial } from "../../src/content";
+import { testimonials } from "../helpers/site-data";
 
 describe("S11.1 — the committed testimonials validate", () => {
   it("validateTestimonials(testimonials) returns ok: true", () => {

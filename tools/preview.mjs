@@ -39,7 +39,7 @@ function build() {
 build();
 const server = await startStaticServer(distDir);
 console.log(`Preview at ${server.url} (site/dist)`);
-console.log("Watching src/ and site/landing.config.ts — rebuilds on change. Ctrl+C to stop.");
+console.log("Watching src/ and the landing data inputs — rebuilds on change. Ctrl+C to stop.");
 
 let pending = null;
 function scheduleRebuild() {
@@ -50,6 +50,9 @@ function scheduleRebuild() {
 const watchers = [
   watch(fileURLToPath(new URL("../src", import.meta.url)), { recursive: true }, scheduleRebuild),
   watch(fileURLToPath(new URL("../site/landing.config.ts", import.meta.url)), scheduleRebuild),
+  watch(fileURLToPath(new URL("../site/sources.public.yml", import.meta.url)), scheduleRebuild),
+  watch(fileURLToPath(new URL("../site/projects.json", import.meta.url)), scheduleRebuild),
+  watch(fileURLToPath(new URL("../site/testimonials.json", import.meta.url)), scheduleRebuild),
 ];
 
 process.on("SIGINT", async () => {

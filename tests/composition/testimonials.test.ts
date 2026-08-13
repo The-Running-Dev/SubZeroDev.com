@@ -1,7 +1,7 @@
 // Coverage for the testimonials section, rendered inline on the apex page by
 // `renderTestimonials` (src/composition/testimonials.ts) rather than as its
 // own route (design/90-decisions.md — "testimonials folds into the apex").
-// Fixtures only, never `src/content/testimonials.ts` (content-agnosticism) —
+// Fixtures only, never the committed testimonials JSON (content-agnosticism) —
 // the committed collection has its own coverage in
 // tests/content/testimonials.test.ts and tests/build/emitted-document.test.ts.
 
@@ -118,14 +118,16 @@ describe("composeApex is deterministic and testimonials rendering is content-agn
     // assertions, and a composition test is neither.
     const here = dirname(fileURLToPath(import.meta.url));
     const dataSource = readFileSync(
-      resolve(here, "../../src/content/testimonials.ts"),
+      resolve(here, "../../site/testimonials.json"),
       "utf8",
     );
     const compositionSource = readFileSync(
       resolve(here, "../../src/composition/testimonials.ts"),
       "utf8",
     );
-    const authors = [...dataSource.matchAll(/author:\s*"([^"]+)"/g)].map((m) => m[1]!);
+    const authors = (
+      JSON.parse(dataSource) as { testimonials: readonly { author: string }[] }
+    ).testimonials.map((testimonial) => testimonial.author);
     expect(authors.length).toBeGreaterThan(0);
     for (const author of authors) {
       expect(compositionSource).not.toContain(author);

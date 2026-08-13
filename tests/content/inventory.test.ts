@@ -1,7 +1,5 @@
-// S2.1–S2.7 — the committed inventory. Under C14 this stands in for the
-// `validateInventory` call site until Adapter exists to hold it; Adapter is
-// blocked by the contract's U2 — Presentation's token set — since it can
-// declare no route until Composition can produce one.
+// S2.1–S2.7 — the committed JSON inventory, read through the shared test
+// helper. Production validation belongs to the Adapter's document validator.
 
 import { describe, expect, it } from "vitest";
 
@@ -9,7 +7,6 @@ import { composeApex } from "../../src/composition";
 import {
   contaminationForest,
   primarySlogan,
-  projects,
   sinceYear,
   apexFooterQuote,
   validateInventory,
@@ -17,6 +14,7 @@ import {
 import type { BuildContext, CommitId, Inventory, Project, Testimonials, Year } from "../../src/content";
 import { assertStyleAgreement } from "../../src/verification";
 import { makeTestimonial, TEST_ORIGIN } from "./fixtures";
+import { projects } from "../helpers/site-data";
 
 const testimonials: Testimonials = [makeTestimonial()];
 

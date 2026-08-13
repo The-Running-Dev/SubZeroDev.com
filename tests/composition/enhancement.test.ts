@@ -26,10 +26,12 @@ describe("S12.2 — the script interpolates no Content value", () => {
   // assertions, and this module is neither (the same reasoning
   // tests/composition/testimonials.test.ts's S11.7 case already applies).
   it("carries none of the committed projects' names, ids or lines", () => {
-    const source = readFileSync(resolve(here, "../../src/content/projects.ts"), "utf8");
-    const names = [...source.matchAll(/name:\s*"([^"]+)"/g)].map((m) => m[1]!);
-    const ids = [...source.matchAll(/id:\s*id\("([^"]+)"\)/g)].map((m) => m[1]!);
-    const lines = [...source.matchAll(/line:\s*"([^"]+)"/g)].map((m) => m[1]!);
+    const document = JSON.parse(readFileSync(resolve(here, "../../site/projects.json"), "utf8")) as {
+      projects: readonly { id: string; name: string; line: string }[];
+    };
+    const names = document.projects.map((project) => project.name);
+    const ids = document.projects.map((project) => project.id);
+    const lines = document.projects.map((project) => project.line);
     expect(names.length).toBeGreaterThan(0);
     expect(ids.length).toBeGreaterThan(0);
     expect(lines.length).toBeGreaterThan(0);
@@ -39,9 +41,11 @@ describe("S12.2 — the script interpolates no Content value", () => {
   });
 
   it("carries none of the committed testimonials' quotes or authors", () => {
-    const source = readFileSync(resolve(here, "../../src/content/testimonials.ts"), "utf8");
-    const quotes = [...source.matchAll(/quote:\s*"([^"]+)"/g)].map((m) => m[1]!);
-    const authors = [...source.matchAll(/author:\s*"([^"]+)"/g)].map((m) => m[1]!);
+    const document = JSON.parse(readFileSync(resolve(here, "../../site/testimonials.json"), "utf8")) as {
+      testimonials: readonly { quote: string; author: string }[];
+    };
+    const quotes = document.testimonials.map((testimonial) => testimonial.quote);
+    const authors = document.testimonials.map((testimonial) => testimonial.author);
     expect(quotes.length).toBeGreaterThan(0);
     expect(authors.length).toBeGreaterThan(0);
     for (const value of [...quotes, ...authors]) {

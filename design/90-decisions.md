@@ -5,6 +5,13 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
+- **Route-documentation drift remains unresolved.** `design/10-design.md`, `design/20-contract.md`
+  and S11/S12 in `design/30-slices.md` describe a three-route testimonial fold, while the shipped
+  implementation declares only `/` and `/404/` and renders testimonials inline on the apex. This is
+  an architecture question — retain the two-route merged section or restore the documented fold — not
+  a transcription correction. The JSON-data migration does not decide it and must not rewrite those
+  documents. A future `/design` session owns the decision.
+
 (the two items found 2026-08-08 while adding S11's C16 import check and while adjudicating the
 testimonialsPath fix — the SKIP_DIRS/tests/build/ exclusion and the untethered footer back-link —
 became [#68](https://github.com/The-Running-Dev/SubZeroDev.com/issues/68) and
@@ -23,6 +30,24 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-13 — Local versioned JSON documents use Data.Json and Zod
+
+Chosen: projects and testimonials are owned by two strict, versioned JSON documents loaded only at
+build time through `subzerodev-data-json@0.2.0`; `zod@4.4.3` decodes their envelopes and record
+shapes, while the existing Content validators keep semantic policy. The site pins the corrected
+`subzerodev-platform-ui-landing-page@0.4.1` exactly, since `0.4.0` was superseded before this
+migration began.
+
+Rejected — retaining TypeScript-owned arrays. It couples content edits to source modules and makes the
+adapter own raw records instead of validated sources. Rejected — a network or fallback source. Local
+files are the complete site input and preserve the build's no-network policy. Rejected — handwritten
+structural checks. Zod already supplies the strict decoder and aggregated document diagnostics.
+
+Reversibility: moderate. The JSON documents can be re-encoded into TypeScript, but that would restore
+the old ownership boundary and remove the reusable build-time source contract.
 
 ---
 
