@@ -15,8 +15,17 @@ process.env.GITHUB_SHA ??= "a".repeat(40);
 
 const adapter = await import("../../site/landing.config");
 const { iconDataUri, themeColor } = await import("../../src/presentation");
+const { validateInventory, validateTestimonials } = await import("../../src/content");
+const { projects, testimonials } = await import("../helpers/site-data");
 
-const { default: config, origin, apexPath, missPath } = adapter;
+const { default: declaration, origin, apexPath, missPath } = adapter;
+const inventory = validateInventory(projects, {
+  commit: "a".repeat(40) as import("../../src/content").CommitId,
+  utcYear: new Date().getUTCFullYear() as import("../../src/content").Year,
+});
+const validatedTestimonials = validateTestimonials(testimonials);
+if (!inventory.ok || !validatedTestimonials.ok) throw new Error("committed JSON failed to validate");
+const config = declaration.config({ projects: inventory.value, testimonials: validatedTestimonials.value });
 
 const here = dirname(fileURLToPath(import.meta.url));
 const adapterSource = readFileSync(resolve(here, "../../site/landing.config.ts"), "utf8");

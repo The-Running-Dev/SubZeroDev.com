@@ -9,8 +9,9 @@ import { chromium } from "playwright";
 import type { Browser } from "playwright";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { projects, testimonials, validateInventory, validateTestimonials } from "../../src/content";
+import { validateInventory, validateTestimonials } from "../../src/content";
 import { context } from "../content/fixtures";
+import { projects, testimonials } from "../helpers/site-data";
 import { startStaticServer } from "./static-server";
 import type { StaticServer } from "./static-server";
 

@@ -1,0 +1,10 @@
+version: 1
+sources:
+  projects:
+    at: build
+    path: site/projects.json
+    cache: manual
+  testimonials:
+    at: build
+    path: site/testimonials.json
+    cache: manual

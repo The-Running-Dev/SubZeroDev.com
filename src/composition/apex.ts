@@ -138,7 +138,7 @@ type NavTarget = {
 };
 
 // Blog and Portfolio are the inventory's own homes, found by id rather than
-// restated — those URLs have one home, in `projects.ts`. Renaming either
+// restated — those URLs have one home, in the projects JSON document. Renaming either
 // record drops its link silently, because Composition is total and cannot
 // fail. Two tests go red instead: `tests/composition/apex-navigation.test.ts`
 // pins the drop-not-fake behaviour, and `tests/content/inventory.test.ts`

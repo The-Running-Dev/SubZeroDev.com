@@ -27,9 +27,8 @@ export type { ContentError, ContentErrorCode } from "./errors";
 export { stageOrder } from "./stage-order";
 export { validateInventory, validateTestimonials } from "./validate";
 export { parseCommitId } from "./commit";
+export { projectsDocumentValidator, testimonialsDocumentValidator } from "./documents";
 export { resolvedHomes } from "./resolved-homes";
-export { projects } from "./projects";
-export { testimonials } from "./testimonials";
 export { primarySlogan, apexFooterQuote } from "./copy";
 export { sourceUrl } from "./links";
 export {

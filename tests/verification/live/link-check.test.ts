@@ -3,14 +3,15 @@
 // config and `vitest.config.ts`'s exclude.
 //
 // This is also S3.8's fixture: a temporary bad-host entry added to
-// `src/content/projects.ts` and validated to turn this job red — see the
+// committed projects JSON document and validated to turn this job red — see the
 // slice report for how that was verified and reverted.
 
 import { describe, expect, it } from "vitest";
 
-import { projects, resolvedHomes, validateInventory } from "../../../src/content";
+import { resolvedHomes, validateInventory } from "../../../src/content";
 import type { BuildContext, CommitId, Year } from "../../../src/content";
 import { checkLinks, linkCheckRetry } from "../../../src/verification";
+import { projects } from "../../helpers/site-data";
 
 const context: BuildContext = {
   commit: "0".repeat(40) as CommitId,

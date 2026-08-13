@@ -1,26 +1,32 @@
 // Adapter — the module the package CLI loads (contract's Adapter section;
-// S6). It is the sole `validateInventory` and `validateTestimonials` call
-// site (A5) and the only importer of Composition and of
-// `themeColor`/`iconDataUri` from Presentation (A3). Imports exactly:
-// Composition, the external package, Content's `projects`, `testimonials`,
-// `validateInventory`, `validateTestimonials`, `BuildContext` and
-// `parseCommitId`, and Presentation's `themeColor` and `iconDataUri` (S6.7).
+// S6). It is the only importer of Composition and of
+// `themeColor`/`iconDataUri` from Presentation. Imports exactly:
+// Composition, the external package, Content's document validators,
+// `BuildContext`, `Inventory`, `Testimonials` and `parseCommitId`, and
+// Presentation's `themeColor` and `iconDataUri`.
+//
+// Adapter declares the two build-time JSON sources and hands each its
+// validator; the package's loader is what invokes them, once per document,
+// before `compose` runs. So Adapter no longer *calls* `validateInventory` or
+// `validateTestimonials` itself — `src/content/documents.ts` holds those call
+// sites, inside the validators declared here. `design/20-contract.md` still
+// describes the pre-migration arrangement (`A3`, `A5`, `C14`, `C16`, `V16`);
+// that divergence is staged in `design/90-decisions.md` § Open for a later
+// `/reconcile` and is deliberately not resolved here.
 //
 // PLACEHOLDER COPY: the apex route's `title`, `description` and Open Graph
 // fields below are deliberate placeholders. Leave them unchanged.
 
-import { defineLandingPage } from "subzerodev-platform-ui-landing-page";
+import { defineLandingPage, defineLandingPageData } from "subzerodev-platform-ui-landing-page";
 import type { LandingPageConfig } from "subzerodev-platform-ui-landing-page";
 
 import { composeApex, composeMiss } from "../src/composition";
 import {
   parseCommitId,
-  projects,
-  testimonials,
-  validateInventory,
-  validateTestimonials,
+  projectsDocumentValidator,
+  testimonialsDocumentValidator,
 } from "../src/content";
-import type { BuildContext } from "../src/content";
+import type { BuildContext, Inventory, Testimonials } from "../src/content";
 import { iconDataUri, themeColor } from "../src/presentation";
 
 export const origin = "https://subzerodev.com" as const;
@@ -47,27 +53,10 @@ function buildContext(): BuildContext {
 }
 
 const context = buildContext();
-const validatedInventory = validateInventory(projects, context);
-const validatedTestimonials = validateTestimonials(testimonials);
-
-if (!validatedInventory.ok || !validatedTestimonials.ok) {
-  const errors = [
-    ...(validatedInventory.ok ? [] : validatedInventory.errors),
-    ...(validatedTestimonials.ok ? [] : validatedTestimonials.errors),
-  ];
-  for (const error of errors) {
-    console.error(
-      `${error.code} (project: ${error.projectId ?? "-"}, field: ${error.field ?? "-"}): ${error.detail}`,
-    );
-  }
-  process.exit(1);
-}
-
-const inventory = validatedInventory.value;
-const apex = composeApex(inventory, validatedTestimonials.value, origin);
-const miss = composeMiss();
-
-const config: LandingPageConfig = defineLandingPage({
+function compose({ projects, testimonials }: { projects: Inventory; testimonials: Testimonials }): LandingPageConfig {
+  const apex = composeApex(projects, testimonials, origin);
+  const miss = composeMiss();
+  return defineLandingPage({
   routes: [
     {
       path: apexPath,
@@ -108,6 +97,13 @@ const config: LandingPageConfig = defineLandingPage({
       },
     },
   ],
-});
+  });
+}
 
-export default config;
+export default defineLandingPageData(
+  {
+    projects: { id: "projects", validate: projectsDocumentValidator(context) },
+    testimonials: { id: "testimonials", validate: testimonialsDocumentValidator },
+  },
+  compose,
+);

@@ -60,37 +60,32 @@ describe("S1.10 — Content imports no other repository module (invariant C1)", 
   });
 });
 
-describe("S2.8/S3.7/S6.7 — nothing imports `projects` except validateInventory's call site and Verification's inventory assertion (invariant C14)", () => {
-  const targetFiles = [resolve(contentDir, "projects.ts"), resolve(contentDir, "index.ts")];
-  // C14's closed importer set: S6's Adapter, the production `validateInventory`
-  // call site (contract's Adapter § "Adapter is the validateInventory call
-  // site"); the S2 test that stood in for that call site before Adapter
-  // existed, kept for its own S2/S5 assertions over the committed inventory;
-  // and S3's live link-check test — the "Verification's inventory assertion"
-  // the contract names as C14's other permitted importer.
+describe("the adapter is the sole production importer of the projects document validator", () => {
+  const targetFiles = [resolve(contentDir, "index.ts")];
+  // The Adapter owns the production source boundary; test readers consume the
+  // committed JSON directly and never import a production data collection.
   const callSites = [
     resolve(repoRoot, "site/landing.config.ts"),
-    resolve(repoRoot, "tests/content/inventory.test.ts"),
-    resolve(repoRoot, "tests/verification/live/link-check.test.ts"),
+    resolve(repoRoot, "tests/content/documents.test.ts"),
   ];
 
-  it("the only importers across the repository are those two call sites", () => {
+  it("the only importers are the Adapter and document-validator tests", () => {
     const files = listTsFiles(repoRoot);
     expect(files.length).toBeGreaterThan(0);
-    const users = namedImportUsers(readEntries(files), targetFiles, "projects");
+    const users = namedImportUsers(readEntries(files), targetFiles, "projectsDocumentValidator");
     expect(users.sort()).toEqual([...callSites].sort());
   });
 
-  it("the check has teeth: an unrelated file importing `projects` is flagged", () => {
+  it("the check has teeth: an unrelated validator import is flagged", () => {
     const users = namedImportUsers(
       [
         {
           file: resolve(repoRoot, "src/composition/page.ts"),
-          source: 'import { projects } from "../content";',
+          source: 'import { projectsDocumentValidator } from "../content";',
         },
       ],
       targetFiles,
-      "projects",
+      "projectsDocumentValidator",
     );
     expect(users).toEqual([resolve(repoRoot, "src/composition/page.ts")]);
   });
@@ -104,23 +99,23 @@ describe("S2.8/S3.7/S6.7 — nothing imports `projects` except validateInventory
         },
       ],
       targetFiles,
-      "projects",
+      "projectsDocumentValidator",
     );
     expect(users).toEqual([]);
   });
 
-  // Naming `projects` in a clause is only one of the ways to reach it. Each of
+  // Naming a validator in a clause is only one of the ways to reach it. Each of
   // these hands over the module's whole surface without writing the symbol
   // down, and each went unflagged until the check was widened to fail closed.
   const offender = resolve(repoRoot, "src/composition/page.ts");
 
   it.each([
-    ["a namespace import", 'import * as content from "../content";\nconst p = content.projects;'],
+    ["a namespace import", 'import * as content from "../content";\nconst p = content.projectsDocumentValidator;'],
     ["an export-star re-export", 'export * from "../content";'],
     ["a namespace re-export", 'export * as content from "../content";'],
-    ["a dynamic import", 'const { projects } = await import("../content");'],
-  ])("the check has teeth: %s reaching `projects` is flagged", (_label, source) => {
-    expect(namedImportUsers([{ file: offender, source }], targetFiles, "projects")).toEqual([
+    ["a dynamic import", 'const { projectsDocumentValidator } = await import("../content");'],
+  ])("the check has teeth: %s reaching the validator is flagged", (_label, source) => {
+    expect(namedImportUsers([{ file: offender, source }], targetFiles, "projectsDocumentValidator")).toEqual([
       offender,
     ]);
   });
@@ -129,48 +124,34 @@ describe("S2.8/S3.7/S6.7 — nothing imports `projects` except validateInventory
     ["a side-effect-only import", 'import "../content";'],
     ["a namespace import of an unrelated module", 'import * as other from "../presentation/tokens";'],
   ])("%s is not flagged", (_label, source) => {
-    expect(namedImportUsers([{ file: offender, source }], targetFiles, "projects")).toEqual([]);
+    expect(namedImportUsers([{ file: offender, source }], targetFiles, "projectsDocumentValidator")).toEqual([]);
   });
 });
 
-describe("S11 — nothing imports `testimonials` except validateTestimonials's call site and Verification-shaped assertions over the collection (invariant C16)", () => {
-  const targetFiles = [resolve(contentDir, "testimonials.ts"), resolve(contentDir, "index.ts")];
-  // C16's closed importer set, the parallel of C14's over `projects`: S11's
-  // Adapter (the production `validateTestimonials` call site) and the S11
-  // content test asserting the committed collection validates.
-  //
-  // `tests/build/emitted-document.test.ts` also imports `testimonials`
-  // (S11.13) but is invisible to `listTsFiles` here — `SKIP_DIRS` matches
-  // directory *names*, and `tests/build`'s last path segment happens to
-  // collide with the "build output" skip entry meant for `dist`/`build`
-  // artifact directories. `tests/build/emitted-document.test.ts`'s existing
-  // import of `projects` has the identical, pre-existing blind spot in the
-  // `C14` block above, which does not name it as a call site either — this
-  // mirrors that precedent rather than introducing a new one. Logged in
-  // `design/90-decisions.md` § *Open* as a defect in this helper, not fixed
-  // here: it is a pre-existing gap this slice inherited, not one it created.
+describe("the adapter is the sole production importer of the testimonials document validator", () => {
+  const targetFiles = [resolve(contentDir, "index.ts")];
   const callSites = [
     resolve(repoRoot, "site/landing.config.ts"),
-    resolve(repoRoot, "tests/content/testimonials.test.ts"),
+    resolve(repoRoot, "tests/content/documents.test.ts"),
   ];
 
-  it("the only importers across the repository are those call sites", () => {
+  it("the only importers across the repository are the adapter and validator tests", () => {
     const files = listTsFiles(repoRoot);
     expect(files.length).toBeGreaterThan(0);
-    const users = namedImportUsers(readEntries(files), targetFiles, "testimonials");
+    const users = namedImportUsers(readEntries(files), targetFiles, "testimonialsDocumentValidator");
     expect(users.sort()).toEqual([...callSites].sort());
   });
 
-  it("the check has teeth: an unrelated file importing `testimonials` is flagged", () => {
+  it("the check has teeth: an unrelated validator import is flagged", () => {
     const users = namedImportUsers(
       [
         {
           file: resolve(repoRoot, "src/composition/page.ts"),
-          source: 'import { testimonials } from "../content";',
+          source: 'import { testimonialsDocumentValidator } from "../content";',
         },
       ],
       targetFiles,
-      "testimonials",
+      "testimonialsDocumentValidator",
     );
     expect(users).toEqual([resolve(repoRoot, "src/composition/page.ts")]);
   });
@@ -312,7 +293,7 @@ describe("S6.13 — nothing imports Composition except Adapter (X2)", () => {
   });
 });
 
-describe("S6.7/S11 — Adapter imports exactly Composition, the external package, Content's projects/testimonials/validateInventory/validateTestimonials/BuildContext/parseCommitId, and Presentation's themeColor/iconDataUri (A3)", () => {
+describe("the adapter imports Composition, the external package, document validators and its local configuration dependencies", () => {
   const adapterFile = resolve(repoRoot, "site/landing.config.ts");
   // Composition and the external package may be imported by whichever names
   // they expose — A3 closes the module list, not which symbols travel from
@@ -324,11 +305,11 @@ describe("S6.7/S11 — Adapter imports exactly Composition, the external package
   ]);
   const ALLOWED_NAMES: Record<string, readonly string[]> = {
     "../src/content": [
-      "projects",
-      "testimonials",
-      "validateInventory",
-      "validateTestimonials",
+      "projectsDocumentValidator",
+      "testimonialsDocumentValidator",
       "BuildContext",
+      "Inventory",
+      "Testimonials",
       "parseCommitId",
     ],
     "../src/presentation": ["themeColor", "iconDataUri"],
