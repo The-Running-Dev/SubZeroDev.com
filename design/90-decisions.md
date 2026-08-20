@@ -5,6 +5,18 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
+- **Two source comments cite `C16` and a `/reconcile` that has already run.** `C16` is not a contract
+  invariant — the `C` series stops at `C15`, and `C16` was an `S11` acceptance-criterion id merged into
+  `C14` on 2026-08-20 — so `src/composition/testimonials.ts:7` reads as a contract citation that does
+  not resolve. `site/landing.config.ts:13`–`15` cites it too, and adds two claims that were true when
+  written and are now false: that `20-contract.md` "still describes the pre-migration arrangement", and
+  that the divergence "is staged in `design/90-decisions.md` § Open for a later `/reconcile`". That
+  `/reconcile` ran on 2026-08-20 and resolved it. The 2026-08-20 contract entry recorded the `C16`
+  citation and left it to `S11`'s re-cut; `/slices` ruled `S11` **landed** rather than re-cut on the
+  same day, so that resolution path is gone and this needs its own carrier. Both are code comments —
+  `/slices` writes `design/30-slices.md` only, and correcting descriptive drift in source is `/slice`'s
+  or `/fix`'s. Issues are disabled, so it stays staged here.
+
 - **`V16`'s `assertImportGraph` is declared in the contract and has no implementation.** The import
   graph is checked instead by `tests/content/import-graph.test.ts` against a test-local AST helper,
   which is the arrangement `assertImportGraph` was written to replace. `20-contract.md` now says so
