@@ -15,8 +15,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run typecheck
-      - run: npm test
+      # verification: true
+      - name: Typecheck
+        run: npm run typecheck
+      # verification: true
+      - name: Test
+        run: npm test
 
   build:
     name: Build
@@ -31,7 +35,9 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build
-      - run: npx vitest run --config vitest.build.config.ts
+      # verification: true
+      - name: Interrogate the build artifact
+        run: npx vitest run --config vitest.build.config.ts
       - uses: actions/upload-artifact@v4
         with:
           name: publishable-tree
@@ -74,7 +80,9 @@ jobs:
           done
           echo "the container never answered on :8080" >&2
           exit 1
-      - run: npm run image-gate
+      # verification: true
+      - name: Image gate
+        run: npm run image-gate
         env:
           SERVED_BASE_URL: http://localhost:8080
       # Carries the gated image into `publish-release` rather than rebuilding
@@ -113,7 +121,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run check-links
+      # verification: true
+      - name: Check links
+        run: npm run check-links
 
   # Ungated Pages preview/development publishing (design/30-slices.md §
   # S10.6, *The publication CI*). Depends only on the shared `build` — never
