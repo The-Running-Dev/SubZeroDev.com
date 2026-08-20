@@ -30,6 +30,15 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
   at `ci.yml`. Issues are disabled, so this is its carrier. Full per-test detail is in
   [PR #88](https://github.com/The-Running-Dev/SubZeroDev.com/pull/88)'s `Verified` section.
 
+- **Four test files cite `C16`, an invariant that no longer exists.** `src/composition/testimonials.ts`
+  and `tests/composition/{apex,enhancement,testimonials}.test.ts` name `C16` for the
+  testimonial-import closure; that invariant merged into `C14` with the 2026-08-11 JSON migration, and
+  the citations were not updated. Found on 2026-08-21 while adding two invariants, which nearly took
+  `C16` as the next free id and would have silently repointed all four at a rule about link checking.
+  The contract now records the retirement so the number is not reused; the four comments are still
+  wrong and are a `src`/`tests` edit this command may not make. Issues are disabled, so this is its
+  carrier.
+
 - **`V16`'s `assertImportGraph` is declared in the contract and has no implementation.** The import
   graph is checked instead by `tests/content/import-graph.test.ts` against a test-local AST helper,
   which is the arrangement `assertImportGraph` was written to replace. `20-contract.md` now says so
@@ -64,6 +73,228 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-21 — `/cv/` and `/portfolio/` become routes of this site, and the contract is amended for four routes
+Context: the CV and the technology portfolio live in two sibling repositories and drive a separate
+deployment at `portfolio.subzerodev.com`. A design session on 2026-08-20 settled the fold with the
+owner and produced no contract amendment; the `/reconcile` pass it depended on landed as
+[#88](https://github.com/The-Running-Dev/SubZeroDev.com/pull/88). This entry and the amendment beside
+it are that session's output carried into contract form. Every fork below was decided with the owner
+in that session and is transcribed rather than re-derived.
+Chosen: `RoutePath` widens to `"/" | "/cv/" | "/portfolio/" | "/404/"` with the miss last in the
+union, in `config.routes` and in `A4`; `cvPath` and `portfolioPath` join `apexPath` and `missPath`;
+`composeCv` and `composePortfolio` join `composeApex` and `composeMiss`, each total, each taking
+`(inventory, ownDocument, origin)` and each deriving its own stylesheet through `stylesheetFor`.
+`PrimitiveName` stays closed at twelve — a CV timeline is `entry` records with `meta` lines and a
+technology tree is a `grid` of `card`s. `view` stays apex-only, because its rules name the apex's four
+anchor ids and `stylesheetFor` would emit them into a document that has none;
+`assertStyleAgreement` cannot catch that, since those selectors carry no class, so the contract states
+it as a constraint on the composers and `S16.4`/`S17.4` assert it.
+The two composers take an `Inventory` **and derive `hrefById` and `sinceYear` themselves** rather than
+receiving them: `A3` forbids Adapter importing a Content derivation, so Adapter could not compute
+them, and the alternative is widening that edge to serve two parameters.
+Rejected: **Sections of the apex rather than routes** — the apex is one document by the 2026-08-05
+ruling and a CV is not a section of a manifesto; four sections is already the most a `:target` switch
+carries legibly, and six would make the apex a site. **Keeping both on
+`portfolio.subzerodev.com` and linking out** — the status quo, and the thing the owner asked to
+change: the material is evidence about the company and it reads as a different site. **New primitives
+for a CV timeline and a tech tree** — put and declined; the existing set expresses both, and a
+thirteenth member is permanent where a layout choice is not. **Migrating or retiring
+`portfolio.subzerodev.com`** — explicitly out of scope; it stays live, stays the inventory's
+`portfolio` record with an `own` home, and stays checked by `V4`.
+Reversibility: expensive — two routes, two content documents, nine error codes and a masthead change,
+across five slices.
+
+---
+
+### 2026-08-21 — `checkLinks` widens from `ResolvedHome` to `CheckedLink`, reopening the 2026-08-07 decision
+Context: on 2026-08-07 the owner declined to widen `checkLinks` so that `sourceUrl` could be checked,
+accepting instead that it would be the one outbound link on the page no gate reached — verified `200`
+by hand that day. The stated cost was **one link**. The CV route brings eighteen further outbound
+addresses onto this site, across four field paths, and every one of them is exactly the kind of link
+`V4` exists for: an employer's site, a repository, a package registry pull-request query. Nineteen
+unchecked links is not the trade that was accepted. **This is the 2026-08-07 decision reopened on new
+evidence, not a fresh one** — the option chosen here is the one that ruling names as "the middle
+option" and declined.
+Chosen: `CheckedLink` — `{ label: string; url: AbsoluteUrl }` — in **Content**, because Content
+produces it and `C1` forbids Content importing the module that consumes it. `checkLinks` takes
+`readonly CheckedLink[]` and `LinkCheckResult.target` becomes one. `checkedLinks(inventory, cv)` in
+Content is the single enumeration of `V4`'s set — resolved homes, `sourceUrl`, and the CV's four
+link-bearing field paths — and `C16` closes it so no second list can be assembled. `V4` is restated
+over it. It does **not** deduplicate: `portfolio.subzerodev.com` is carried by both an inventory record
+and the CV header, and a dead address there should name both places an author must edit.
+Costs accepted and stated in the contract: a failing target is now named by a `label` string rather
+than by a `ProjectId`, so a diagnostic that was a typed identity is not; three of `S3`'s landed
+acceptance criteria turn on `LinkCheckResult.target` and are superseded, recorded in `30-slices.md`'s
+`## Landed` index by `S14.9`; and `V4` is now **wider** than the brief's clause, which asks only that
+every outbound *project* link resolve. Wider is the safe direction for a gate to be wrong in.
+Rejected: **Leaving `sourceUrl` outside and adding the CV's eighteen alongside it** — nineteen
+unchecked links, which is the position this reopening exists to end. **A full `SiteLink` type with
+project-reference resolution** — the 2026-08-07 ruling's rigorous option, needing a new type, a new
+derivation, new `ContentError` codes and a new `C` invariant; still declined, and `CheckedLink` is the
+cheap two-thirds of it. **Deduplicating by URL** — one error for a link two records carry, leaving the
+second to be found later. **Putting `CheckedLink` in Verification** — Content would then be unable to
+produce one, and the enumeration would move to the call site, which is where a forgotten link hides.
+Reversibility: cheap — one type, one parameter and one derivation; the retry semantics, the redirect
+rule and the failure shape are all untouched.
+
+---
+
+### 2026-08-21 — `X1`'s derivation clause narrows to the apex; the brief states the broader form
+Context: `X1` requires every figure on the page to be a Content derivation, and `00-brief.md`
+§ *Definition of done* states the same rule as *"No count, project total or figure anywhere on the
+page is a typed literal."* The portfolio document carries `"20+"`, `"50+"` and `"Open Source"` as stat
+values and the CV carries `"2023 – Present"` as a period. **Nothing in either document could produce
+those figures**: the portfolio lists eleven technology categories, not fifty projects, and the stats
+are the author's estimates about twenty years of work. A derivation over data that does not contain
+the fact would have to invent it.
+Chosen: `X1` keeps its typed-literal half over every route — no figure is ever written into
+Composition's source — and narrows its **derivation** half to the apex. On `/cv/` and `/portfolio/` a
+figure may be authored content carried in that route's own validated document.
+[`20-contract.md`](20-contract.md) § `U11` records the brief conflict this creates, in `U5`'s and
+`U10`'s shape, and names the exact bullet the owner edits. `S16.10` and `S17.7` assert the half that
+survives — every rendered figure appears in that route's JSON document, so a literal in
+`src/composition/` fails.
+Rejected: **Deriving the stats anyway** — a count of the portfolio document's own categories rendered
+under a label reading "Projects Delivered" would be a true number answering a different question,
+which is worse than an estimate the author knew was one. **Dropping the stats strip** — it is the
+part of that page a reader scans first, and removing content to satisfy an invariant is the invariant
+deciding the design. **Leaving `X1` as written and shipping in breach** — the shape `agent.md`
+§ *Drift* names, where a rule believed enforced is quietly not. **Editing the brief here** — a model
+may interrogate that file but not author it, so `U11` names the edit and stops.
+Reversibility: cheap — one invariant clause and one `U` entry; nothing in the tree depends on the
+broader reading.
+
+---
+
+### 2026-08-21 — `/cv/` carries a JSON-LD `Person` block; `/portfolio/` carries none
+Context: `X6` permitted exactly one `application/ld+json` element, on the apex, holding an
+`Organization`. The 2026-08-20 design session named the question of whether `/cv/` carries a `Person`
+block and did not resolve it. It is settled here because a route cannot ship with its script-element
+count undecided — `V13` counts them per document.
+Chosen: `/cv/` carries **exactly one** such element, holding a single `Person` object built from
+validated `CvData`; `/portfolio/` and the miss route carry **none**. The CV is the one document on
+this site whose subject is a person, every value in the block is already visible prose on the same
+page, and that is the `Organization` block's own justification applied to the other entity this site
+describes. The block carries `name`, `jobTitle`, `url` and `sameAs` and **omits `email` and
+`telephone`**: the visible `mailto:` is a deliberate human-facing affordance and a machine-readable
+restatement of it is harvested by anything that fetches the page, buying nothing the brief asks for —
+and `phone`'s value is prose rather than a dialable number, so a consumer parsing it would be parsing
+a sentence.
+This forces one owner-supplied string that the source CV does not contain: `cv.header.name`. The
+source names a job title, an address and a phone line and never states whose CV it is. `S15` stops and
+asks rather than inferring one from a git author, a domain or a repository name.
+Rejected: **No `Person` block** — the cheaper option, and it leaves the one page a recruiter is sent
+to with no structured data while the manifesto has some. **A `CollectionPage` or `ItemList` on
+`/portfolio/`** — both describe the *page* rather than an entity, which is a different kind of claim
+from the one the apex makes, and a technology tree is not a thing schema.org types. **`worksFor`
+linking the `Person` to the apex's `Organization`** — couples two documents' copy and buys nothing the
+brief asks for. **Including `email`** — see above.
+Reversibility: cheap — one internal builder, one `X6` clause and one `V13` count.
+
+---
+
+### 2026-08-21 — The masthead's outbound group becomes five entries, and Portfolio points here
+Context: the group carries SubZeroDev.com, Blog and Projects, with Portfolio resolved through
+`homeOf(hrefById, "portfolio")` to the `portfolio.subzerodev.com` subdomain. With `/portfolio/` and
+`/cv/` becoming routes of this site, the entry labelled Portfolio has two possible destinations and
+the group has two missing ones.
+Chosen: five entries — SubZeroDev.com, Blog, Projects, Portfolio, CV — with Portfolio and CV resolving
+to `${origin}/portfolio/` and `${origin}/cv/`. The entry naming the route being rendered carries
+`link-current` and `aria-current="page"`, and **exactly one entry is marked**, matched on path
+equality rather than on a prefix: with the three own-site paths being `/`, `/cv/` and `/portfolio/`
+and no nesting, longest-match and equality give the same answer, and equality is what makes it
+checkable and stops SubZeroDev.com being marked current on all three. `renderOutbound` gains the
+current path as a plain `string`, for the reason `origin` is one — `RoutePath` is Adapter's and `X2`
+closes that edge.
+This removes the only call site of `homeOf(hrefById, "portfolio")`, and with it the fragility the
+2026-08-07 entry recorded for that one link: renaming the inventory record no longer drops a nav
+entry. `homeOf` survives for Blog, and `tests/content/inventory.test.ts`'s assertion about the
+`portfolio` id now guards the ecosystem list rather than the masthead.
+**Nothing about `portfolio.subzerodev.com` changes.** It stays a live separate deployment, stays the
+inventory's `portfolio` record with an `own` home, stays in the apex's ecosystem list with its own
+link, stays in `checkedLinks` and stays checked by `V4`. `S18.7` asserts all of that, because the one
+real risk in this change is losing an outbound link by accident.
+Rejected: **Keeping Portfolio pointed at the subdomain and adding a sixth entry for `/portfolio/`** —
+two entries with the same word, and a visitor cannot tell which is which. **Redirecting the subdomain
+to `/portfolio/`** — delivery configuration, excluded by the brief's hosting non-goal. **Marking
+current by path prefix** — marks SubZeroDev.com current on every route, which is why `S18.3`
+demonstrates red that way specifically.
+Reversibility: cheap — one derivation and one parameter.
+
+---
+
+### 2026-08-21 — The CV and portfolio transcriptions drop two field kinds, normalise three shapes, and carry provenance as data
+Context: `site/cv.json` and `site/portfolio.json` are hand transcriptions of `Portfolio`'s
+`config/cvData.yml` and `Docusaurus-Template`'s `data/portfolioData.json`. Both sources carry shapes
+this site cannot serve or should not model as given. The brief forbids content derived from sibling
+repositories and forbids network access in the build, so the transcription is a one-time human act and
+**nothing detects a later divergence** — a required `provenance` field in each file names its source,
+which is what makes the question askable.
+Chosen, five transcription rulings, each recorded because a later reader will otherwise ask why the
+JSON does not match its source:
+**(1) A badge's image `src` and a role's `icon` are dropped entirely.** The first is a shields.io URL
+— a request the brief forbids and `V13` rejects — and the second an icon-font token whose font `P1`
+forbids. With the image gone a badge *is* its label, so `badges` is a list of strings rather than a
+list of one-field records. **(2) `tech` is a list, flattened from the source's comma-separated prose
+once, by hand.** The alternative puts a parser over prose inside Composition and makes the page's chip
+boundaries a property of a regular expression. **(3) A `TechNode` is one recursive shape where the
+source has three** — `{name, subCategories}`, `{name}`, and bare strings — normalised so one renderer
+walks the whole tree, with depth bounded at three and enforced by `PortfolioTechDepthExceeded`.
+**(4) `PortfolioStat.value` is a string.** The source mixes `"20+"` with the bare number `7`; these
+are display copy, and a numeric type would be a claim the data cannot support.
+**(5) Provenance is a required `provenance` field on each envelope, not a comment.** The 2026-08-20
+design session called for a provenance comment in each file. **JSON has no comment syntax and these
+schemas are `.strict()`**, so that is not implementable as stated; the intent — the document names its
+source — is preserved as data. It is the better form regardless: a comment is invisible to every
+check, a field can be required and asserted. `projects.json` and `testimonials.json` do not gain one,
+because their content is authored here and has no upstream to name.
+Two further absences: the source's `seo` block is **not** transcribed, because route `title` and
+`description` are Adapter's owner-supplied copy and sourcing head metadata from a Content document
+crosses `A3`; and `cv.header.name` is **added**, because the source never states whose CV it is and a
+CV that does not name its subject is broken independently of any schema.
+`email` and `phone` are checked for emptiness and nothing else — an address's real validity cannot be
+established without sending mail, a pattern strict enough to be worth having rejects valid addresses
+while still accepting dead ones, and the phone value is prose rather than a number. The contract says
+plainly that these are the two CV fields whose shape nothing checks.
+A fifth, smaller ruling recorded with them: **field names follow the source except where the source
+name states something false**, because the transcription is checkable only by eye and a JSON document
+that reads like its source is what makes that possible. `href`, `website`, `link`, `period` and `tech`
+stay as the source writes them even where `url` would match this repository's own convention;
+`number` becomes `value`, `subCategories` becomes `children`, and a badge stops being a record at all.
+Rejected: **Keeping `badges` as `{ alt }` records** — a one-field record with a field named for an
+image that is not there. **Inlining the badge images as data URIs** — eleven SVGs of other projects'
+logos, re-encoded here, is visual identity this site does not own and weight it does not need.
+**Splitting `tech` at render time.** **Modelling the source's three tech-node encodings faithfully** —
+three renderers for one idea. **A `string | number` union for stat values** — pushes the same choice
+onto every reader. **Validating `email` against a pattern.**
+Reversibility: cheap per ruling — each is a schema field and its transcription; expensive in
+aggregate once the documents are committed and rendered.
+
+---
+
+### 2026-08-21 — Nine new `ContentErrorCode` members, discriminated by a dotted `field` path
+Context: `Testimonial` has five fields and took five codes. `CvDocument` has more than thirty leaf
+fields across seven record types, and `PortfolioDocument` a recursive tree; a code per field would be
+an enumeration nobody can read, kept in step with a schema by hand.
+Chosen: nine codes — `CvFieldEmpty`, `CvCollectionEmpty`, `CvUrlInvalid`, `CvYearInvalid`,
+`CvYearAfterBuild`, `PortfolioFieldEmpty`, `PortfolioCollectionEmpty`, `PortfolioTechDepthExceeded`,
+`PortfolioDuplicateCategory` — with the **fault kind** in the code and the **location** in `field`,
+carried as a dotted path from the document root with a zero-based index at each list
+(`roles[3].achievements[1]`). `ContentError.projectId` is `null` for all nine, on the same reasoning
+the testimonial codes rest on. `CvYearInvalid` takes precedence over `CvYearAfterBuild`, mirroring
+`InvalidYear` over `YearAfterBuild`, so one bad value yields one error.
+`CvData` and `PortfolioData` are **branded**, so only their validators can produce one — the same
+guarantee `Inventory` carries, and what lets `composeCv` and `composePortfolio` be total.
+Rejected: **A code per field** — thirty-plus members, and a schema change that silently needs a code
+nobody adds. **A separate `CvError` type** — the duplication the testimonial codes were folded into
+`ContentError` to avoid. **Synthetic `ProjectId`s for CV employers and portfolio categories** — the
+shape the 2026-08-07 `sourceUrl` ruling already rejected: an id naming nothing, to reach a field that
+does not apply. **Unbranded `CvData`** — a composer could then be handed a decoded but unvalidated
+document.
+Reversibility: cheap — nine union members and a `field` convention.
 
 ---
 
