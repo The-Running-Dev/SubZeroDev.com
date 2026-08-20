@@ -5,29 +5,48 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-- **The JSON migration changed Content's public surface without a contract amendment.** Landed by
-  [#83](https://github.com/The-Running-Dev/SubZeroDev.com/pull/83) with `design/` unfrozen, so the
-  usual "state it in the PR and leave the document alone" route did not apply — it was deferred
-  deliberately, not overlooked. Six divergences, all in `design/20-contract.md`: the `projects` and
-  `testimonials` exports it describes at § Content ("the **only unvalidated export in this
-  contract**") no longer exist; `projectsDocumentValidator` and `testimonialsDocumentValidator` are
-  exported but undeclared; `A3`'s enumerated Adapter import list names four symbols Adapter no longer
-  imports; `C14` and `C16` govern modules that are gone, and `tests/content/import-graph.test.ts` was
-  repointed at the validator symbols, which guards a function rather than the unvalidated records the
-  invariants were written for; `V16` cites `C14` and `A3` as describing the import graph; and
-  `UnauthorizedInventoryImport` (already contract-only, never implemented) now also names a module
-  that does not exist. Each is a **decision** — a public interface or an invariant — not a
-  transcription correction, so `/reconcile` (`opus`, `high`) adjudicates rather than the
-  implementing session. Issues are currently disabled on the repository, so this stays staged here.
+- **Five testimonials are ruled real and are waiting on their citation URLs.** The owner ruled on
+  2026-08-20 that the five `"What Would Lucifer Do?"` entries in `site/testimonials.json` are real
+  lines and take citations under `00-brief.md` § *Source material* item 4. The five URLs are
+  **owner-supplied and were not available in that pass**; a slice transcribes them and does not invent
+  one, and a guessed citation is worse than none because it is the one testimonial property nothing in
+  the tree can check. Until they arrive the tree holds a rule the brief states and the content does
+  not. `validateTestimonials` already enforces the shape (`TestimonialUrlInvalid`) and `X8` already
+  renders the `Source` line, so nothing but the JSON changes. Issues are disabled, so this is its
+  carrier — the shape [`agent.md`](../agent.md) § *Drift* names, given one deliberately.
 
-- **Route-documentation drift remains unresolved.** `design/10-design.md`, `design/20-contract.md`
-  and S11/S12 in `design/30-slices.md` describe a three-route testimonial fold, while the shipped
-  implementation declares only `/` and `/404/` and renders testimonials inline on the apex. This is
-  an architecture question — retain the two-route merged section or restore the documented fold — not
-  a transcription correction. The JSON-data migration does not decide it and must not rewrite those
-  documents. A future `/design` session owns the decision.
+- **`tools/*.Tests.ps1` fails 12 of 253 tests, all pre-existing and unrelated to any change on
+  [PR #88](https://github.com/The-Running-Dev/SubZeroDev.com/pull/88).** Found while running
+  `/pr`'s gate phase against that PR on 2026-08-20; confirmed present on `main` as well, so nothing
+  on the PR's branch caused it. Two independent root causes: (1) `design/state/` and
+  `design/state-index.md` do not exist in this repository, so every test exercising
+  `Test-DesignState.ps1` / `Read-DesignState.ps1` / `Update-DesignProjection.ps1` "against this
+  repository's own tree" has nothing to read — `Test-DesignState.ps1` itself exits 2
+  (`ContractListUnreadable`, `StateSetAbsent`) rather than 0 or 1; (2)
+  `tools/Test-CIWorkflow.Tests.ps1` expects `.github/workflows/verify.yml`, which does not exist —
+  only `.github/workflows/ci.yml` does. Deciding what `design/state/`'s record set should actually
+  contain (or whether this repository carries that tooling at all) is an owner call, not a
+  mechanical backfill; the `verify.yml` mismatch is either adding that file or repointing the test
+  at `ci.yml`. Issues are disabled, so this is its carrier. Full per-test detail is in
+  [PR #88](https://github.com/The-Running-Dev/SubZeroDev.com/pull/88)'s `Verified` section.
 
-(the two items found 2026-08-08 while adding S11's C16 import check and while adjudicating the
+- **`V16`'s `assertImportGraph` is declared in the contract and has no implementation.** The import
+  graph is checked instead by `tests/content/import-graph.test.ts` against a test-local AST helper,
+  which is the arrangement `assertImportGraph` was written to replace. `20-contract.md` now says so
+  rather than implying the function exists. Pre-existing and unrelated to either 2026-08-11 item;
+  noticed while re-aiming `C14`. Either implement it or withdraw the declaration — both are decisions,
+  neither is `/reconcile`'s.
+
+(the S11/S12 item staged here on 2026-08-20 was adjudicated by `/slices` the same day — both slices
+were ruled landed and retired to `30-slices.md`'s new `## Landed` index, and the entry of that date
+below is its carrier, since issues are disabled on this repository;
+
+the two items staged 2026-08-11 — the JSON migration's contract consequences and the route-fold
+drift — were adjudicated and applied by `/reconcile` on 2026-08-20; issues are disabled on this
+repository, so the carrier is the decision entry of that date rather than a tracked issue, and every
+edit it names landed in the same commit as the entry;
+
+the two items found 2026-08-08 while adding S11's C16 import check and while adjudicating the
 testimonialsPath fix — the SKIP_DIRS/tests/build/ exclusion and the untethered footer back-link —
 became [#68](https://github.com/The-Running-Dev/SubZeroDev.com/issues/68) and
 [#69](https://github.com/The-Running-Dev/SubZeroDev.com/issues/69) on 2026-08-08;
@@ -45,6 +64,475 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-20 — `view`'s nav-colouring rules are a named exception to `Primitive.rules`, not a relaxation of it
+
+Context: `/reconcile` found that `20-contract.md` required every selector in a primitive's `rules` to
+**begin with** that primitive's own class selector — *"There is no exception to this"* — while
+`S4.4` (landed 2026-08-06) restated that as **contains**, and
+`tests/presentation/primitives.test.ts` asserted `toContain` from the criterion rather than from the
+contract. Eleven of `view`'s selectors fail *begins with*. Six of them keep `.view` on the subject
+compound and hold the property the rule exists to guarantee. **Five do not**: the nav-colouring rules
+match a nav link carrying `link`'s class and no `.view` at all, which is precisely "a rule that can
+match an element the class is absent from". Nothing caught it — `assertStyleAgreement` compares only
+class selectors, and `nav [href="#…"]` carries none. Live on both published targets since
+2026-08-10.
+
+**Chosen: keep a strong default, name the five as the exception, and state the rule as the property
+rather than as one spelling of it.** `Primitive.rules` now admits a selector that either begins with
+the class **or** carries it in the subject compound — two ways of bounding a match, by ancestry or by
+identity — which admits `.stack > .view` and `#effortless-action.view:target` without an exception,
+since both plainly hold the property that *begins with* was reaching for. The five nav-colouring
+selectors are then written out by name in the `view` paragraph, with the cost stated: the anchoring
+constraint no longer bounds `view` by itself, and what bounds it is the **emission guard** —
+`stylesheetFor` reaches a primitive's rules only from a body already carrying its class — so those
+rules never enter a document without `.view` but are unbounded within one. The test now checks the
+two admitted forms and enumerates exactly those five; a sixth of that shape, or a first in any other
+primitive, is a contract amendment.
+
+**Verified rather than asserted**: the tightened check was demonstrated red by adding a sixth
+selector of the forbidden shape (`.page:has(.view:target) footer p`) — it reported six unanchored
+against five expected — then reverted, with `git diff` clean and the file's 32 assertions green.
+
+Rejected — **restating the constraint as `contains`**, matching the tree and `S4.4`. Honest about
+what has actually been bounding the set, needs no exception list, and is the smaller edit. Declined
+because it gives up the property for all twelve primitives to accommodate one, and puts nothing in
+its place: `contains` admits any selector that merely *mentions* the class, which is the exact shape
+that shipped unflagged. Rejected — **changing the code to satisfy the doc.** CSS has no combinator
+reaching a section's `:target` state from its nav link, so a selector anchored at the link cannot
+express the current-tab affordance at all; the options were dropping the affordance, or moving the
+five rules into the token block, where they would be emitted into the miss document naming four ids
+it does not have. Also not this command's tier.
+
+Not fixed, and named rather than hidden: `S4.4` and `S11.3` still read *contains*. They are landed
+criteria, and the 2026-08-20 ruling on `30-slices.md` holds that a landed criterion keeps its id and
+its wording — it was true when it was accepted, which is all a landed criterion claims. The test now
+enforces the contract rather than the criterion, and says so where it does.
+
+Reversibility: cheap. One paragraph in `20-contract.md`, one row in its *Types* table, and one
+`describe` block.
+
+---
+
+### 2026-08-20 — `card`'s hover lift is retained, and is the only motion in the design
+
+Context: `/reconcile` found `src/presentation/primitives.ts` giving `card` a `translateY(-2px)` hover
+lift and a `transform` transition, inside `@media (prefers-reduced-motion: no-preference)`. It landed
+in [#79](https://github.com/The-Running-Dev/SubZeroDev.com/pull/79), a pull request titled for the tab
+switch, with **no decision-log entry** — and it made two contract sentences untrue: `card` was
+described as carrying no colour rule beyond `--rule` (it also sets `--fg-muted` on hover), and `P3`'s
+parenthetical claimed a hover colour change was *the* case of a transition in the primitive set.
+
+**Chosen: keep it.** `P3` is satisfied by construction rather than by inspection — the guard is
+`no-preference`, so under `reduce` the rule is *absent* rather than overridden and nothing has to
+compute which declaration wins. A 2px lift on a card that is already an interactive-looking container
+is a conventional affordance, and the brief's bullet forbids motion under `reduce`, not motion. The
+two contract sentences are corrected in the same commit as this entry rather than left for a later
+pass — [`agent.md`](../agent.md) § *Drift* records that a note about another file survives its own
+resolution unless the edit and the note land together.
+
+**Also chosen, and worth naming: the hover *colour* change stays outside the guard.** A reader under
+`reduce` therefore still gets hover feedback rather than none, which is what makes the motion an
+enhancement instead of the affordance itself. It clears `P2`(a) against `--bg` at 6.62:1, so it needs
+no exemption of its own — the `--rule` exemption covers the resting border only.
+
+Rejected — **removing the block**, returning the site to zero motion and making both contract
+sentences true again with no edit. The cheaper reversal, and a real argument on a site whose genre is
+*the plain document*. Declined because the rule violates nothing: the guard is exactly the mechanism
+the brief's narrowed `P3` was amended to permit, and removing shipped behaviour to make a sentence
+true is the wrong direction when the sentence is the thing that drifted. Rejected — **keeping the lift
+and dropping the hover colour**, so `card` carries the one colour rule the contract already described
+and no correction is needed. Declined because it makes the hover affordance depend entirely on the
+thing that disappears under `reduce`.
+
+Reversibility: cheap. Five lines of CSS and two sentences.
+
+---
+
+### 2026-08-20 — A real testimonial takes its citation; the five `What Would Lucifer Do?` lines are real
+
+Context: `/reconcile` found that `site/testimonials.json` carries 24 entries of which exactly one has
+a `url`, while five are attributed to `"What Would Lucifer Do?"` and four of those read as product UI
+strings. All six landed together in
+[5f1bd16](https://github.com/The-Running-Dev/SubZeroDev.com/commit/5f1bd16), whose second bullet is
+*"Add canonical testimonial sources"*. The 2026-08-20 citation ruling requires a real line from a real
+SubZeroDev repository to carry its source. `20-contract.md` § *Types* states plainly that this rule is
+**authored rather than enforced** — nothing in the tree can tell a real quote from an invented one —
+so no gate could have found this and none can settle it.
+
+**Chosen: the five are real, and take citations.** The ruling applies to them as written. The
+transcription is **not** done here: the five URLs are owner-supplied and were not available in this
+pass, and a citation is the one testimonial property a reader cannot check against the tree, so a
+guessed URL is worse than an absent one. Staged in `## Open` above with the reasoning, since issues
+are disabled on this repository and an amendment with no carrier is invisible from the moment it is
+written.
+
+Rejected — **narrowing the ruling instead**, on the ground that `"What Would Lucifer Do?"` is not in
+the project inventory and so arguably is not "a real SubZeroDev repository". It would have closed the
+finding at zero cost and it was put second rather than dismissed, because the clause genuinely does
+not name it. Declined by the owner: the house rule that nothing may be funnier than it is true does
+not turn on whether the source happens to have an inventory row. Rejected — **removing the five**,
+which is cleanest against the ruling and also removes some of the "tell" `10-design.md`
+§ *Testimonial* already accepts as the cost of having any citation at all; declined because they were
+deliberately preserved in [#75](https://github.com/The-Running-Dev/SubZeroDev.com/pull/75). Rejected
+— **treating them as fabricated**, which would have made the tree already correct; declined on the
+owner's own knowledge of where the lines came from.
+
+Reversibility: cheap for the ruling, cheap for the edit — five string fields in one JSON document.
+
+---
+
+### 2026-08-20 — S11 and S12 are landed, not re-sliced; the twelve bodies stay under a `## Landed` index
+
+Context: `## Open` staged S11 and S12 as `/slices`' — *"a re-slice of S11/S12 against the merged
+two-route shape, or a ruling that both are landed and should be marked so."* The tree answers the
+factual half outright: both merged ([#66](https://github.com/The-Running-Dev/SubZeroDev.com/pull/66),
+[#73](https://github.com/The-Running-Dev/SubZeroDev.com/pull/73),
+[#76](https://github.com/The-Running-Dev/SubZeroDev.com/pull/76)) and were partly withdrawn afterwards
+by [#77](https://github.com/The-Running-Dev/SubZeroDev.com/pull/77) and
+[#79](https://github.com/The-Running-Dev/SubZeroDev.com/pull/79). Nothing from either is outstanding.
+What was actually decided here is what the document should say about work that landed and was then
+superseded.
+
+**Chosen: both are landed, and `30-slices.md` gains the `## Landed` / `## Outstanding` split it never
+had.** The document predates that shape — `.claude/commands/track.md` and `tools/Test-DesignDrift.ps1`
+both cite a *"How this document is kept"* section and a `## Landed` index this file did not contain,
+so the drift tool read all twelve shipped slices as outstanding specification. `S1`–`S12` move under
+`## Landed` behind an index table naming each slice's pull request and **what has changed underneath it
+since**; `## Outstanding` carries `S13` alone. Verified after the edit: the tool's parser now reports
+`Landed: 1..12` and one outstanding slice with eight criteria.
+
+Rejected — **re-cutting S11 and S12 against the two-route shape**, the first half of the staged fork.
+The work merged and the withdrawal is complete in the tree, so the re-cut slices would have had nothing
+to implement; they would have been a description of current code, which § *Single ownership* forbids a
+document to carry. Rejected — **annotating S11 and S12 in place and leaving the twelve as full
+sections.** The smallest edit, and it keeps every criterion verbatim, which is why it was put second
+rather than dismissed. Declined because the tooling would still read twelve shipped slices as live
+specification, and because a reader meets `S11.15` as a criterion several lines before meeting the note
+that kills it.
+
+**Chosen, and not dictated by the ruling: the landed criteria bodies are kept, against the kit's own
+default.** `.claude/commands/track.md` says a landed slice's body is retired once its issue closes.
+Retiring them here would have broken **211 citations across 63 files** — measured, not estimated:
+`tests/verification/style-agreement.test.ts` cites `S4.11` and `S4.12`, `src/presentation/types.ts`
+cites `S4.14`, `.github/workflows/ci.yml` cites `S10.5`–`S10.10`, and every `vitest.*.config.ts` names
+the criterion its shard runs. That is 109 distinct ids, each the stated reason a file exists, and
+`agent.md` § *Drift* records a stale cross-reference as the failure that is invisible. The bodies
+therefore stay, demoted to `###` so the index table is what a tracker parses; every one of the 109 was
+confirmed to resolve after the edit. Rejected — **retiring the bodies and re-pointing all 211
+citations at index rows**, which loses the per-criterion precision the citations carry and is a
+63-file edit outside this command's scope. Rejected — **retiring them and accepting the orphans**,
+which is the kit shape exactly, at the price of 211 dangling references.
+
+**Also chosen: no criterion is edited, including the one the tree now contradicts.** `S11.15` requires
+`RoutePath` pinned to a three-member union; `tests/types/route-path.type-check.ts` pins it to two. It
+keeps its id and its wording, and the contradiction is recorded against it in the index. Editing it
+would rewrite what an existing citation refers to, which is the one failure the never-renumber rule
+exists to prevent — and it was true when it was accepted, which is all a landed criterion claims.
+
+Reversibility: cheap. This pass changed no code and git carries the prior text; the split is a
+restructure of one document, and every criterion id survives it unchanged.
+
+---
+
+### 2026-08-20 — `S13` is allocated for the apex's placeholder copy, which is live on both targets
+
+Context: found while surveying the tree for outstanding work. `site/landing.config.ts` and
+`src/composition/apex.ts` carry **six** placeholder strings — the apex's `title`, `description`, Open
+Graph title and description, and the `Organization` block's `name` and `description` — each reading
+"replace before publication". The 2026-08-06 entry *"S6's route titles and descriptions start as
+placeholder copy"* authorised exactly this, on the owner's instruction, "with the real copy to replace
+it in a follow-up once written". **That follow-up was never opened**, and the site has since published
+on both targets, so a search result, a shared link and the machine-readable `Organization` summary all
+currently say the copy is a placeholder.
+
+This is verbatim the failure `agent.md` § *Drift* names — *"an amendment made after its slice has
+merged has no carrier, and nothing goes red"*. Nothing was wrong with the deferral; it had no carrier,
+and issues are disabled here, so fourteen days passed with the placeholder on the front page.
+
+Chosen: allocate `S13 — The apex's real title and description`, the sole entry under
+`## Outstanding`. It is vertical — six strings through route metadata and the JSON-LD block to the
+emitted document — and its criteria assert against **built HTML** rather than the declared
+configuration, on `S6.12`'s rule. `S13.3` requires that neither module still contains the string
+`placeholder`, so the two `PLACEHOLDER COPY` comments instructing a reader to leave the copy alone go
+with the copy they guard.
+
+Rejected — **treating it as a copy edit needing no slice.** It is six strings, and the temptation is
+real. Declined because that is precisely what the 2026-08-06 deferral did: something too small to
+track went untracked and survived fourteen days and a publication. A slice is the only carrier this
+repository has while issues are disabled. Rejected — **folding it into `S6`'s criteria**, which would
+edit a landed slice's body and reopen a shipped slice.
+
+Reversibility: cheap, and it stays blocked on the owner either way — the six strings are brand
+material a slice transcribes and never invents.
+
+---
+
+### 2026-08-20 — The citation ruling lands in `20-contract.md`; `Testimonial.url` stays unbranded
+
+Context: the entry below sequenced the ruling's second half to `/contract` over `20-contract.md`
+§ *Types*, § *Error semantics* and `X8`, and closed **"Still owed"**. This is that run. The ruling
+itself was not re-decided; it was transcribed against the tree rather than against the ruling's
+summary of it, which is what surfaced the one thing here that the ruling did not settle.
+
+Chosen, and dictated by the ruling: `Testimonial` gains `readonly url?: string`;
+`ContentErrorCode` gains `TestimonialUrlInvalid` and its table row; the testimonial codes become six
+and the field-level ones five; the stale **"no `source` field"** sentence goes, while the `avatar`
+rejection stays on its own reasoning; `X8` gains the `Source`-line clause.
+
+**Chosen, and not dictated by the ruling: `url` is declared `string`, not `AbsoluteUrl`.** The tree has
+declared it unbranded since 5f1bd16 and validates it with the same predicate `Home.own.url` uses, so
+the contract had a genuine choice about which to write down. Written as `string`, because that is what
+the tree declares and a contract that says otherwise is false about the surface it exists to
+constrain — and the tree's arrangement is coherent rather than an oversight: `Testimonial` carries no
+branded field at all, a brand here gates a value into a derivation, and no derivation reads a
+testimonial. `TestimonialUrlInvalid` earns the property at the same point every other testimonial
+guarantee is earned. Rejected: **writing `AbsoluteUrl` and treating the tree as the stale half.** It
+buys symmetry with `Home.own.url` and a guarantee carried in the type rather than in a validator, which
+is this document's usual preference. Declined because nothing downstream demands it and it would make
+`Testimonial` the one half-branded record shape in the repository, which is harder to reason about
+than either end — and because it is a public-interface change, so it would have escalated rather than
+being written here.
+
+**Also recorded: two statements elsewhere in `20-contract.md` were falsified by the field itself and
+corrected in the same commit.** § *Public signatures*' "no author, quote, role or organization appears
+in Composition's source" omitted `url`, and `X5`'s "a `ResolvedHome.url` carried in an `href` is the
+case the apex composition has" was no longer the only attribute-position case. Both are transcription
+errors under `AGENTS.md` § *Hard rules*, corrected where found; neither is a decision. The rule the
+first states is unchanged.
+
+**Not applied, and not this command's:** `src/composition/testimonials.ts` cites `(C16)` for the
+content-agnostic rule. `C16` is an `S11` acceptance-criterion id, not a contract invariant — the
+contract's `C` series stops at `C15` — so the comment reads as a contract citation that does not
+resolve. It is a code comment, `/contract` writes no code, and `S11` is already staged in `## Open`
+as `/slices`' to re-cut. Recorded here so it is not rediscovered as a contract defect.
+
+Reversibility: cheap. The field, the code and the `X8` clause revert with the tree; the branding
+choice is a one-line change if a derivation ever reads a testimonial, which is the condition that
+would make it worth having.
+
+---
+
+### 2026-08-20 — The citation ruling lands in the brief and the design; open question 5 closes with it
+
+Context: the entry below ruled that `design/` is the stale half on `Testimonial.url` and closed with
+**"Not applied here"**, sequencing the work as `00-brief.md` and `10-design.md` first — `/design`,
+`opus`/`high`, fresh session — then `/contract` over § *Types*, § *Error semantics* and `X8`. This is
+that `/design` run. Nothing below was re-decided; the ruling was transcribed. One thing was closed
+that the ruling did not name, and it is the reason this entry exists rather than a commit message.
+
+Chosen, in `00-brief.md`: § *Definition of done* drops "fabricated" from the collection and states
+instead that the quotes are fabricated **save where one is genuinely citable and carries its
+citation**; § *Source material* item 4 keeps every existing sentence and gains a closing paragraph
+stating the narrowing as **"the exception is that no fabricated quote is labelled, not that every
+quote is fabricated"**. Item 3 is untouched and stays true — none of `Idea.md`'s three drafts was
+chosen. In `10-design.md`: § *Testimonial* gains the `url` row, the combined avatar/source paragraph
+splits so the `avatar` rejection survives intact on its own reasoning, and the citation rejection is
+retained as the record of what it was an argument about — fabricated attributions — rather than
+deleted. The tell is written up as an accepted cost under its own heading, in the form this document
+already uses for `stage`-versus-liveness.
+
+**Chosen, and not dictated by the ruling: open question 5 is marked answered.** *"Does Effortless
+Action go on the page, and in which draft?"* had stood open since 2026-08-05 while both halves were
+already settled — the page half by `00-brief.md` § *Definition of done*, which names Effortless Action
+as one of the apex document's four sections, and the draft half by this log's own 2026-08-07 entry,
+*"The manifesto supersedes the Idea.md draft"*, where the owner ruled the manifesto prose is
+owner-supplied final copy superseding the transcript outright. `.claude/commands/design.md`'s re-run
+rule is explicit that a question the brief now answers must not reappear, so leaving it open was a
+defect in this document rather than a live uncertainty. It keeps its number and says so, per the
+stable-numbering rule the section opens with.
+
+Rejected: **regenerating `10-design.md`'s prose in full**, which is the literal reading of the re-run
+instruction. Declined because the same instruction binds the output to this log — a logged decision is
+re-expressed, not re-made — so a faithful regeneration reproduces the current document everywhere the
+brief and this log have not moved, and re-typing 1158 lines of reconciled prose to reach that same
+artifact risks silently dropping a load-bearing clause for no gain. `AGENTS.md` § *What not to do*
+forbids improving prose while editing something else, which is what a cosmetic rewrite would be.
+Rejected: **leaving question 5 open and letting `/contract` or the next `/reconcile` find it** — it
+would be found as drift a third time, and the run that can see it settled is the one that should close
+it.
+
+Reversibility: cheap in `10-design.md`, expensive in `00-brief.md`, unchanged from the entry below —
+item 4's carve-out is load-bearing for the section, and the narrowing is the kind of clause that is
+re-argued rather than reverted. Question 5's closure is cheap and citation-safe: the number is
+retained.
+
+**Still owed:** `/contract` over `20-contract.md` § *Types*, § *Error semantics* and `X8` — the
+`url` field, `TestimonialUrlInvalid`, the testimonial codes becoming six, and the `Source`-line clause.
+That half is unchanged by this run and is not `/design`'s.
+
+---
+
+### 2026-08-20 — A testimonial may carry a citation URL; `design/` is the stale half
+
+Context: `/contract` compared `20-contract.md` against the tree and found a contradiction neither
+document nor `## Open` had recorded. `10-design.md` § *Testimonial* declares four fields and rejects a
+citation link by name — *"`source` was considered as an outbound citation link, but every candidate
+rendering either duplicates `organization` as inert text or turns a fabricated attribution into a
+clickable claim, which the *testimonials* carve-out in `00-brief.md` § *Source material* does not
+extend to"* — and `20-contract.md` carries the same four fields, the same sentence, an eighteen-member
+`ContentErrorCode` and the phrase "the five testimonial codes". The tree has carried a fifth field
+since 5f1bd16 ([#75](https://github.com/The-Running-Dev/SubZeroDev.com/pull/75), 2026-08-10): an
+optional `url`, validated as an absolute `https:` URL, rendered as a `Source` link in the card's
+attribution, and used by exactly one entry — a real quote from a real issue in
+`SubZeroDev.GameEngine`. This is a **public interface**, so it escalated rather than being corrected in
+place (`AGENTS.md`, *Hard rules*).
+
+The design's rejection is entirely an argument about **fabricated** attributions, and the one entry
+using the field is not one. That is why this is a stale document rather than a defect in the tree: the
+reasoning was sound and simply never contemplated a quote that could be cited.
+
+Chosen, **on the owner's ruling**: `design/` moves and the code does not. `Testimonial` gains the
+optional `url`; `ContentErrorCode` gains `TestimonialUrlInvalid`; the testimonial codes become six;
+`X8` gains the `Source`-line clause alongside the existing metadata-line rule. The brief moves too, in
+two clauses that the real quote makes false — § *Definition of done*'s "a fixed collection of
+**fabricated** testimonials" and § *Source material* item 4's "**every** quote in it is fabricated".
+The bounded exception itself is unchanged: the page still labels nothing on it as fictional.
+
+Rejected: **remove `url` from the tree**, restoring the documents as written and leaving the brief
+untouched. It is the cheaper edit and it keeps one property the chosen option gives up — a `Source`
+link on one card among fifteen is a **tell**, inviting a reader to notice which quotes can be checked
+and which cannot, which is a cost to the joke the section exists for. Declined because the house rule
+that nothing may be funnier than it is true favours the citation where one exists, and because the
+quote is genuinely checkable evidence about a SubZeroDev repository, which is the site's own subject.
+Rejected: **keep the field and render nothing** — an inert declaration, which this design refuses
+elsewhere by name.
+
+Reversibility: cheap in code, expensive in the brief. Item 4's carve-out is load-bearing for the
+section, and narrowing "every quote is fabricated" to "every fabricated quote is unlabelled" is the
+kind of clause that is re-argued rather than reverted.
+
+**Not applied here.** `/contract` may not write a signature `10-design.md` determines the opposite of,
+so the sequence is `00-brief.md` and `10-design.md` first — `/design`, `opus`/`high`, fresh session —
+then `/contract` again over § *Types*, § *Error semantics* and `X8`. The single descriptive drift this
+pass did correct on the spot is in 7d83b99 and is unrelated.
+
+
+### 2026-08-20 — `design/` is reconciled to the two-route tree and to the JSON content documents
+
+Context: the two items staged in `## Open` on 2026-08-11, adjudicated together because they overlap in
+`§ Adapter`, which both rewrite. The fold's removal was already decided (2026-08-10); the JSON
+migration's contract consequences were deferred by
+[#83](https://github.com/The-Running-Dev/SubZeroDev.com/pull/83) rather than overlooked. Neither was
+re-litigated here — what was decided is how much the documents should say afterwards.
+
+Chosen, **the fold**: delete it from `10-design.md` and `20-contract.md` outright, and record it in
+`10-design.md` § *Alternatives considered* as an alternative that shipped and was withdrawn, pointing at
+the 2026-08-10 entry for the detail. Roughly fifteen clauses go — § *Route*'s "Three, not two", the
+fold sentences in § *Module boundaries*, § *Control flow* 1 and the whole of 3a, the "fold envelope
+drifts" failure mode, `FoldedRoutes`, `foldRoutes`, `composeTestimonials`, `testimonialsPath`,
+`stylesheetFor`'s `data-view`/`default-*` blocks, and the fold clauses in `A4`, `A6`, `X6`, `X8`, `X9`,
+`X10`, `V2`, `V11`, `V13`, `P6`, `Primitive.rules` and § *Error semantics*. `composeApex` gains its
+`testimonials` parameter and `X9` is re-aimed at the `view` primitive's `:target` switch, which is the
+fold's idea applied within one document rather than across two.
+
+Rejected — **marking each clause superseded in place.** It keeps the history visible in the document
+that carried it, and it is what a cautious pass would do. Declined because `agent.md` § *Drift* already
+carries the cost: a note recording a divergence survives its own resolution unless the edit and the
+note land together, and this would create fifteen of them at once, in a contract that would then
+describe two architectures. Rejected — **deleting with no alternatives note.** § *Single ownership*
+argues for it, since `90-decisions.md` holds the why in more detail. Declined because § *Alternatives
+considered* is where a future session looks before proposing a route per section again, and it will not
+think to search a dated log entry for a shape nobody mentioned to it.
+
+Chosen, **the JSON migration**: `C14` and `C16` merge into one invariant over the two **document
+validators** — only Adapter and the validator tests may reach `projectsDocumentValidator` or
+`testimonialsDocumentValidator` — which is what `tests/content/import-graph.test.ts` already asserts,
+including against the four non-naming reach forms. `UnauthorizedInventoryImport` becomes
+`UnauthorizedValidatorImport`. `§ Content` loses `projects` and `testimonials` and gains the two
+validators, with the structural/semantic split written out; a new `§ The content documents` states what
+`site/sources.public.yml` and the two JSON files cannot state about themselves — strict envelopes, a
+`version` that fails rather than degrades, `at: build`, `cache: manual` — and points at the tree for
+everything it can. `§ Adapter` is rewritten around `defineLandingPageData`: the default export is a
+`LandingPageDataConfig`, not a `LandingPageConfig`, and `A5` becomes a property of the build rather
+than a call Adapter makes. `A3`'s import list and `V16`'s citations follow.
+
+**What that invariant does and does not buy is written down, because they are not the same guarantee.**
+The old rule kept unvalidated records from reaching a derivation. That failure mode is now closed **by
+construction** — the records are JSON outside the module graph, and `Inventory` and `Testimonials` are
+constructible only by a validator — so the surviving rule protects something narrower: that there stays
+one validation entry point per document. Rejected — **dropping `C14` entirely** on the § *Single
+ownership* argument that an invariant restating a type-system guarantee is a second copy. Declined
+because `V16` and the test file both cite the id, and deleting it would leave the test's reason for
+existing written down nowhere in `design/`.
+
+Also settled: **the package pin's fifteen `0.3.0` references.** Every behavioural claim among them was
+**re-verified against the installed `0.4.1`** in this session rather than re-dated from memory —
+`config.styles` is still read nowhere, `hydrate` is read only as a type check during data validation,
+`LandingPageBodyRoute`'s shape is unchanged, `noScript` is still appended inside a body route's body,
+and `socialImageUrl`/`openGraph.imageUrl`/`twitter` are still omitted when absent. Bare pins move to
+`0.4.1`; dated answers in the `U*` blocks keep their original version and gain the supersession.
+Rejected — **find-and-replacing the numeral**, which would have re-asserted a verification nobody
+performed; rejected — **staging it for `/contract`**, since `## Open` is where the last two items sat
+for twelve days.
+
+Also settled: **`row` is retained with no call site**, and the contract now says so rather than
+describing it as a live layout. Its last user went with the section stack on 2026-08-10. It stays
+because `stylesheetFor` derives emission from the body, so an unused primitive reaches no document and
+costs nothing — which is what distinguishes it from the "permission with no user" `10-design.md`
+§ *Alternatives considered* refuses, where an unexercised permission widens what a document may
+contain. Rejected — **deleting it**, which is the stricter reading and stays cheap to do later; it is a
+code change, and this was a documentation pass whose only gates were `tsc --noEmit` and
+`check-design-counts`. The same paragraph's claim that `row` is the *only* primitive sizing a child it
+does not name is corrected: `grid`'s `break-inside` rule made that untrue on 2026-08-08.
+
+**Not resolved here, and deliberately:** `design/30-slices.md`'s S11 and S12 still specify the fold.
+`.claude/commands/reconcile.md` puts that document out of scope and forbids editing an unlanded slice's
+criteria in this pass — landing slice N and rewriting slice N+1's criteria is the churn loop this
+command owns the first link of. It goes to `/slices` (`opus`, `high`). `V16`'s `assertImportGraph` is
+still declared with no implementation; the contract now says so instead of implying otherwise.
+
+Reversibility: cheap for every edit here — this pass changed no code, and git carries the prior text.
+The two things it describes are not cheap to reverse and were not decided here: the fold's removal is
+recorded as expensive in the 2026-08-10 entry, and the JSON migration as moderate in the 2026-08-13
+one.
+
+---
+
+### 2026-08-20 — The apex is a tab switch after all; the brief's "all at once" clause is the stale half
+
+Context: `/reconcile` found the deployed apex hiding three of its four sections while
+`00-brief.md` § *Definition of done* required all four to render at once, "not hidden behind a tab",
+and while the 2026-08-10 entry below recorded that as an explicit owner instruction.
+[#79](https://github.com/The-Running-Dev/SubZeroDev.com/pull/79) reversed it thirteen hours after that
+entry was written, restoring the switch as a new `view` primitive with
+`tests/build/section-layout.test.ts` guarding it from a browser. That pull request's own body named the
+two contract statements it was leaving stale and said they needed sign-off; **the sign-off was never
+asked for and no entry was written**, so nothing went red and nothing was staged in `## Open`. The
+contradiction survived eight merges, a `/reconcile` staging pass on 2026-08-08 and PR #83's deferral
+note — both of which read this area — because the restored switch shares no vocabulary with the fold it
+replaced: every search for `foldRoutes`, `data-view` or `/testimonials/` returned clean while
+`:target`-based section hiding was live under a new name.
+
+Chosen: **the brief moves and the code does not.** #79 is the later decision and the better one on its
+own evidence — with every section visible, each nav link scrolled to its section instead of selecting
+it, no tab ever read as current, and the imported prototype (`SubZeroDev Landing.dc.html`) puts each
+section behind its own `sc-if` and shows exactly one. `00-brief.md` § *Definition of done* loses "not
+hidden behind a tab" and "all render on the same document at once", keeping the clause's real point,
+which is that testimonials is a **section of the apex rather than a route** — that half is unchanged by
+this entry and is what the 2026-08-10 merge actually bought. § *Source material* item 4 drops
+"always-visible" for the same reason. `20-contract.md`'s `PrimitiveName` opens from ten to twelve and
+declares `view` and `link-current` in the union rather than carrying one of them in prose alone; `view`
+gets the paragraph describing why a primitive naming one document's anchor ids is accepted here.
+
+Rejected — **reverting #79 and holding the brief.** The brief outranks the code and this was the
+default reading, put first when the fork was raised. Declined on the owner's ruling: the switch is the
+intended design, the four-sections-at-once instruction was given before its geometry had been seen
+rendered, and #78's single-column stack — which is independent and stays either way — is what exposed
+that. The cost of this direction is stated plainly: **the brief has now been amended twice in eleven
+days on the same clause**, which is the pattern *Working with me* asks to be told about rather than
+absorbed quietly.
+
+Rejected — **leaving both and staging the contradiction in `## Open` again.** It was already there in
+substance for ten days without being seen. A second deferral of a Definition-of-done contradiction that
+is live on both published targets is not a lighter-weight decision, it is the same decision taken by
+not taking it.
+
+Reversibility: cheap in code, expensive in intent. Deleting the `view` primitive, its class at
+`src/composition/apex.ts:128` and `tests/build/section-layout.test.ts` restores the all-visible page in
+one patch; what does not come back cheaply is a brief clause that has stopped being trusted as settled.
 
 ---
 
@@ -147,15 +635,14 @@ Reversibility: expensive. Reintroducing `/testimonials/` as a separate route, or
 switch, means re-deriving the CSS `:target`/`:has()` fold and the JS tab-activation layer this entry
 removes — both are recoverable from git history, but neither is a small patch on top of the merged shape.
 
-**Known debt, not resolved here:** `design/10-design.md` and `design/20-contract.md` still describe the
-three-route fold architecture in detail — the *Route*, *Composition* and *Adapter* sections, the `A4`/`A6`/
-`V2`/`C16`/`X8` invariant table entries naming `foldRoutes`/`testimonialsPath`, and the whole *Fold*
-narrative in `10-design.md` — and `design/30-slices.md`'s S11/S12 acceptance criteria still read as if that
-architecture ships. None of that is rewritten in this entry: the surface area is large, session boundaries
-put doc-reconciliation after implementation on purpose (`AGENTS.md` § *Session boundaries*), and a rushed
-inline rewrite of a contract document risks introducing exactly the drift `agent.md` already warns against.
-A `/reconcile` pass (fresh session, sonnet/medium) is the next step and should treat this entry as its
-starting brief.
+**Known debt, mostly closed on 2026-08-20.** This entry left `design/10-design.md` and
+`design/20-contract.md` describing the three-route fold architecture in detail, and
+`design/30-slices.md`'s S11/S12 acceptance criteria reading as if it ships — deliberately, because the
+surface area was large and session boundaries put doc-reconciliation after implementation on purpose
+(`AGENTS.md` § *Session boundaries*). The `/reconcile` pass ran on 2026-08-20 at `opus`/`high` and
+**removed the fold from both documents**; see that date's entry for what changed and what was rejected.
+**S11 and S12 are still outstanding** — `30-slices.md` is out of `/reconcile`'s scope by that command's
+own rule, and correcting an unlanded slice's criteria belongs to `/slices`.
 
 ---
 

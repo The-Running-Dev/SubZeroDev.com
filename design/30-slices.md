@@ -3,61 +3,81 @@
 Derived from [`10-design.md`](10-design.md) and [`20-contract.md`](20-contract.md). Where this
 document and the contract disagree, one of them is a defect; say which rather than reconciling.
 
-## What can be sliced, and what cannot
+## How this document is kept
 
-**Everything on the render and publication path can now be sliced.** The three contract items that
-blocked it are answered: [`U1`](20-contract.md#u1--the-package-cannot-accept-a-caller-supplied-body)
-released at `0.3.0`, [`U2`](20-contract.md#u2--presentations-token-set-and-primitives) supplied
-Presentation's token set on 2026-08-06, and [`U7`](20-contract.md#u7--which-server-serves-the-container-tree)
-settled the container's server. Every signature `S4`–`S11` below needs is written in the contract.
+Two sections carry slices, and the difference between them is what a reader may assume.
 
-**What is not a block, and is not treated as one.** Three things are still outstanding and each is
-carried as a `Depends on:` line rather than as a barrier, following the precedent `S2` set when it
-waited on the owner's `line` and `stage` values:
+**[`## Outstanding`](#outstanding) is specification.** A slice there has not shipped. Its `Acceptance:`
+criteria are live claims, an implementing agent works against them, and `/track` syncs only these.
 
-- **Owner-supplied copy** — the manifesto prose, the miss page's copy, each route's title and
-  description, whether *Effortless Action* appears and in which draft
-  ([`10-design.md`](10-design.md) *Open questions* 5), and whether the page links to project source
-  ([*Open questions*](10-design.md#open-questions) 4). An implementing agent that reaches a sentence
-  the owner has not supplied **stops and asks; it does not write brand voice.**
-- **[`U6`](20-contract.md#u6--whether-a-social-image-asset-exists)** — whether a social image asset
-  exists. It determines whether three metadata fields are declared at all, so it is `S6`'s to wait on.
-- **Two mechanism choices** this document has recorded as needing a decision-log entry
-  *before* implementation since it was first written: the browser driver for `V2`, and the image
-  build-and-push mechanism. Each is now the first acceptance criterion of the slice that needs it, so
-  the decision is a deliverable rather than a note.
+**[`## Landed`](#landed) is record.** A slice there shipped, and its criteria state what was accepted
+**at merge** — not what is true today. Later work has withdrawn parts of several of them; the index
+below names every such supersession, so a reader meets the correction before the criterion.
+**Nothing under `## Landed` is re-derived, re-run, or reported as drift.**
 
-**The earlier deferral is discharged.** A previous revision declined to slice `projectTotal`,
-`countByStage`, `ecosystemTree`, `contaminationForest` and `sinceYear` because "their sole consumer is
-Composition, which is blocked. Writing them now produces a layer with nothing to verify it against."
-Composition is no longer blocked, so all five arrive in `S5` **with** that consumer, which is what the
-deferral was waiting for. `resolvedHomes` was the exception and shipped in `S3`.
+**The criteria bodies are kept rather than retired, and that is a departure from the kit's default.**
+That default is that a landed slice's body goes once its issue closes
+([`.claude/commands/track.md`](../.claude/commands/track.md)). Here the bodies stay, because **211
+citations across 63 files** name an individual criterion id as the reason that file exists —
+`tests/verification/style-agreement.test.ts` cites `S4.11` and `S4.12`, `src/presentation/types.ts`
+cites `S4.14`, `.github/workflows/ci.yml` cites `S10.5` through `S10.10`, and every `vitest.*.config.ts`
+names the criterion its shard runs. Retiring the bodies would turn all 211 into references to ids this
+document no longer contains, which [`agent.md`](../agent.md) § *Drift* records as the failure that is
+invisible. Landed sections are demoted to `###` instead, so what a tracker parses as the slice set is
+the index table and the `## Outstanding` entries alone.
 
-Eleven units are fully specified, independently valuable, and deliverable. `S1`–`S3` are done.
+**Ids are never reused and never renumbered.** Removing `S3.2` leaves a gap; the next criterion is
+`S3.4`. A criterion later work has falsified — `S11.15` is the one that has — **keeps its id and its
+wording**, and the supersession is recorded against it rather than by editing it. Renumbering silently
+rewrites what an existing citation refers to, which is the one failure this scheme exists to prevent.
 
-**Verticality.** A static site with no runtime has two observable ends: a served document and a CI
-outcome. `S1`–`S3` ended at a CI outcome because a served document was blocked. `S4` and `S5` end at a
-CI outcome for a different reason — **size, not blockage** — and the distinction matters, because the
-old justification no longer applies and reusing it would hide a judgement call. Each of them still
-produces a *page*, not a layer: `composeMiss()` and `composeApex(inventory, origin)` each return a complete
-document body and the stylesheet it requires. From `S6` on, every slice ends at an emitted or served
-document.
+**A re-run appends.** New slices go under `## Outstanding` at the next free number. `## Landed` is not
+rewritten and no retired id is reused, even for a slice that never got an issue.
 
-**Ordering, and the one place it is not ideal.** The design names its own largest bet plainly — *"the
-package hands the generated HTML to a bundler, and what a bundler adds to a document is its business,
-not this design's"* — and that bet is exercised in `S6`, the third new slice rather than the first.
-It cannot move earlier: the package cannot be handed a body until there is a body, and `A4` requires
-**both** routes to be declared at once, so both compositions must exist before anything is emitted.
-`S4` and `S5` are the shortest path to that point, and neither adds a layer to get there.
+Two rules bind a new slice, and they are why the landed set is shaped as it is:
 
-**Numbering.** `S1`–`S3` are fixed and closed; their criteria are ticked checkboxes on merged issues
-and are reproduced here verbatim. `S4`–`S10` were allocated by an earlier pass; `S11` — the
-testimonials route — is appended by this one, on 2026-08-08, rather than inserted, per `agent.md`'s
-rule to prefer appending over renumbering. Nothing is renumbered.
+- **Slices are vertical.** Each goes from entry point to persistence and leaves the system runnable. A
+  slice that only adds a layer cannot be run, so it cannot be verified, so it accumulates undetected
+  error. A static site with no runtime has two observable ends — a served document and a CI outcome —
+  and both count as an end.
+- **The riskiest assumption is exercised earliest.** `S6` carried this set's largest bet — that a
+  bundler hands back a self-contained document — and `S4` and `S5` were the shortest path to running
+  that bet rather than arguing it. `S6` could not move earlier: the package cannot be handed a body
+  until there is a body, and `A4` requires both routes declared at once.
+
+**Issues are disabled on this repository**, so no slice here has a tracker item and `/track` has
+nothing to sync. Deferred work stays in [`90-decisions.md`](90-decisions.md) § *Open* instead. That is
+a standing condition, not a gap this document can close.
 
 ---
 
-## S1 — Repository scaffold and the content gate
+## Landed
+
+Twelve slices have landed. Each row names the pull request that merged it and what has changed
+underneath it since; an em dash means the slice's criteria still describe the tree.
+
+| Id | Name | Merged | Superseded since |
+|---|---|---|---|
+| **S1** | Repository scaffold and the content gate | [#7](https://github.com/The-Running-Dev/SubZeroDev.com/pull/7) | `ContentErrorCode` has grown from the thirteen `S1.3` counts against to nineteen — five testimonial codes with `S11`, and `TestimonialUrlInvalid` with the 2026-08-20 citation ruling |
+| **S2** | The project inventory | [#8](https://github.com/The-Running-Dev/SubZeroDev.com/pull/8) | The `projects` export this slice's `Touches` names is **gone**: the records moved to `site/projects.json`, reachable only through `projectsDocumentValidator` (2026-08-11, [#83](https://github.com/The-Running-Dev/SubZeroDev.com/pull/83)). `S2.8`'s import check is now over the two document validators, which is `C14` as rewritten 2026-08-20 |
+| **S3** | Outbound link verification | [#10](https://github.com/The-Running-Dev/SubZeroDev.com/pull/10) | — |
+| **S4** | The visual language and the miss page | [#27](https://github.com/The-Running-Dev/SubZeroDev.com/pull/27) | `PrimitiveName` is closed at **twelve**, not the six `S4.3` counts: `row` and `bar` (2026-08-07), `grid` and `card` (2026-08-08, `S11.3`), `view` (2026-08-10) and `link-current` (2026-08-13). `S4.9`'s single `--font-mono` user is unchanged and is still `meta` |
+| **S5** | The apex composition | [#28](https://github.com/The-Running-Dev/SubZeroDev.com/pull/28) | `composeApex` takes `(inventory, testimonials, origin)` since 2026-08-10; `S5.5`–`S5.10` name the two-parameter form. The apex carries four sections rather than the three this slice composed |
+| **S6** | The emitted document | [#30](https://github.com/The-Running-Dev/SubZeroDev.com/pull/30) | The pin `S6.1` names is **`0.4.1`**, not `0.3.0` (2026-08-11), and the default export is a `LandingPageDataConfig` built by `defineLandingPageData`, so `A5`'s refusal is the package loader's rather than Adapter's. `S6.7`'s `projects` import is now the two document validators. `S6.3`'s two-route count went to three under `S11` and is two again. **Its route copy is still placeholder text — that is [`S13`](#s13--the-apexs-real-title-and-description)** |
+| **S7** | The publishable tree | [#31](https://github.com/The-Running-Dev/SubZeroDev.com/pull/31) | — |
+| **S8** | The browser request capture | [#32](https://github.com/The-Running-Dev/SubZeroDev.com/pull/32) | `S8.5` names issue #17; the issue it actually closed is [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16), recorded 2026-08-06. The finding it reports — no automatic `/favicon.ico` request — is unaffected |
+| **S9** | The container image and its in-CI gate | [#34](https://github.com/The-Running-Dev/SubZeroDev.com/pull/34) | — |
+| **S10** | Publication | [#35](https://github.com/The-Running-Dev/SubZeroDev.com/pull/35), [#45](https://github.com/The-Running-Dev/SubZeroDev.com/pull/45) | — |
+| **S11** | The testimonials route | [#66](https://github.com/The-Running-Dev/SubZeroDev.com/pull/66), [#73](https://github.com/The-Running-Dev/SubZeroDev.com/pull/73) | **The route is withdrawn** (2026-08-10, [#77](https://github.com/The-Running-Dev/SubZeroDev.com/pull/77)). `composeTestimonials` is now `renderTestimonials`, composing one section of the apex; `testimonialsPath` and the third route are deleted. `S11.11`'s three route entries are two, and **`S11.15` asserts the opposite of the tree** — `tests/types/route-path.type-check.ts` pins `RoutePath` to two members. `S11.3`'s ten primitives are twelve. Its `Touches` line counts three new error codes where `S11.1` names five. What survives untouched: the collection, `validateTestimonials`, `testimonialTotal`, `grid`, `card`, the escaping and the content-agnosticism suite |
+| **S12** | The inline enhancement script | [#76](https://github.com/The-Running-Dev/SubZeroDev.com/pull/76) | **The fold went with the route** (2026-08-10, [#77](https://github.com/The-Running-Dev/SubZeroDev.com/pull/77)): `foldRoutes` is deleted and `enhancementScript()` is emitted into one apex body, not two folded ones, so `S12.3`'s three emitted documents are two. The view switch `S12.6` names was removed with it and then **restored** as the `view` primitive's `:target` rules ([#79](https://github.com/The-Running-Dev/SubZeroDev.com/pull/79), adjudicated 2026-08-20), guarded by `tests/build/section-layout.test.ts` rather than by `:has()`. The search box, stage chips, detail overlay, manifesto layout and every criterion from `S12.7` to `S12.10` survive as written |
+
+
+The twelve bodies follow, verbatim as merged. **Read the index above first** — several criteria below
+were true when they were accepted and are not true now, and none of them has been edited to hide that.
+
+---
+
+### S1 — Repository scaffold and the content gate
 
 Delivers: The repository becomes a real TypeScript project that typechecks, tests and reports in CI
 for the first time, and it gains the one thing everything else depends on — a single validator that
@@ -92,7 +112,7 @@ not touch the version question `U4` leaves open. Anything that emits HTML.
 
 ---
 
-## S2 — The project inventory
+### S2 — The project inventory
 
 Delivers: The real list of projects lands in the repository — every product named in `Idea.md`'s
 ecosystem, plus the subdomains that actually serve, each carrying the year it began, where it sits in
@@ -124,7 +144,7 @@ Rendering. Checking that any URL responds — that is S3.
 
 ---
 
-## S3 — Outbound link verification
+### S3 — Outbound link verification
 
 Delivers: Every address the release will send a visitor to is checked by CI before the release can be
 published, and the check goes red when one of them stops answering. It runs on the network, after the
@@ -162,7 +182,7 @@ undecided. Publishing anything, or stating any live URL.
 
 ---
 
-## S4 — The visual language and the miss page
+### S4 — The visual language and the miss page
 
 Delivers: The site gets its look — a dark, typographic token set and six layout primitives — and its
 first complete page, the one a visitor sees when they ask for something that is not there. Each page
@@ -205,7 +225,7 @@ emitted to disk — S6.
 
 ---
 
-## S5 — The apex composition
+### S5 — The apex composition
 
 Delivers: The page this whole repository exists for — the manifesto, the ecosystem list grouped by
 lifecycle stage, the contamination chain that shows which project escaped out of which, and the
@@ -241,7 +261,7 @@ as a parameter and its tests supply it.
 
 ---
 
-## S6 — The emitted document
+### S6 — The emitted document
 
 Delivers: For the first time this repository produces actual HTML files. The landing-page package is
 added at an exact version, the two routes are declared with their titles, descriptions and social
@@ -289,7 +309,7 @@ the package would append **inside the body**, putting a false sentence in the pa
 
 ---
 
-## S7 — The publishable tree
+### S7 — The publishable tree
 
 Delivers: The emitted documents become a tree that can actually be published. Every document gains a
 machine-readable stamp of the exact commit it was built from — which is what later lets a deployment
@@ -328,7 +348,7 @@ published, and any live URL.
 
 ---
 
-## S8 — The browser request capture
+### S8 — The browser request capture
 
 Delivers: A real browser loads the built page and CI records every request it makes. The promise this
 whole design was written around — that a visitor's browser fetches the document and nothing else —
@@ -358,7 +378,7 @@ release it. `P2` and `P3`. Anything published.
 
 ---
 
-## S9 — The container image and its in-CI gate
+### S9 — The container image and its in-CI gate
 
 Delivers: The release artifact — a container image serving the built tree — is built, run and
 interrogated inside CI before anything could publish it. CI checks that the image serves byte for byte
@@ -394,7 +414,7 @@ and endpoint read-back. *Open question* 7 (TLS termination) stays foreclosed.
 
 ---
 
-## S10 — Publication
+### S10 — Publication
 
 Delivers: Preview/development publishing and release publishing become two explicit paths. Pages
 publishes every main-branch commit after the shared build, with no human approval, image gate, link
@@ -432,7 +452,7 @@ deployment sits behind, which the brief's non-goals still put out of scope perma
 
 ---
 
-## S11 — The testimonials route
+### S11 — The testimonials route
 
 Delivers: A third, content-agnostic testimonial renderer and a `/testimonials/` route carrying
 SubZeroDev's own fabricated collection, published, marked and gated on exactly the same footing as the
@@ -480,7 +500,7 @@ suite is what keeps the door open for one later.
 
 ---
 
-## S12 — The inline enhancement script
+### S12 — The inline enhancement script
 
 Delivers: The folded content routes gain the interactive layer the imported Claude Design prototype
 specified — the view switch upgraded from a fragment write to a direct swap, a search box and stage
@@ -517,9 +537,52 @@ animation as the prototype expresses it, which sets `opacity: 0` before observin
 second clause rules out; a reveal that only ever adds visibility is in scope. Changing `composeApex`,
 `composeTestimonials` or any Content module — this slice is additive at the fold, exactly as the
 2026-08-08 fold was additive at the Adapter wiring.
+## Outstanding
+
+One slice. Everything else this document allocated has landed; what is left beyond this sits under
+[`## Blocked`](#blocked) and is waiting on a decision rather than on work.
+
+## S13 — The apex's real title and description
+
+Delivers: The front page finally introduces itself. Since the site first published, anyone arriving
+from a search result, a shared link or a browser tab has been shown a stand-in sentence that says, in
+as many words, that it is a placeholder waiting to be replaced — and the machine-readable summary a
+search engine reads carries the same stand-in. This puts the real words there, in the site's own
+voice, on the one page this whole repository exists for.
+
+Touches: Adapter — the apex route's `title` and `description`, its Open Graph title and description,
+and the `PLACEHOLDER COPY` header comment that instructs a reader to leave them alone. Composition —
+the `Organization` block's `name` and `description` (`X6`), and the same comment above them.
+Verification — the emitted-document metadata assertions `S6.12` established. CI — the existing `build`
+job's offline assertions.
+
+Depends on: S6, and on **owner-supplied copy — six strings**: the apex's title and description, its
+Open Graph title and description, and the organisation's name and description. The 2026-08-06 ruling
+that let `/slice S6` start on placeholders named "the real copy to replace it in a follow-up once
+written" ([`90-decisions.md`](90-decisions.md)); **this is that follow-up**, and it has no carrier
+other than this entry, which is the shape [`agent.md`](../agent.md) § *Drift* names — an amendment made
+after its slice merged, with nothing to go red. An implementing agent that reaches this with no
+supplied copy stops and asks; it does not write brand voice.
+
+Acceptance:
+  - S13.1 The apex route's `title`, `description`, `openGraph.title` and `openGraph.description` each equal the owner-supplied string for that field, transcribed rather than composed, asserted field by field against the declared route metadata.
+  - S13.2 The `Organization` block's `name` and `description` each equal the owner-supplied string, asserted against the JSON-LD parsed out of the **emitted** apex document rather than against the module constants.
+  - S13.3 Neither `site/landing.config.ts` nor `src/composition/apex.ts` contains the string `placeholder` in any case, asserted over both module sources and demonstrated red by reintroducing one — so the two `PLACEHOLDER COPY` comments go with the copy they guard. `src/composition/enhancement.ts`'s DOM `placeholder` property assignment is untouched and outside this check.
+  - S13.4 The emitted apex document carries the supplied title as its `<title>` and the supplied description as its meta description — asserted against the built HTML, never against the declared configuration (`S6.12`'s rule).
+  - S13.5 The emitted apex document's Open Graph title and description carry the supplied strings, while its canonical URL, `og:url` and `og:type` are unchanged from what `S6.4` asserts, and no `og:image` and no `twitter` element appears (`U6`).
+  - S13.6 `assertSelfContained`, `assertContentPresent` and `assertStyleAgreement` each still return `{ ok: true }` for the emitted apex, and it still carries exactly two script elements (`V13`) — a copy swap moves no class, no rule and no element count.
+  - S13.7 The miss route's metadata is unchanged, asserted value by value against the committed strings. Its copy is real already and this slice does not revisit it.
+  - S13.8 A fixture organisation name or description containing `<`, `>`, `&`, `"` and `'` is JSON-string-escaped inside the `Organization` block and leaves it carrying no `</script` sequence in any case (`X5`'s exception, `X6`) — asserted with a fixture, since the committed copy is unlikely to carry any of the five.
+
+Out of scope: The miss route's copy, which landed real in
+[#74](https://github.com/The-Running-Dev/SubZeroDev.com/pull/74) — `S13.7` asserts it did not move.
+**Which** metadata fields are declared: `U6` settled that no social image exists, so `socialImageUrl`,
+`openGraph.imageUrl` and the whole `twitter` block stay omitted, and declaring one is a contract
+question rather than a copy swap. The manifesto prose, the section headings, the testimonials and the
+footer quote — all already real copy, none of it touched here. Any change to how metadata reaches the
+document: this slice changes six strings and nothing structural.
 
 ---
-
 ## Blocked
 
 Nothing below is a slice. Each names what is missing and the condition that releases it. No slice
@@ -538,9 +601,19 @@ check is static over `StylesheetText` or a computed-style check in a browser, an
 precedent for `V2` and `V13` — *"Source inspection cannot prove runtime behaviour… Both are
 required"* — makes that a decision rather than an implementer's choice.
 
+**`S12` narrowed this and did not release it.** `S12.8` and `S12.9` landed real browser assertions in
+`tests/build/enhancement.test.ts`: the detail overlay is keyboard-reachable, returns focus to its
+trigger, closes on `Escape` and traps focus while open; and with `prefers-reduced-motion: reduce`
+emulated, nothing transforms, translates, scales, rotates, moves or scrolls. What that settles is
+`P3` and `P4` **as they bind `X10`'s script**, which is the scope `X10` itself names. It leaves the
+primitive set unchecked, leaves `P2` with no check of any kind, and adds no `VerificationErrorCode`
+and no function to *Public signatures*. The gap is smaller than it was and is the same gap — with one
+item struck off the list of what is missing, since the browser harness `P4` needed now exists.
+
 **Not blocked by this:** anything that emits or serves a document. `P2`–`P4` stay Presentation's to
 maintain, and S4 ships them maintained and unchecked, which S4's *Out of scope* states plainly.
-Choosing a browser driver in S8 does not release this — S8 buys a driver, not a surface.
+Choosing a browser driver in S8 does not release this — S8 buys a driver, not a surface, and `S12`
+spending that driver on two of the three does not either.
 
 ### A scheduled post-deploy link re-check — `10-design.md` *Open question* 6
 
@@ -574,8 +647,6 @@ heading is retained unchanged because three documents cite the anchor.
 The same edit closed `U10`, whose motion clause the brief now carries in `P3`'s narrowed wording. It
 had no entry in this section.
 
----
-
 ## The publication CI
 
 The job graph below is derived from [`10-design.md`](10-design.md)'s ordering invariant `V7` and its
@@ -583,9 +654,9 @@ The job graph below is derived from [`10-design.md`](10-design.md)'s ordering in
 not itself a slice, and it allocates no number.
 
 ```
-build ──┬──► publish-preview
-        ├──► image-gate ──┬──► attestation ──► publish-release
-        └──► link-check ──┘
+typecheck-and-test ──┬──► build ──┬──► publish-preview
+                     │            └──► image-gate ──┬──► attestation ──► publish-release
+                     └──► link-check ───────────────┘
 ```
 
 `publish-preview` is a leaf. It joins nothing downstream, and `attestation` does not wait on it — the
@@ -593,9 +664,15 @@ two branches never converge, on the 2026-08-08 ruling recorded in
 [`90-decisions.md`](90-decisions.md). This graph drew an edge from `publish-preview` into `attestation`
 until then.
 
+**`link-check` hangs off `typecheck-and-test`, not off `build`.** It runs over `resolvedHomes` of the
+validated inventory and never reads the emitted tree, so it needs the content gate and not the
+artifact. This graph drew it under `build`, and omitted `typecheck-and-test` altogether, until
+2026-08-20; `.github/workflows/ci.yml` is the canonical statement and has read this way since S3.
+
 | Job | Discharges | Runs on | Delivered by |
 |---|---|---|---|
-| `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `R6`, `V1`, `V2`, `V3`, `V13`, `V16`, `X4` | push + all PRs | S6, S7, S8 |
+| `typecheck-and-test` — the content gate, the derivations, and every offline unit assertion | `C1`–`C15`, `P1`, `P5`–`P7`, `X1`, `X3`–`X10` | push + all PRs | S1, and every slice since |
+| `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `R6`, `V1`, `V2`, `V3`, `V13`, `V16`, `X4` | push + all PRs | S6, S7, S8, S12 |
 | `image-gate` — build, run and gate the image before any push | `V10`, `V11` (image half), `V12` (container half) | push + all PRs | S9 |
 | `link-check` — **already implemented** | `V4` | push + same-repo PRs | S3 |
 | `publish-preview` — branch-head check, Pages deploy, Pages read-back; no release gate precedes publication | `V6`, `V8` (preview half), `V11` (Pages half), `V12` (Pages half) | main push | S10 |
@@ -623,14 +700,23 @@ them fails silently:
    pushed image*; a staging tag would be a registry write before the branch-head check, which the
    design forbids. That leaves saving and reloading it, with the digest asserted across the boundary.
 
-**Two of the four choices this section named are made.** `U7` settled the base image and file server,
-and `U3` settled the attestation mechanism. The browser driver for `V2` and the image build-and-push
-mechanism are still open, and are now the first acceptance criterion of S8 and S9 respectively rather
-than a warning in prose.
-
+**All four choices this section named are made, and each is logged.** `U7` settled the base image and
+file server and `U3` the attestation mechanism, both on 2026-08-06. The two this document carried as
+first acceptance criteria were answered the same day and are recorded in
+[`90-decisions.md`](90-decisions.md): the browser driver for `V2` is **Playwright driving Chromium
+headless over a local static HTTP server rather than `file://`** (`S8.1`), and the image build and push
+mechanism is **GHCR, tagged with the full commit id, with the registry write scoped to
+`publish-release` alone** (`S9.1`). Making the decision a slice's own first criterion rather than a
+warning in prose is what got both answered before either slice wrote code; that is the shape a future
+mechanism choice should take.
 ---
 
 ## Next
 
-Run `/track` in a fresh session to open the issues and milestone for `S4`–`S12`. This document opens
-none. `S1`–`S3` already have issues and are closed.
+`/track` is the usual next step and **cannot run here**: issues are disabled on this repository, so no
+slice in this document has a tracker item and there is nothing to sync. `S13` is carried by this
+document and by [`90-decisions.md`](90-decisions.md) § *Open* until that changes.
+
+`S13` needs six owner-supplied strings before it can start, and a slice transcribes them rather than
+inventing them. Nothing else here is implementable: everything under `## Landed` has shipped, and
+everything under `## Blocked` is waiting on a decision rather than on work.

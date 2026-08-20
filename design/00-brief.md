@@ -93,11 +93,13 @@ The binding list. Out of scope for every agent, permanently, until this file cha
   precisely when scripting is off, and on a document that needs no scripting there is no fallback for
   it to describe.
 - A 404 route exists, is on-voice, and is served for an unknown path at the apex.
-- **The apex carries a fixed collection of fabricated testimonials as one of its always-visible
-  sections** — not a separate route, and not hidden behind a tab: Effortless Action, The Echo System,
-  Contamination and Testimonials all render on the same document at once (2026-08-10, "merge
-  testimonials into the apex"). The section is presented with the same corporate seriousness as the
-  rest of the site and names nothing on it as fictional, satirical or fake.
+- **The apex carries a fixed collection of testimonials as one of its sections** — not a
+  separate route. Effortless Action, The Echo System, Contamination and Testimonials are all sections
+  of the single apex document, selected by that document's own navigation (2026-08-10, "merge
+  testimonials into the apex"; the tab switch restored the same day, PR #79). The quotes are
+  fabricated, save where one is genuinely citable and carries its citation. The section is presented
+  with the same corporate seriousness as the rest of the site and names nothing on it as fictional,
+  satirical or fake.
 - The page is legible in greyscale, **moves** nothing under `prefers-reduced-motion: reduce`, and is
   keyboard-traversable in visual order. Moves means no transform, translation, scale, rotation,
   position change or scroll behaviour, animated or transitioned. A transition of a non-positional
@@ -150,9 +152,16 @@ Four things about it are settled here rather than there:
 4. **The testimonials section is a bounded exception to item 2's house rule, not a repeal of it.**
    `Idea.md` § *Company Personality* and § *Writing Style* ("Never exaggerate. Reality already did.")
    describe the voice everywhere else on the site, and item 2 holds everywhere else. Testimonials is
-   the one section built the opposite way on purpose: every quote in it is fabricated, most of them
+   the one section built the opposite way on purpose: its quotes are fabricated, most of them
    adversarial to SubZeroDev, and the page never says so. The joke depends on the page never breaking
    character — no "fake", "satire", "not real" or "for entertainment" label anywhere on it. It no
-   longer needs its own route to carry that exception — it is one always-visible section of the single
-   apex document (2026-08-10) — but the exception itself is unchanged and still scoped to it alone; the
+   longer needs its own route to carry that exception — it is one section of the single apex document
+   (2026-08-10) — but the exception itself is unchanged and still scoped to it alone; the
    ecosystem list and everything else on the apex still answer to item 2 as written.
+
+   **The exception is that no fabricated quote is labelled, not that every quote is fabricated**
+   (2026-08-20). Where a quote is a real line from a real SubZeroDev repository, it is used as itself
+   and carries its citation — item 2's house rule reaches that far even here, because a checkable
+   quote about a SubZeroDev repository is exactly the kind of thing that rule exists to prefer. The
+   unlabelled character of the section is untouched: a fabricated quote is never marked as one, and
+   never acquires a citation it cannot have.

@@ -53,6 +53,15 @@ and preferences belong in `AGENTS.md`.
   has an implementation yet"); **honesty in the log is not a carrier.** An amendment landing outside
   an open slice needs a tracked item in the same commit, or it is invisible from the moment it is
   written.
+- **A constraint gets quietly reworded on its way into a slice criterion, and the test is
+  written from the criterion.** The contract required every primitive selector to *begin
+  with* its own class; `S4.4` restated that as *contains*, the test asserted `toContain`,
+  and both shipped green. Ten days later a primitive was added whose nav rules match
+  elements carrying no such class — the exact failure the anchoring rule names — under a
+  test still named for it. **Cost: an invariant believed enforced since S4, unenforced for
+  the primitive that needed it, live on both published targets, found only by a full
+  re-read.** When a criterion restates a contract constraint, quote it; a paraphrase in a
+  test name is where a rule stops being the rule.
 - **A stale cross-reference is invisible.** Section numbers cited across documents rot
   silently when a document is restructured. Positional numbering makes this worse: inserting
   a document between existing ones means renumbering everything after it and rewriting every
