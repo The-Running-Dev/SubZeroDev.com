@@ -15,6 +15,21 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
   renders the `Source` line, so nothing but the JSON changes. Issues are disabled, so this is its
   carrier — the shape [`agent.md`](../agent.md) § *Drift* names, given one deliberately.
 
+- **`tools/*.Tests.ps1` fails 12 of 253 tests, all pre-existing and unrelated to any change on
+  [PR #88](https://github.com/The-Running-Dev/SubZeroDev.com/pull/88).** Found while running
+  `/pr`'s gate phase against that PR on 2026-08-20; confirmed present on `main` as well, so nothing
+  on the PR's branch caused it. Two independent root causes: (1) `design/state/` and
+  `design/state-index.md` do not exist in this repository, so every test exercising
+  `Test-DesignState.ps1` / `Read-DesignState.ps1` / `Update-DesignProjection.ps1` "against this
+  repository's own tree" has nothing to read — `Test-DesignState.ps1` itself exits 2
+  (`ContractListUnreadable`, `StateSetAbsent`) rather than 0 or 1; (2)
+  `tools/Test-CIWorkflow.Tests.ps1` expects `.github/workflows/verify.yml`, which does not exist —
+  only `.github/workflows/ci.yml` does. Deciding what `design/state/`'s record set should actually
+  contain (or whether this repository carries that tooling at all) is an owner call, not a
+  mechanical backfill; the `verify.yml` mismatch is either adding that file or repointing the test
+  at `ci.yml`. Issues are disabled, so this is its carrier. Full per-test detail is in
+  [PR #88](https://github.com/The-Running-Dev/SubZeroDev.com/pull/88)'s `Verified` section.
+
 - **`V16`'s `assertImportGraph` is declared in the contract and has no implementation.** The import
   graph is checked instead by `tests/content/import-graph.test.ts` against a test-local AST helper,
   which is the arrangement `assertImportGraph` was written to replace. `20-contract.md` now says so
