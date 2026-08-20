@@ -136,15 +136,35 @@ export type Testimonial = {
   readonly author: string;
   readonly role?: string;
   readonly organization?: string;
+  readonly url?: string;
 };
 
 export type Testimonials = readonly [Testimonial, ...Testimonial[]];
 ```
 
-`quote` and `author` are non-empty after trimming. `role` and `organization` are absent, never
+`quote` and `author` are non-empty after trimming. `role`, `organization` and `url` are absent, never
 `undefined`-valued and never empty, on the same convention as `Project.question`. No `avatar` field —
-`10-design.md` § *Testimonial* states why — and no `source` field, for the same section's reason.
+`10-design.md` § *Testimonial* states why, and that reasoning is untouched by `url` below.
 `Testimonials` carries its committed order as data; nothing derives, sorts or ranks it.
+
+**`url` is a citation, and the constraint the declaration cannot carry is *when it may be present*.**
+A present `url` is an absolute `https:` URL — enforced by `validateTestimonials`, which raises
+`TestimonialUrlInvalid` — and it is permitted **only on a quote that is genuinely a real line from a
+real SubZeroDev repository**, used as itself. A fabricated attribution has nothing to cite and never
+acquires the field. That is the whole of the rule, it is **authored rather than enforced**, and no
+assertion in this document checks it: nothing in the tree can tell a real quote from an invented one,
+so this is the one testimonial property a reader may not trust without checking the record. The
+carve-out in `00-brief.md` § *Source material* item 4 is unchanged — the page still labels nothing on
+it as fictional, and the field cannot become that label, because the quotes it would mark are exactly
+the ones that never carry it.
+
+**`url` is deliberately not `AbsoluteUrl`,** though it satisfies that type's constraint and is checked
+by the same predicate as `Home.own.url`. `Testimonial` carries no branded field at all: a brand exists
+here to gate a value into a derivation, and no derivation reads a testimonial — `testimonialTotal`
+counts the collection and the renderer consumes each record whole. Branding `url` would buy a
+guarantee nothing downstream demands and make `Testimonial` the one record shape that is half-branded,
+which is harder to reason about than either end. `TestimonialUrlInvalid` is what earns the property
+instead, at the same point every other testimonial guarantee is earned.
 
 ### Content — derived shapes
 
@@ -738,10 +758,11 @@ performs I/O.
 **`composeApex` composes the whole apex, testimonials included.** It takes a `Testimonials` for the
 same reason it takes an `Inventory` — Composition holds no content of its own, and the testimonials
 section is one of the apex document's four sections rather than a document of its own. It renders every
-`Testimonial` in input order and knows nothing about who any of them are: no author, quote, role or
-organization appears in Composition's source, which is what `X8` asserts. Site copy it does carry, on
-the same footing as the manifesto's — the section heading is this site's words, and only the quoted
-people's words are parameterised.
+`Testimonial` in input order and knows nothing about who any of them are: no `author`, `quote`,
+`role`, `organization` or `url` appears in Composition's source, which is what `X8` asserts. Site copy
+it does carry, on the same footing as the manifesto's — the section heading and the fixed `Source`
+link text are this site's words, and only the quoted people's words and their citation are
+parameterised.
 
 **The four sections are selected, not stacked.** All four are in the emitted body; the `view` primitive
 is what shows one at a time, in CSS, with no script (*Types* § *Presentation*). That is
@@ -1145,7 +1166,8 @@ export type ContentErrorCode =
   | "TestimonialQuoteEmpty"
   | "TestimonialAuthorEmpty"
   | "TestimonialRoleEmpty"
-  | "TestimonialOrganizationEmpty";
+  | "TestimonialOrganizationEmpty"
+  | "TestimonialUrlInvalid";
 
 export type ContentError = {
   readonly code: ContentErrorCode;
@@ -1158,16 +1180,22 @@ export type ContentError = {
 Every variant is deterministic and **not retryable**. In every case the caller — the build — exits
 non-zero and publishes nothing. There is no default value, no fallback stage, no dropped project and
 no silently empty section. `validateInventory` reports **all** failures in one `Result`, never the
-first only. `validateTestimonials` holds to the same rule over its own five codes.
+first only. `validateTestimonials` holds to the same rule over its own six codes.
 
-The five testimonial codes reuse `ContentError` rather than earning a second error type: `projectId`
+The six testimonial codes reuse `ContentError` rather than earning a second error type: `projectId`
 is always `null` for them — a `Testimonial` has no `ProjectId` — and `detail` carries the offending
 record's zero-based index, since there is no identity field to name it by instead. `field` is `"quote"`,
-`"author"`, `"role"` or `"organization"` for the four field-level codes and `null` for
+`"author"`, `"role"`, `"organization"` or `"url"` for the five field-level codes and `null` for
 `EmptyTestimonials`. Reusing the shape costs
-one always-`null` field on these five variants and buys one error type, one `Result` shape and one
+one always-`null` field on these six variants and buys one error type, one `Result` shape and one
 caller-facing report format for both content sets — the alternative, a `TestimonialError` type with its
-own five-code union, was considered and rejected for exactly that duplication.
+own union, was considered and rejected for exactly that duplication.
+
+**`TestimonialUrlInvalid` is the only testimonial code that is not an emptiness check**, and the
+asymmetry is worth naming: the other four field-level codes reject a field that is present and blank,
+while this one rejects a field that is present and *wrong*. It is also the narrower half of the two
+rules governing `url` — it constrains the value's **shape** and says nothing about whether the quote
+was entitled to carry one, which is authored and unenforceable (§ *Types*).
 
 | Code | Raised when | `projectId` | `field` |
 |---|---|---|---|
@@ -1189,6 +1217,7 @@ own five-code union, was considered and rejected for exactly that duplication.
 | `TestimonialAuthorEmpty` | An `author` is empty after trimming, at the index in `detail` | `null` | `"author"` |
 | `TestimonialRoleEmpty` | A `role` is present but empty after trimming, at the index in `detail`. Absent is valid; present-and-empty is not (`X8` would otherwise render an empty metadata element) | `null` | `"role"` |
 | `TestimonialOrganizationEmpty` | An `organization` is present but empty after trimming, at the index in `detail`. Absent is valid; present-and-empty is not, for `TestimonialRoleEmpty`'s reason | `null` | `"organization"` |
+| `TestimonialUrlInvalid` | A `url` is present and is not an absolute `https:` URL, at the index in `detail`. Absent is valid. Emptiness needs no separate code — an empty string fails this one | `null` | `"url"` |
 
 ### Artifact
 
@@ -1361,10 +1390,10 @@ where a separate module checks it, that is said in the row.
 | **X2** | Composition imports only Content and Presentation, and nothing imports Composition except Adapter | Composition |
 | **X3** | The page contains no form, no analytics, no consent surface and no third-party script | Composition |
 | **X4** | For each `ComposedRoute`, every class referenced in `bodyHtml` has a matching selector in `stylesheet`, and every **class** selector in `stylesheet` has a user in `bodyHtml` — checked by `assertStyleAgreement`. The token block's `:root` rules fall outside both halves and need no exemption clause: they carry no class selector, and `Primitive.rules` roots every other rule at its own `className` | Composition |
-| **X5** | Every Content value interpolated into `bodyHtml` is HTML-escaped, in attribute position as well as in text position; `<`, `>`, `&`, `"` and `'` never reach the document unescaped from a content value. The rule is over every interpolated value, not over a named list of fields. The attribute half is not implied by the text half — `"` and `'` are inert in text and are exactly what closes an attribute early — and a `ResolvedHome.url` carried in an `href` is the case the apex composition has. Asserted with a fixture project carrying all five characters, in both positions. **One exception, and it is not a relaxation**: inside the `application/ld+json` block (`X6`) HTML escaping would corrupt the JSON — `&amp;` in a URL is a different URL — so values there are JSON-string-escaped instead, and `X6`'s `</script` guard is what keeps that safe rather than the escaping | Composition |
+| **X5** | Every Content value interpolated into `bodyHtml` is HTML-escaped, in attribute position as well as in text position; `<`, `>`, `&`, `"` and `'` never reach the document unescaped from a content value. The rule is over every interpolated value, not over a named list of fields. The attribute half is not implied by the text half — `"` and `'` are inert in text and are exactly what closes an attribute early — a `ResolvedHome.url` carried in an `href` is the case the apex composition has, and a `Testimonial.url` in the `Source` link's `href` (`X8`) is a second one on the same document. Asserted with a fixture project carrying all five characters, in both positions. **One exception, and it is not a relaxation**: inside the `application/ld+json` block (`X6`) HTML escaping would corrupt the JSON — `&amp;` in a URL is a different URL — so values there are JSON-string-escaped instead, and `X6`'s `</script` guard is what keeps that safe rather than the escaping | Composition |
 | **X6** | The apex body carries **exactly one** `<script type="application/ld+json">` element; the miss body carries none. It holds a single JSON-LD `Organization` object; every value in it is JSON-string-escaped (`X5`), it contains no `</script` sequence in any case — checked as one of `ScriptElementPresent`'s raising conditions, not a separate code — and any figure in it is a Content derivation rather than a typed literal, exactly as `X1` requires of the visible page. The only other script element any document may carry is the single inline enhancement script `X10` admits; there is no third | Composition |
 | **X7** | The apex renders only `EcosystemGroup`s carrying at least one project. `C11` keeps every `Stage` in the tree so counts, ordering and totals stay total and testable; a lifecycle stage nothing has reached yet is not rendered as a heading with nothing beneath it. The two are complementary rather than in tension — the derivation is complete, the page is not a list of empties — and this is stated because the design's "never a silently empty section" rule was written for an empty *inventory* and left the empty *group* unnamed | Composition |
-| **X8** | The apex's testimonials section renders every `Testimonial` `composeApex` is given, in input order — it sorts nothing and drops nothing. A testimonial carrying neither `role` nor `organization` omits the metadata line entirely rather than rendering an empty one | Composition |
+| **X8** | The apex's testimonials section renders every `Testimonial` `composeApex` is given, in input order — it sorts nothing and drops nothing. A testimonial carrying neither `role` nor `organization` omits the metadata line entirely rather than rendering an empty one. A present `url` renders as one further attribution line carrying a single link whose text is `Source` and whose `href` is that value; an absent `url` renders **no** such line and no placeholder, so a card without a citation is indistinguishable from a card that was never eligible for one. The link text is fixed and is Composition's own word rather than the quoted person's, so § *Public signatures*' rule that no testimonial field appears in Composition's source survives the addition intact | Composition |
 | **X9** | The apex body carries its four sections — Effortless Action, The Echo System, Contamination and Testimonials — each reached by a fragment link in the apex navigation, and each carrying the `view` primitive's class. Which one is visible is decided by that primitive's `:target` rules and by nothing the composition states; a document requested with no fragment shows the first. Those rules remain the whole of section selection with `X10`'s script never executed — the script enhances the switch and does not replace it | Composition |
 | **X10** | The apex body carries **at most one** script element beyond `X6`'s JSON-LD block: an **inline enhancement script** with no `src` attribute, containing no `</script` sequence in any case. The miss body carries none. It initiates **no** network request of any kind — no `fetch`, no `XMLHttpRequest`, no dynamic `import()`, and no element insertion that loads a resource — which is what keeps `V2` true of a document that now executes something. It is **strictly additive**: it may reveal, hide, filter, reorder or overlay content already present in `bodyHtml`, and is never the sole source of any content, figure or link on the page. That constraint is not review-enforced — `V3` asserts every manifesto sentence and project `name` in built HTML **with scripting never executed**, so a script that became load-bearing for content turns `V3` red. `P3` and `P4` bind it as they bind the primitive set: it introduces no motion under `prefers-reduced-motion: reduce`, and any overlay it opens preserves focus order and keyboard reachability | Composition |
 | **A1** | Every URL in route metadata is built from `origin`; no origin string is written twice. Each route's `canonicalUrl` and `openGraph.url` equal `origin` concatenated with that route's `path` | Adapter |

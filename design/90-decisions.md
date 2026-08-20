@@ -50,6 +50,51 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 
 ---
 
+### 2026-08-20 — The citation ruling lands in `20-contract.md`; `Testimonial.url` stays unbranded
+
+Context: the entry below sequenced the ruling's second half to `/contract` over `20-contract.md`
+§ *Types*, § *Error semantics* and `X8`, and closed **"Still owed"**. This is that run. The ruling
+itself was not re-decided; it was transcribed against the tree rather than against the ruling's
+summary of it, which is what surfaced the one thing here that the ruling did not settle.
+
+Chosen, and dictated by the ruling: `Testimonial` gains `readonly url?: string`;
+`ContentErrorCode` gains `TestimonialUrlInvalid` and its table row; the testimonial codes become six
+and the field-level ones five; the stale **"no `source` field"** sentence goes, while the `avatar`
+rejection stays on its own reasoning; `X8` gains the `Source`-line clause.
+
+**Chosen, and not dictated by the ruling: `url` is declared `string`, not `AbsoluteUrl`.** The tree has
+declared it unbranded since 5f1bd16 and validates it with the same predicate `Home.own.url` uses, so
+the contract had a genuine choice about which to write down. Written as `string`, because that is what
+the tree declares and a contract that says otherwise is false about the surface it exists to
+constrain — and the tree's arrangement is coherent rather than an oversight: `Testimonial` carries no
+branded field at all, a brand here gates a value into a derivation, and no derivation reads a
+testimonial. `TestimonialUrlInvalid` earns the property at the same point every other testimonial
+guarantee is earned. Rejected: **writing `AbsoluteUrl` and treating the tree as the stale half.** It
+buys symmetry with `Home.own.url` and a guarantee carried in the type rather than in a validator, which
+is this document's usual preference. Declined because nothing downstream demands it and it would make
+`Testimonial` the one half-branded record shape in the repository, which is harder to reason about
+than either end — and because it is a public-interface change, so it would have escalated rather than
+being written here.
+
+**Also recorded: two statements elsewhere in `20-contract.md` were falsified by the field itself and
+corrected in the same commit.** § *Public signatures*' "no author, quote, role or organization appears
+in Composition's source" omitted `url`, and `X5`'s "a `ResolvedHome.url` carried in an `href` is the
+case the apex composition has" was no longer the only attribute-position case. Both are transcription
+errors under `AGENTS.md` § *Hard rules*, corrected where found; neither is a decision. The rule the
+first states is unchanged.
+
+**Not applied, and not this command's:** `src/composition/testimonials.ts` cites `(C16)` for the
+content-agnostic rule. `C16` is an `S11` acceptance-criterion id, not a contract invariant — the
+contract's `C` series stops at `C15` — so the comment reads as a contract citation that does not
+resolve. It is a code comment, `/contract` writes no code, and `S11` is already staged in `## Open`
+as `/slices`' to re-cut. Recorded here so it is not rediscovered as a contract defect.
+
+Reversibility: cheap. The field, the code and the `X8` clause revert with the tree; the branding
+choice is a one-line change if a derivation ever reads a testimonial, which is the condition that
+would make it worth having.
+
+---
+
 ### 2026-08-20 — The citation ruling lands in the brief and the design; open question 5 closes with it
 
 Context: the entry below ruled that `design/` is the stale half on `Testimonial.url` and closed with
