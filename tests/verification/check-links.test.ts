@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { checkLinks } from "../../src/verification";
 import type { LinkCheckResult, RetryPolicy } from "../../src/verification";
-import type { ResolvedHome } from "../../src/content";
+import type { CheckedLink } from "../../src/content";
 
 // A policy structurally identical to `linkCheckRetry` (S3.2 owns testing its
 // exact values) but with short delays, so the retry-exhaustion cases here run
@@ -33,7 +33,7 @@ afterEach(async () => {
   }
 });
 
-function startStub(status: number, onRequest?: () => void): Promise<{ target: ResolvedHome }> {
+function startStub(status: number, onRequest?: () => void): Promise<{ target: CheckedLink }> {
   return new Promise((resolvePromise) => {
     server = createServer((_req, res) => {
       onRequest?.();
@@ -44,15 +44,15 @@ function startStub(status: number, onRequest?: () => void): Promise<{ target: Re
       const { port } = server!.address() as AddressInfo;
       resolvePromise({
         target: {
-          projectId: "stub" as ResolvedHome["projectId"],
-          url: `http://127.0.0.1:${port}` as ResolvedHome["url"],
+          label: "stub",
+          url: `http://127.0.0.1:${port}` as CheckedLink["url"],
         },
       });
     });
   });
 }
 
-async function refusedTarget(): Promise<ResolvedHome> {
+async function refusedTarget(): Promise<CheckedLink> {
   const { target } = await startStub(200);
   await new Promise<void>((resolve) => server!.close(() => resolve()));
   server = undefined;
@@ -133,9 +133,9 @@ describe("S3.6 — a refused connection", () => {
       tcpServer!.listen(0, "127.0.0.1", () => resolvePromise(tcpServer!.address() as AddressInfo));
     });
 
-    const target: ResolvedHome = {
-      projectId: "stub" as ResolvedHome["projectId"],
-      url: `http://127.0.0.1:${address.port}` as ResolvedHome["url"],
+    const target: CheckedLink = {
+      label: "stub",
+      url: `http://127.0.0.1:${address.port}` as CheckedLink["url"],
     };
     const result = await checkLinks([target], { ...fastPolicy, attemptTimeoutMs: 50 });
 

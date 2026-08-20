@@ -403,6 +403,35 @@ describe("S7.12 — Artifact imports exactly CommitId, parseCommitId and Result 
   });
 });
 
+describe("S14.7 — checkLinks is called only by the live link-check shard and its own unit test (C17)", () => {
+  const targetFiles = [resolve(verificationDir, "index.ts")];
+  const callSites = [
+    resolve(repoRoot, "tests/verification/live/link-check.test.ts"),
+    resolve(repoRoot, "tests/verification/check-links.test.ts"),
+  ];
+
+  it("the only callers across the repository are the live shard and the direct unit test", () => {
+    const files = listTsFiles(repoRoot);
+    expect(files.length).toBeGreaterThan(0);
+    const users = namedImportUsers(readEntries(files), targetFiles, "checkLinks");
+    expect(users.sort()).toEqual([...callSites].sort());
+  });
+
+  it("the check has teeth: an unrelated caller is flagged", () => {
+    const users = namedImportUsers(
+      [
+        {
+          file: resolve(compositionDir, "apex.ts"),
+          source: 'import { checkLinks } from "../verification";',
+        },
+      ],
+      targetFiles,
+      "checkLinks",
+    );
+    expect(users).toEqual([resolve(compositionDir, "apex.ts")]);
+  });
+});
+
 describe("S3.7 — nothing imports Verification", () => {
   // Scoped to `src`, which is the boundary the contract states: no repository
   // module imports Verification, and its own tests necessarily do.
