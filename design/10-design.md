@@ -168,13 +168,29 @@ not a paragraph.
 | `author` | string | Who is credited. Required, non-empty. |
 | `role` | string or absent | A secondary attribution line, under the author. |
 | `organization` | string or absent | A tertiary attribution line, under `role`. |
+| `url` | absolute `https:` URL or absent | Where the quote can be read at its source. Present only where the quote is real; a fabricated attribution has nothing to cite, and is never given one. |
 
-No `avatar` field and no `source` field. `avatar` would be an image asset, and the brief's
-runtime-request non-goal forbids any load-triggered request after the document — the same rule that
-already rules out webfonts and linked stylesheets in *Presentation*. `source` was considered as an
-outbound citation link, but every candidate rendering either duplicates `organization` as inert text or
-turns a fabricated attribution into a clickable claim, which the *testimonials* carve-out in
-`00-brief.md` § *Source material* does not extend to.
+**No `avatar` field.** It would be an image asset, and the brief's runtime-request non-goal forbids
+any load-triggered request after the document — the same rule that already rules out webfonts and
+linked stylesheets in *Presentation*.
+
+**`url` is a citation, and the rejection it replaced was an argument about something else.** This
+document excluded an outbound citation field by name until 2026-08-20, reasoning that every candidate
+rendering either duplicates `organization` as inert text or turns a *fabricated* attribution into a
+clickable claim, which the testimonials carve-out in `00-brief.md` § *Source material* does not extend
+to. That reasoning was sound and is retained wherever it applies; it simply never contemplated a quote
+that could be cited. Where a testimonial is a real line from a real SubZeroDev repository it is used as
+itself and carries its source; where a testimonial is fabricated the field is absent and no rendering
+question arises. The carve-out is untouched — the page still labels nothing on it as fictional, and the
+field cannot be the thing that labels one, because a fabricated quote never carries it.
+
+**The accepted cost, stated plainly:** a citation on some cards and not others is a **tell**. It
+invites a reader to notice which quotes can be checked and which cannot, which is a real cost to the
+joke the section exists for, and it is the reason the cheaper reversal — dropping the field — was
+seriously considered. It is accepted on the owner's ruling of 2026-08-20: the house rule that nothing
+may be funnier than it is true outranks the joke's polish, and a checkable quote about a SubZeroDev
+repository is evidence about this site's own subject. The alternatives and their costs are in
+[`90-decisions.md`](90-decisions.md), 2026-08-20.
 
 **Order is the data's, not the renderer's.** The renderer preserves the order it is given and sorts
 nothing — the same discipline `ecosystemTree` and `contaminationForest` observe over `Project`, so a
@@ -1099,9 +1115,15 @@ and renumbering would rot those citations silently. An answered question keeps i
    citations to it resolve.
 4. **Which repositories are public?** If the page links to source, a link to a private repository is
    a 404 for every visitor but you. I have not checked visibility.
-5. **Does *Effortless Action* go on the page, and in which draft?** `Idea.md` lines 540–604 hold three
-   competing versions inside an unresolved conversation. None is chosen and I have treated none as
-   settled.
+5. ~~**Does *Effortless Action* go on the page, and in which draft?**~~ **Answered 2026-08-07: it is
+   the apex's first section, and in none of the three drafts.** `Idea.md` lines 540–604 hold three
+   competing versions inside an unresolved conversation, and the answer did not come from choosing
+   between them: on the owner's ruling the manifesto prose is owner-supplied final copy that
+   supersedes the transcript outright, so no line citation is made for it and `00-brief.md` §
+   *Source material* item 3 stays true as written — none of the three was chosen. The other half is
+   settled by the brief itself, whose *Definition of done* now names Effortless Action as one of the
+   four sections of the single apex document. See [`90-decisions.md`](90-decisions.md), 2026-08-07 —
+   "The manifesto supersedes the Idea.md draft". Retained so the citations to it resolve.
 6. **Should a scheduled link check run?** It is the only way a dead outbound link is noticed after
    deploy. It costs a workflow and it is the sole thing that would make this repository observe the
    others — adjacent to a brief non-goal, though not obviously inside it.

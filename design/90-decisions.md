@@ -50,6 +50,56 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 
 ---
 
+### 2026-08-20 — The citation ruling lands in the brief and the design; open question 5 closes with it
+
+Context: the entry below ruled that `design/` is the stale half on `Testimonial.url` and closed with
+**"Not applied here"**, sequencing the work as `00-brief.md` and `10-design.md` first — `/design`,
+`opus`/`high`, fresh session — then `/contract` over § *Types*, § *Error semantics* and `X8`. This is
+that `/design` run. Nothing below was re-decided; the ruling was transcribed. One thing was closed
+that the ruling did not name, and it is the reason this entry exists rather than a commit message.
+
+Chosen, in `00-brief.md`: § *Definition of done* drops "fabricated" from the collection and states
+instead that the quotes are fabricated **save where one is genuinely citable and carries its
+citation**; § *Source material* item 4 keeps every existing sentence and gains a closing paragraph
+stating the narrowing as **"the exception is that no fabricated quote is labelled, not that every
+quote is fabricated"**. Item 3 is untouched and stays true — none of `Idea.md`'s three drafts was
+chosen. In `10-design.md`: § *Testimonial* gains the `url` row, the combined avatar/source paragraph
+splits so the `avatar` rejection survives intact on its own reasoning, and the citation rejection is
+retained as the record of what it was an argument about — fabricated attributions — rather than
+deleted. The tell is written up as an accepted cost under its own heading, in the form this document
+already uses for `stage`-versus-liveness.
+
+**Chosen, and not dictated by the ruling: open question 5 is marked answered.** *"Does Effortless
+Action go on the page, and in which draft?"* had stood open since 2026-08-05 while both halves were
+already settled — the page half by `00-brief.md` § *Definition of done*, which names Effortless Action
+as one of the apex document's four sections, and the draft half by this log's own 2026-08-07 entry,
+*"The manifesto supersedes the Idea.md draft"*, where the owner ruled the manifesto prose is
+owner-supplied final copy superseding the transcript outright. `.claude/commands/design.md`'s re-run
+rule is explicit that a question the brief now answers must not reappear, so leaving it open was a
+defect in this document rather than a live uncertainty. It keeps its number and says so, per the
+stable-numbering rule the section opens with.
+
+Rejected: **regenerating `10-design.md`'s prose in full**, which is the literal reading of the re-run
+instruction. Declined because the same instruction binds the output to this log — a logged decision is
+re-expressed, not re-made — so a faithful regeneration reproduces the current document everywhere the
+brief and this log have not moved, and re-typing 1158 lines of reconciled prose to reach that same
+artifact risks silently dropping a load-bearing clause for no gain. `AGENTS.md` § *What not to do*
+forbids improving prose while editing something else, which is what a cosmetic rewrite would be.
+Rejected: **leaving question 5 open and letting `/contract` or the next `/reconcile` find it** — it
+would be found as drift a third time, and the run that can see it settled is the one that should close
+it.
+
+Reversibility: cheap in `10-design.md`, expensive in `00-brief.md`, unchanged from the entry below —
+item 4's carve-out is load-bearing for the section, and the narrowing is the kind of clause that is
+re-argued rather than reverted. Question 5's closure is cheap and citation-safe: the number is
+retained.
+
+**Still owed:** `/contract` over `20-contract.md` § *Types*, § *Error semantics* and `X8` — the
+`url` field, `TestimonialUrlInvalid`, the testimonial codes becoming six, and the `Source`-line clause.
+That half is unchanged by this run and is not `/design`'s.
+
+---
+
 ### 2026-08-20 — A testimonial may carry a citation URL; `design/` is the stale half
 
 Context: `/contract` compared `20-contract.md` against the tree and found a contradiction neither
