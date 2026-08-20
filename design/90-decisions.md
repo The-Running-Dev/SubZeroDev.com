@@ -5,18 +5,6 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-- **`30-slices.md`'s S11 and S12 still specify the fold, and one of their criteria is now asserted
-  false by a test.** S11 delivers "a `/testimonials/` route", S11.11 requires three route entries, and
-  S11.15 pins `RoutePath` to a three-member union — which `tests/types/route-path.type-check.ts` now
-  pins to two, by mutual assignability, so the criterion and the tree assert opposite things. S12 is
-  written entirely against `foldRoutes`. `/reconcile` removed the fold from `10-design.md` and
-  `20-contract.md` on 2026-08-20 and **deliberately did not touch this document**:
-  `.claude/commands/reconcile.md` puts it out of scope and forbids editing an unlanded slice's
-  acceptance criteria, because rewriting slice N+1's criteria while landing slice N is the first link
-  in the churn loop that command owns. **This is `/slices`' (`opus`, `high`)** — a re-slice of S11/S12
-  against the merged two-route shape, or a ruling that both are landed and should be marked so.
-  Issues are disabled on the repository, so it stays staged here.
-
 - **`V16`'s `assertImportGraph` is declared in the contract and has no implementation.** The import
   graph is checked instead by `tests/content/import-graph.test.ts` against a test-local AST helper,
   which is the arrangement `assertImportGraph` was written to replace. `20-contract.md` now says so
@@ -24,7 +12,11 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
   noticed while re-aiming `C14`. Either implement it or withdraw the declaration — both are decisions,
   neither is `/reconcile`'s.
 
-(the two items staged 2026-08-11 — the JSON migration's contract consequences and the route-fold
+(the S11/S12 item staged here on 2026-08-20 was adjudicated by `/slices` the same day — both slices
+were ruled landed and retired to `30-slices.md`'s new `## Landed` index, and the entry of that date
+below is its carrier, since issues are disabled on this repository;
+
+the two items staged 2026-08-11 — the JSON migration's contract consequences and the route-fold
 drift — were adjudicated and applied by `/reconcile` on 2026-08-20; issues are disabled on this
 repository, so the carrier is the decision entry of that date rather than a tracked issue, and every
 edit it names landed in the same commit as the entry;
@@ -47,6 +39,92 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-20 — S11 and S12 are landed, not re-sliced; the twelve bodies stay under a `## Landed` index
+
+Context: `## Open` staged S11 and S12 as `/slices`' — *"a re-slice of S11/S12 against the merged
+two-route shape, or a ruling that both are landed and should be marked so."* The tree answers the
+factual half outright: both merged ([#66](https://github.com/The-Running-Dev/SubZeroDev.com/pull/66),
+[#73](https://github.com/The-Running-Dev/SubZeroDev.com/pull/73),
+[#76](https://github.com/The-Running-Dev/SubZeroDev.com/pull/76)) and were partly withdrawn afterwards
+by [#77](https://github.com/The-Running-Dev/SubZeroDev.com/pull/77) and
+[#79](https://github.com/The-Running-Dev/SubZeroDev.com/pull/79). Nothing from either is outstanding.
+What was actually decided here is what the document should say about work that landed and was then
+superseded.
+
+**Chosen: both are landed, and `30-slices.md` gains the `## Landed` / `## Outstanding` split it never
+had.** The document predates that shape — `.claude/commands/track.md` and `tools/Test-DesignDrift.ps1`
+both cite a *"How this document is kept"* section and a `## Landed` index this file did not contain,
+so the drift tool read all twelve shipped slices as outstanding specification. `S1`–`S12` move under
+`## Landed` behind an index table naming each slice's pull request and **what has changed underneath it
+since**; `## Outstanding` carries `S13` alone. Verified after the edit: the tool's parser now reports
+`Landed: 1..12` and one outstanding slice with eight criteria.
+
+Rejected — **re-cutting S11 and S12 against the two-route shape**, the first half of the staged fork.
+The work merged and the withdrawal is complete in the tree, so the re-cut slices would have had nothing
+to implement; they would have been a description of current code, which § *Single ownership* forbids a
+document to carry. Rejected — **annotating S11 and S12 in place and leaving the twelve as full
+sections.** The smallest edit, and it keeps every criterion verbatim, which is why it was put second
+rather than dismissed. Declined because the tooling would still read twelve shipped slices as live
+specification, and because a reader meets `S11.15` as a criterion several lines before meeting the note
+that kills it.
+
+**Chosen, and not dictated by the ruling: the landed criteria bodies are kept, against the kit's own
+default.** `.claude/commands/track.md` says a landed slice's body is retired once its issue closes.
+Retiring them here would have broken **211 citations across 63 files** — measured, not estimated:
+`tests/verification/style-agreement.test.ts` cites `S4.11` and `S4.12`, `src/presentation/types.ts`
+cites `S4.14`, `.github/workflows/ci.yml` cites `S10.5`–`S10.10`, and every `vitest.*.config.ts` names
+the criterion its shard runs. That is 109 distinct ids, each the stated reason a file exists, and
+`agent.md` § *Drift* records a stale cross-reference as the failure that is invisible. The bodies
+therefore stay, demoted to `###` so the index table is what a tracker parses; every one of the 109 was
+confirmed to resolve after the edit. Rejected — **retiring the bodies and re-pointing all 211
+citations at index rows**, which loses the per-criterion precision the citations carry and is a
+63-file edit outside this command's scope. Rejected — **retiring them and accepting the orphans**,
+which is the kit shape exactly, at the price of 211 dangling references.
+
+**Also chosen: no criterion is edited, including the one the tree now contradicts.** `S11.15` requires
+`RoutePath` pinned to a three-member union; `tests/types/route-path.type-check.ts` pins it to two. It
+keeps its id and its wording, and the contradiction is recorded against it in the index. Editing it
+would rewrite what an existing citation refers to, which is the one failure the never-renumber rule
+exists to prevent — and it was true when it was accepted, which is all a landed criterion claims.
+
+Reversibility: cheap. This pass changed no code and git carries the prior text; the split is a
+restructure of one document, and every criterion id survives it unchanged.
+
+---
+
+### 2026-08-20 — `S13` is allocated for the apex's placeholder copy, which is live on both targets
+
+Context: found while surveying the tree for outstanding work. `site/landing.config.ts` and
+`src/composition/apex.ts` carry **six** placeholder strings — the apex's `title`, `description`, Open
+Graph title and description, and the `Organization` block's `name` and `description` — each reading
+"replace before publication". The 2026-08-06 entry *"S6's route titles and descriptions start as
+placeholder copy"* authorised exactly this, on the owner's instruction, "with the real copy to replace
+it in a follow-up once written". **That follow-up was never opened**, and the site has since published
+on both targets, so a search result, a shared link and the machine-readable `Organization` summary all
+currently say the copy is a placeholder.
+
+This is verbatim the failure `agent.md` § *Drift* names — *"an amendment made after its slice has
+merged has no carrier, and nothing goes red"*. Nothing was wrong with the deferral; it had no carrier,
+and issues are disabled here, so fourteen days passed with the placeholder on the front page.
+
+Chosen: allocate `S13 — The apex's real title and description`, the sole entry under
+`## Outstanding`. It is vertical — six strings through route metadata and the JSON-LD block to the
+emitted document — and its criteria assert against **built HTML** rather than the declared
+configuration, on `S6.12`'s rule. `S13.3` requires that neither module still contains the string
+`placeholder`, so the two `PLACEHOLDER COPY` comments instructing a reader to leave the copy alone go
+with the copy they guard.
+
+Rejected — **treating it as a copy edit needing no slice.** It is six strings, and the temptation is
+real. Declined because that is precisely what the 2026-08-06 deferral did: something too small to
+track went untracked and survived fourteen days and a publication. A slice is the only carrier this
+repository has while issues are disabled. Rejected — **folding it into `S6`'s criteria**, which would
+edit a landed slice's body and reopen a shipped slice.
+
+Reversibility: cheap, and it stays blocked on the owner either way — the six strings are brand
+material a slice transcribes and never invents.
 
 ---
 
