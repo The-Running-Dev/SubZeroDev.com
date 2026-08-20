@@ -5,10 +5,14 @@
 // This is also S3.8's fixture: a temporary bad-host entry added to
 // committed projects JSON document and validated to turn this job red — see the
 // slice report for how that was verified and reverted.
+//
+// S14.6 — the target set is read from `checkedLinks`, not `resolvedHomes`:
+// this now also reaches `sourceUrl`, the one outbound link no earlier gate
+// checked.
 
 import { describe, expect, it } from "vitest";
 
-import { resolvedHomes, validateInventory } from "../../../src/content";
+import { checkedLinks, validateInventory } from "../../../src/content";
 import type { BuildContext, CommitId, Year } from "../../../src/content";
 import { checkLinks, linkCheckRetry } from "../../../src/verification";
 import { projects } from "../../helpers/site-data";
@@ -18,8 +22,8 @@ const context: BuildContext = {
   utcYear: new Date().getUTCFullYear() as Year,
 };
 
-describe("S3.7 — every resolved home in the committed inventory answers", () => {
-  it("checkLinks(resolvedHomes(inventory), linkCheckRetry) returns ok: true", async () => {
+describe("S14.6 — every checked link in the committed inventory answers", () => {
+  it("checkLinks(checkedLinks(inventory), linkCheckRetry) returns ok: true", async () => {
     const inventory = validateInventory(projects, context);
     if (!inventory.ok) {
       throw new Error(
@@ -27,7 +31,7 @@ describe("S3.7 — every resolved home in the committed inventory answers", () =
       );
     }
 
-    const result = await checkLinks(resolvedHomes(inventory.value), linkCheckRetry);
+    const result = await checkLinks(checkedLinks(inventory.value), linkCheckRetry);
 
     if (!result.ok) {
       throw new Error(

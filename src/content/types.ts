@@ -81,6 +81,11 @@ export type ResolvedHome = {
   readonly url: AbsoluteUrl;
 };
 
+export type CheckedLink = {
+  readonly label: string;
+  readonly url: AbsoluteUrl;
+};
+
 export type StageCount = {
   readonly stage: Stage;
   readonly count: number;

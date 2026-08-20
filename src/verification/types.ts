@@ -1,6 +1,6 @@
 // Verification — the module's shared value shapes.
 
-import type { CommitId, ResolvedHome } from "../content";
+import type { CheckedLink, CommitId } from "../content";
 
 export type RetryPolicy = {
   readonly attempts: number;
@@ -11,7 +11,7 @@ export type RetryPolicy = {
 };
 
 export type LinkCheckResult = {
-  readonly target: ResolvedHome;
+  readonly target: CheckedLink;
   readonly status: number | null;
   readonly attempts: number;
 };

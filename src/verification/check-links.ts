@@ -14,7 +14,7 @@
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 
-import type { ResolvedHome, Result } from "../content";
+import type { CheckedLink, Result } from "../content";
 import type { VerificationError } from "./errors";
 import type { LinkCheckResult, RetryPolicy } from "./types";
 
@@ -59,7 +59,7 @@ function isOkStatus(status: number): boolean {
   return status >= 200 && status < 400;
 }
 
-async function checkOneTarget(target: ResolvedHome, policy: RetryPolicy): Promise<LinkCheckResult> {
+async function checkOneTarget(target: CheckedLink, policy: RetryPolicy): Promise<LinkCheckResult> {
   let delay = policy.initialDelayMs;
   for (let attempt = 1; attempt <= policy.attempts; attempt++) {
     const status = await requestOnce(target.url, policy.attemptTimeoutMs);
@@ -75,7 +75,7 @@ async function checkOneTarget(target: ResolvedHome, policy: RetryPolicy): Promis
 }
 
 export async function checkLinks(
-  targets: readonly ResolvedHome[],
+  targets: readonly CheckedLink[],
   policy: RetryPolicy,
 ): Promise<Result<readonly LinkCheckResult[], VerificationError>> {
   const results = await Promise.all(targets.map((target) => checkOneTarget(target, policy)));
@@ -85,14 +85,14 @@ export async function checkLinks(
     if (result.status === null) {
       errors.push({
         code: "LinkUnreachable",
-        detail: `${result.target.projectId} (${result.target.url}) did not respond after ${result.attempts} attempt(s).`,
+        detail: `${result.target.label} (${result.target.url}) did not respond after ${result.attempts} attempt(s).`,
         observed: null,
         expected: null,
       });
     } else if (!isOkStatus(result.status)) {
       errors.push({
         code: "LinkNotOk",
-        detail: `${result.target.projectId} (${result.target.url}) responded ${result.status}.`,
+        detail: `${result.target.label} (${result.target.url}) responded ${result.status}.`,
         observed: String(result.status),
         expected: "2xx or 3xx",
       });

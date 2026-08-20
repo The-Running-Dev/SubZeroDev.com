@@ -4,6 +4,7 @@ export type {
   AbsoluteUrl,
   Branded,
   BuildContext,
+  CheckedLink,
   CommitId,
   ContaminationForest,
   ContaminationNode,
@@ -29,6 +30,7 @@ export { validateInventory, validateTestimonials } from "./validate";
 export { parseCommitId } from "./commit";
 export { projectsDocumentValidator, testimonialsDocumentValidator } from "./documents";
 export { resolvedHomes } from "./resolved-homes";
+export { checkedLinks } from "./checked-links";
 export { primarySlogan, apexFooterQuote } from "./copy";
 export { sourceUrl } from "./links";
 export {
