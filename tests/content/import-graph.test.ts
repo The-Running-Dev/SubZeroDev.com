@@ -157,6 +157,64 @@ describe("the adapter is the sole production importer of the testimonials docume
   });
 });
 
+describe("the adapter is the sole production importer of the CV document validator", () => {
+  const targetFiles = [resolve(contentDir, "index.ts")];
+  const callSites = [
+    resolve(repoRoot, "site/landing.config.ts"),
+    resolve(repoRoot, "tests/content/documents.test.ts"),
+  ];
+
+  it("the only importers across the repository are the adapter and validator tests", () => {
+    const files = listTsFiles(repoRoot);
+    expect(files.length).toBeGreaterThan(0);
+    const users = namedImportUsers(readEntries(files), targetFiles, "cvDocumentValidator");
+    expect(users.sort()).toEqual([...callSites].sort());
+  });
+
+  it("the check has teeth: an unrelated validator import is flagged", () => {
+    const users = namedImportUsers(
+      [
+        {
+          file: resolve(repoRoot, "src/composition/page.ts"),
+          source: 'import { cvDocumentValidator } from "../content";',
+        },
+      ],
+      targetFiles,
+      "cvDocumentValidator",
+    );
+    expect(users).toEqual([resolve(repoRoot, "src/composition/page.ts")]);
+  });
+});
+
+describe("the adapter is the sole production importer of the portfolio document validator", () => {
+  const targetFiles = [resolve(contentDir, "index.ts")];
+  const callSites = [
+    resolve(repoRoot, "site/landing.config.ts"),
+    resolve(repoRoot, "tests/content/documents.test.ts"),
+  ];
+
+  it("the only importers across the repository are the adapter and validator tests", () => {
+    const files = listTsFiles(repoRoot);
+    expect(files.length).toBeGreaterThan(0);
+    const users = namedImportUsers(readEntries(files), targetFiles, "portfolioDocumentValidator");
+    expect(users.sort()).toEqual([...callSites].sort());
+  });
+
+  it("the check has teeth: an unrelated validator import is flagged", () => {
+    const users = namedImportUsers(
+      [
+        {
+          file: resolve(repoRoot, "src/composition/page.ts"),
+          source: 'import { portfolioDocumentValidator } from "../content";',
+        },
+      ],
+      targetFiles,
+      "portfolioDocumentValidator",
+    );
+    expect(users).toEqual([resolve(repoRoot, "src/composition/page.ts")]);
+  });
+});
+
 describe("S4.14 — Presentation imports Branded from Content, and nothing else from this repository", () => {
   it("no file under src/presentation imports anything but Branded from Content, or escapes to another module", () => {
     const files = listTsFiles(presentationDir);
@@ -307,9 +365,13 @@ describe("the adapter imports Composition, the external package, document valida
     "../src/content": [
       "projectsDocumentValidator",
       "testimonialsDocumentValidator",
+      "cvDocumentValidator",
+      "portfolioDocumentValidator",
       "BuildContext",
       "Inventory",
       "Testimonials",
+      "CvData",
+      "PortfolioData",
       "parseCommitId",
     ],
     "../src/presentation": ["themeColor", "iconDataUri"],

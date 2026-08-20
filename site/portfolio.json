@@ -1,0 +1,286 @@
+{
+  "version": 1,
+  "provenance": "Docusaurus-Template/data/portfolioData.json",
+  "header": {
+    "title": "Portfolio",
+    "subtitle": "Technical Projects & Experience"
+  },
+  "technologies": [
+    {
+      "name": "Backend",
+      "children": [
+        {
+          "name": ".NET",
+          "children": [
+            { "name": ".NET Core" },
+            { "name": ".NET Framework" },
+            { "name": "ASP.NET Core" },
+            { "name": "Blazor" }
+          ]
+        },
+        {
+          "name": "ASP.NET",
+          "children": [{ "name": "WebAPI" }, { "name": "MVC" }, { "name": "Razor Pages" }]
+        },
+        { "name": "C#" },
+        { "name": "Node.JS" },
+        { "name": "Python" },
+        {
+          "name": "ORM",
+          "children": [
+            { "name": "Entity Framework" },
+            { "name": "Dapper" },
+            { "name": "TypeORM" },
+            { "name": "Mongoose" }
+          ]
+        },
+        {
+          "name": "API",
+          "children": [{ "name": "REST" }, { "name": "GraphQL" }, { "name": "gRPC" }, { "name": "WebSockets" }]
+        },
+        {
+          "name": "Caching",
+          "children": [{ "name": "Redis" }, { "name": "Memcached" }]
+        }
+      ]
+    },
+    {
+      "name": "Frontend",
+      "children": [
+        {
+          "name": "JavaScript",
+          "children": [{ "name": "ES6+" }]
+        },
+        { "name": "TypeScript" },
+        { "name": "React" },
+        { "name": "Angular" },
+        {
+          "name": "State Management",
+          "children": [{ "name": "Redux" }, { "name": "Redux Toolkit" }, { "name": "RxJS" }]
+        },
+        { "name": "jQuery / UI" },
+        {
+          "name": "HTML & CSS",
+          "children": [
+            { "name": "Bootstrap" },
+            { "name": "Sass" },
+            { "name": "Less" },
+            { "name": "Material" },
+            { "name": "PostCSS" },
+            { "name": "Tailwind CSS" }
+          ]
+        },
+        {
+          "name": "Tooling",
+          "children": [
+            { "name": "npm" },
+            { "name": "Yarn" },
+            { "name": "pnpm" },
+            { "name": "Webpack" },
+            { "name": "Vite" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Database",
+      "children": [
+        {
+          "name": "SQL",
+          "children": [
+            { "name": "SQL Server" },
+            { "name": "MariaDB" },
+            { "name": "SQLite" },
+            { "name": "PostgreSQL" }
+          ]
+        },
+        { "name": "MongoDB" },
+        { "name": "DynamoDB" },
+        { "name": "VoltDB" }
+      ]
+    },
+    {
+      "name": "DevOps",
+      "children": [
+        {
+          "name": "Docker",
+          "children": [{ "name": "Docker Compose" }, { "name": "Docker Stacks" }]
+        },
+        {
+          "name": "Kubernetes",
+          "children": [{ "name": "AKS" }, { "name": "EKS" }, { "name": "K3s" }]
+        },
+        {
+          "name": "CI/CD",
+          "children": [
+            { "name": "GitHub Actions" },
+            { "name": "Azure Pipelines" },
+            { "name": "GitLab CI" },
+            { "name": "Jenkins" },
+            { "name": "TeamCity" },
+            { "name": "Octopus Deploy" },
+            { "name": "YAML Pipelines" }
+          ]
+        },
+        {
+          "name": "IaC",
+          "children": [
+            { "name": "CloudFormation" },
+            { "name": "ARM Templates" },
+            { "name": "Terraform" },
+            { "name": "Bicep" }
+          ]
+        },
+        {
+          "name": "Observability",
+          "children": [
+            { "name": "Prometheus" },
+            { "name": "Grafana" },
+            { "name": "Loki" },
+            { "name": "ELK (Elasticsearch, Logstash, Kibana)" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cloud",
+      "children": [
+        {
+          "name": "Azure",
+          "children": [
+            { "name": "App Service" },
+            { "name": "ARM" },
+            { "name": "Cosmos DB" },
+            { "name": "Data Lake" },
+            { "name": "Functions" },
+            { "name": "Service Bus" }
+          ]
+        },
+        {
+          "name": "AWS",
+          "children": [
+            { "name": "Lambda" },
+            { "name": "SNS" },
+            { "name": "SQS" },
+            { "name": "EC2" },
+            { "name": "S3" },
+            { "name": "RDS" },
+            { "name": "(Uses DynamoDB in Database)" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Automation",
+      "children": [
+        { "name": "Bash" },
+        {
+          "name": "PowerShell",
+          "children": [{ "name": "Carbon" }, { "name": "Chocolatey" }, { "name": "Psake" }, { "name": "Pester" }]
+        }
+      ]
+    },
+    {
+      "name": "QA",
+      "children": [
+        {
+          "name": "Testing",
+          "children": [
+            { "name": "xUnit" },
+            { "name": "NUnit" },
+            { "name": "Jest" },
+            { "name": "Vitest" },
+            { "name": "Playwright" },
+            { "name": "Mocha (Legacy)" },
+            { "name": "Sinon (Legacy)" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Data/BI",
+      "children": [
+        {
+          "name": "Business Intelligence",
+          "children": [{ "name": "Power BI" }, { "name": "Tableau" }, { "name": "Amazon QuickSight" }]
+        }
+      ]
+    },
+    {
+      "name": "Architecture",
+      "children": [
+        {
+          "name": "Design Patterns",
+          "children": [
+            { "name": "DDD" },
+            { "name": "Event-Driven Architecture" },
+            { "name": "Microservices" },
+            { "name": "SOLID" },
+            { "name": "TDD" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Security",
+      "children": [
+        {
+          "name": "AuthN/Z",
+          "children": [{ "name": "OAuth2 / OIDC" }, { "name": "JWT" }, { "name": "Azure AD (Entra ID)" }]
+        }
+      ]
+    },
+    {
+      "name": "Methodology",
+      "children": [
+        {
+          "name": "Agile",
+          "children": [{ "name": "Scrum" }, { "name": "Kanban" }, { "name": "Lean" }]
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "category": "Desktop",
+      "icon": "🖥️",
+      "description": "Windows desktop applications and utilities"
+    },
+    {
+      "category": "Frontend",
+      "icon": "🎨",
+      "description": "React, Angular, and modern web applications with responsive design and user experience focus"
+    },
+    {
+      "category": "Backend",
+      "icon": "🔧",
+      "description": "C# .NET, Node.js, TypeScript applications including APIs, microservices, and system integrations"
+    },
+    {
+      "category": "Automation",
+      "icon": "⚡",
+      "description": "PowerShell, Bash, build pipelines, deployment automation, developer productivity tools"
+    },
+    {
+      "category": "Open Source",
+      "icon": "🤝",
+      "description": "Package manager contributions, GitHub projects, community-driven collaboration"
+    },
+    {
+      "category": "Infrastructure",
+      "icon": "☁️",
+      "description": "Docker containerization, Kubernetes, CI/CD pipelines, cloud deployments (Azure, AWS), and automation solutions"
+    }
+  ],
+  "stats": [
+    { "value": "20+", "label": "Years Experience" },
+    { "value": "25+", "label": "Technologies" },
+    { "value": "50+", "label": "Projects Delivered" },
+    { "value": "10+", "label": "Languages & Frameworks" },
+    { "value": "3+", "label": "Cloud Platforms" },
+    { "value": "100+", "label": "CI/CD Automations" },
+    { "value": "7", "label": "Leadership Roles" },
+    { "value": "4", "label": "Countries (USA, Spain, Bulgaria, Remote Global)" },
+    { "value": "Open Source", "label": "Contributor" }
+  ]
+}

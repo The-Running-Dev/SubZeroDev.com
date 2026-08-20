@@ -24,7 +24,16 @@ export type ContentErrorCode =
   | "TestimonialAuthorEmpty"
   | "TestimonialRoleEmpty"
   | "TestimonialOrganizationEmpty"
-  | "TestimonialUrlInvalid";
+  | "TestimonialUrlInvalid"
+  | "CvFieldEmpty"
+  | "CvCollectionEmpty"
+  | "CvUrlInvalid"
+  | "CvYearInvalid"
+  | "CvYearAfterBuild"
+  | "PortfolioFieldEmpty"
+  | "PortfolioCollectionEmpty"
+  | "PortfolioTechDepthExceeded"
+  | "PortfolioDuplicateCategory";
 
 export type ContentError = {
   readonly code: ContentErrorCode;

@@ -1,11 +1,11 @@
 // Adapter — the module the package CLI loads (contract's Adapter section;
-// S6). It is the only importer of Composition and of
+// S6, widened by S15). It is the only importer of Composition and of
 // `themeColor`/`iconDataUri` from Presentation. Imports exactly:
-// Composition, the external package, Content's document validators,
-// `BuildContext`, `Inventory`, `Testimonials` and `parseCommitId`, and
-// Presentation's `themeColor` and `iconDataUri`.
+// Composition, the external package, Content's four document validators,
+// `BuildContext`, `Inventory`, `Testimonials`, `CvData`, `PortfolioData`
+// and `parseCommitId`, and Presentation's `themeColor` and `iconDataUri`.
 //
-// Adapter declares the two build-time JSON sources and hands each its
+// Adapter declares the four build-time JSON sources and hands each its
 // validator; the package's loader is what invokes them, once per document,
 // before `compose` runs. So Adapter no longer *calls* `validateInventory` or
 // `validateTestimonials` itself — `src/content/documents.ts` holds those call
@@ -21,11 +21,13 @@ import type { LandingPageConfig } from "subzerodev-platform-ui-landing-page";
 
 import { composeApex, composeMiss } from "../src/composition";
 import {
+  cvDocumentValidator,
   parseCommitId,
+  portfolioDocumentValidator,
   projectsDocumentValidator,
   testimonialsDocumentValidator,
 } from "../src/content";
-import type { BuildContext, Inventory, Testimonials } from "../src/content";
+import type { BuildContext, CvData, Inventory, PortfolioData, Testimonials } from "../src/content";
 import { iconDataUri, themeColor } from "../src/presentation";
 
 export const origin = "https://subzerodev.com" as const;
@@ -52,7 +54,20 @@ function buildContext(): BuildContext {
 }
 
 const context = buildContext();
-function compose({ projects, testimonials }: { projects: Inventory; testimonials: Testimonials }): LandingPageConfig {
+// `cv` and `portfolio` are validated here and not yet rendered — S15 commits
+// and checks the two documents with nothing consuming them; S16 and S17 are
+// where composeCv and composePortfolio start reading them.
+function compose({
+  projects,
+  testimonials,
+  cv: _cv,
+  portfolio: _portfolio,
+}: {
+  projects: Inventory;
+  testimonials: Testimonials;
+  cv: CvData;
+  portfolio: PortfolioData;
+}): LandingPageConfig {
   const apex = composeApex(projects, testimonials, origin);
   const miss = composeMiss();
   return defineLandingPage({
@@ -103,6 +118,8 @@ export default defineLandingPageData(
   {
     projects: { id: "projects", validate: projectsDocumentValidator(context) },
     testimonials: { id: "testimonials", validate: testimonialsDocumentValidator },
+    cv: { id: "cv", validate: cvDocumentValidator(context) },
+    portfolio: { id: "portfolio", validate: portfolioDocumentValidator },
   },
   compose,
 );

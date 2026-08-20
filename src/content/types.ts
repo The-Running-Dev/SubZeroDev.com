@@ -104,3 +104,100 @@ export type ContaminationNode = {
 };
 
 export type ContaminationForest = readonly ContaminationNode[];
+
+export type CvLink = {
+  readonly label: string;
+  readonly href: AbsoluteUrl;
+};
+
+export type CvRole = {
+  readonly company: string;
+  readonly title: string;
+  readonly period: string;
+  readonly location: string;
+  readonly website?: AbsoluteUrl;
+  readonly summary: string;
+  readonly achievements: readonly [string, ...string[]];
+  readonly tech: readonly [string, ...string[]];
+};
+
+export type CvEducation = {
+  readonly school: string;
+  readonly degree: string;
+  readonly details: string;
+};
+
+export type CvProject = {
+  readonly title: string;
+  readonly link: AbsoluteUrl;
+  readonly description: string;
+  readonly tech: readonly [string, ...string[]];
+  readonly year: Year;
+};
+
+export type CvOpenSource = {
+  readonly title: string;
+  readonly link?: AbsoluteUrl;
+  readonly description: string;
+  readonly impact: string;
+  readonly tech: readonly [string, ...string[]];
+};
+
+export type CvEra = {
+  readonly period: string;
+  readonly focus: string;
+  readonly projects: readonly [string, ...string[]];
+};
+
+export type CvDocument = {
+  readonly header: {
+    readonly name: string;
+    readonly title: string;
+    readonly email: string;
+    readonly phone: string;
+    readonly links: readonly [CvLink, ...CvLink[]];
+  };
+  readonly about: { readonly title: string; readonly body: string };
+  readonly badges: readonly [string, ...string[]];
+  readonly chips: readonly [string, ...string[]];
+  readonly timelineTitle: string;
+  readonly roles: readonly [CvRole, ...CvRole[]];
+  readonly educationTitle: string;
+  readonly education: readonly [CvEducation, ...CvEducation[]];
+  readonly projectsTitle: string;
+  readonly projects: readonly [CvProject, ...CvProject[]];
+  readonly openSourceTitle: string;
+  readonly openSource: readonly [CvOpenSource, ...CvOpenSource[]];
+  readonly timelineProjectsTitle: string;
+  readonly timelineProjects: readonly [CvEra, ...CvEra[]];
+  readonly quote: string;
+};
+
+// The one value only `validateCv` can produce.
+export type CvData = Branded<CvDocument, "CvData">;
+
+export type TechNode = {
+  readonly name: string;
+  readonly children?: readonly [TechNode, ...TechNode[]];
+};
+
+export type PortfolioCategory = {
+  readonly category: string;
+  readonly icon: string;
+  readonly description: string;
+};
+
+export type PortfolioStat = {
+  readonly value: string;
+  readonly label: string;
+};
+
+export type PortfolioDocument = {
+  readonly header: { readonly title: string; readonly subtitle: string };
+  readonly technologies: readonly [TechNode, ...TechNode[]];
+  readonly projects: readonly [PortfolioCategory, ...PortfolioCategory[]];
+  readonly stats: readonly [PortfolioStat, ...PortfolioStat[]];
+};
+
+// The one value only `validatePortfolio` can produce.
+export type PortfolioData = Branded<PortfolioDocument, "PortfolioData">;

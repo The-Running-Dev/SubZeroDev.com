@@ -8,11 +8,23 @@ export type {
   CommitId,
   ContaminationForest,
   ContaminationNode,
+  CvData,
+  CvDocument,
+  CvEducation,
+  CvEra,
+  CvLink,
+  CvOpenSource,
+  CvProject,
+  CvRole,
   EcosystemGroup,
   EcosystemTree,
   Genre,
   Home,
   Inventory,
+  PortfolioCategory,
+  PortfolioData,
+  PortfolioDocument,
+  PortfolioStat,
   Project,
   ProjectId,
   ResolvedHome,
@@ -20,17 +32,23 @@ export type {
   RootRelativePath,
   Stage,
   StageCount,
+  TechNode,
   Testimonial,
   Testimonials,
   Year,
 } from "./types";
 export type { ContentError, ContentErrorCode } from "./errors";
 export { stageOrder } from "./stage-order";
-export { validateInventory, validateTestimonials } from "./validate";
+export { validateCv, validateInventory, validatePortfolio, validateTestimonials } from "./validate";
 export { parseCommitId } from "./commit";
-export { projectsDocumentValidator, testimonialsDocumentValidator } from "./documents";
+export {
+  cvDocumentValidator,
+  portfolioDocumentValidator,
+  projectsDocumentValidator,
+  testimonialsDocumentValidator,
+} from "./documents";
 export { resolvedHomes } from "./resolved-homes";
-export { checkedLinks } from "./checked-links";
+export { checkedLinks, cvOutboundLinks } from "./checked-links";
 export { primarySlogan, apexFooterQuote } from "./copy";
 export { sourceUrl } from "./links";
 export {

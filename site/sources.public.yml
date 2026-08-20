@@ -8,3 +8,11 @@ sources:
     at: build
     path: site/testimonials.json
     cache: manual
+  cv:
+    at: build
+    path: site/cv.json
+    cache: manual
+  portfolio:
+    at: build
+    path: site/portfolio.json
+    cache: manual
