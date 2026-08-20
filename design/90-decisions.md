@@ -5,29 +5,31 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-- **The JSON migration changed Content's public surface without a contract amendment.** Landed by
-  [#83](https://github.com/The-Running-Dev/SubZeroDev.com/pull/83) with `design/` unfrozen, so the
-  usual "state it in the PR and leave the document alone" route did not apply — it was deferred
-  deliberately, not overlooked. Six divergences, all in `design/20-contract.md`: the `projects` and
-  `testimonials` exports it describes at § Content ("the **only unvalidated export in this
-  contract**") no longer exist; `projectsDocumentValidator` and `testimonialsDocumentValidator` are
-  exported but undeclared; `A3`'s enumerated Adapter import list names four symbols Adapter no longer
-  imports; `C14` and `C16` govern modules that are gone, and `tests/content/import-graph.test.ts` was
-  repointed at the validator symbols, which guards a function rather than the unvalidated records the
-  invariants were written for; `V16` cites `C14` and `A3` as describing the import graph; and
-  `UnauthorizedInventoryImport` (already contract-only, never implemented) now also names a module
-  that does not exist. Each is a **decision** — a public interface or an invariant — not a
-  transcription correction, so `/reconcile` (`opus`, `high`) adjudicates rather than the
-  implementing session. Issues are currently disabled on the repository, so this stays staged here.
+- **`30-slices.md`'s S11 and S12 still specify the fold, and one of their criteria is now asserted
+  false by a test.** S11 delivers "a `/testimonials/` route", S11.11 requires three route entries, and
+  S11.15 pins `RoutePath` to a three-member union — which `tests/types/route-path.type-check.ts` now
+  pins to two, by mutual assignability, so the criterion and the tree assert opposite things. S12 is
+  written entirely against `foldRoutes`. `/reconcile` removed the fold from `10-design.md` and
+  `20-contract.md` on 2026-08-20 and **deliberately did not touch this document**:
+  `.claude/commands/reconcile.md` puts it out of scope and forbids editing an unlanded slice's
+  acceptance criteria, because rewriting slice N+1's criteria while landing slice N is the first link
+  in the churn loop that command owns. **This is `/slices`' (`opus`, `high`)** — a re-slice of S11/S12
+  against the merged two-route shape, or a ruling that both are landed and should be marked so.
+  Issues are disabled on the repository, so it stays staged here.
 
-- **Route-documentation drift remains unresolved.** `design/10-design.md`, `design/20-contract.md`
-  and S11/S12 in `design/30-slices.md` describe a three-route testimonial fold, while the shipped
-  implementation declares only `/` and `/404/` and renders testimonials inline on the apex. This is
-  an architecture question — retain the two-route merged section or restore the documented fold — not
-  a transcription correction. The JSON-data migration does not decide it and must not rewrite those
-  documents. A future `/design` session owns the decision.
+- **`V16`'s `assertImportGraph` is declared in the contract and has no implementation.** The import
+  graph is checked instead by `tests/content/import-graph.test.ts` against a test-local AST helper,
+  which is the arrangement `assertImportGraph` was written to replace. `20-contract.md` now says so
+  rather than implying the function exists. Pre-existing and unrelated to either 2026-08-11 item;
+  noticed while re-aiming `C14`. Either implement it or withdraw the declaration — both are decisions,
+  neither is `/reconcile`'s.
 
-(the two items found 2026-08-08 while adding S11's C16 import check and while adjudicating the
+(the two items staged 2026-08-11 — the JSON migration's contract consequences and the route-fold
+drift — were adjudicated and applied by `/reconcile` on 2026-08-20; issues are disabled on this
+repository, so the carrier is the decision entry of that date rather than a tracked issue, and every
+edit it names landed in the same commit as the entry;
+
+the two items found 2026-08-08 while adding S11's C16 import check and while adjudicating the
 testimonialsPath fix — the SKIP_DIRS/tests/build/ exclusion and the untethered footer back-link —
 became [#68](https://github.com/The-Running-Dev/SubZeroDev.com/issues/68) and
 [#69](https://github.com/The-Running-Dev/SubZeroDev.com/issues/69) on 2026-08-08;
@@ -45,6 +47,132 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-20 — `design/` is reconciled to the two-route tree and to the JSON content documents
+
+Context: the two items staged in `## Open` on 2026-08-11, adjudicated together because they overlap in
+`§ Adapter`, which both rewrite. The fold's removal was already decided (2026-08-10); the JSON
+migration's contract consequences were deferred by
+[#83](https://github.com/The-Running-Dev/SubZeroDev.com/pull/83) rather than overlooked. Neither was
+re-litigated here — what was decided is how much the documents should say afterwards.
+
+Chosen, **the fold**: delete it from `10-design.md` and `20-contract.md` outright, and record it in
+`10-design.md` § *Alternatives considered* as an alternative that shipped and was withdrawn, pointing at
+the 2026-08-10 entry for the detail. Roughly fifteen clauses go — § *Route*'s "Three, not two", the
+fold sentences in § *Module boundaries*, § *Control flow* 1 and the whole of 3a, the "fold envelope
+drifts" failure mode, `FoldedRoutes`, `foldRoutes`, `composeTestimonials`, `testimonialsPath`,
+`stylesheetFor`'s `data-view`/`default-*` blocks, and the fold clauses in `A4`, `A6`, `X6`, `X8`, `X9`,
+`X10`, `V2`, `V11`, `V13`, `P6`, `Primitive.rules` and § *Error semantics*. `composeApex` gains its
+`testimonials` parameter and `X9` is re-aimed at the `view` primitive's `:target` switch, which is the
+fold's idea applied within one document rather than across two.
+
+Rejected — **marking each clause superseded in place.** It keeps the history visible in the document
+that carried it, and it is what a cautious pass would do. Declined because `agent.md` § *Drift* already
+carries the cost: a note recording a divergence survives its own resolution unless the edit and the
+note land together, and this would create fifteen of them at once, in a contract that would then
+describe two architectures. Rejected — **deleting with no alternatives note.** § *Single ownership*
+argues for it, since `90-decisions.md` holds the why in more detail. Declined because § *Alternatives
+considered* is where a future session looks before proposing a route per section again, and it will not
+think to search a dated log entry for a shape nobody mentioned to it.
+
+Chosen, **the JSON migration**: `C14` and `C16` merge into one invariant over the two **document
+validators** — only Adapter and the validator tests may reach `projectsDocumentValidator` or
+`testimonialsDocumentValidator` — which is what `tests/content/import-graph.test.ts` already asserts,
+including against the four non-naming reach forms. `UnauthorizedInventoryImport` becomes
+`UnauthorizedValidatorImport`. `§ Content` loses `projects` and `testimonials` and gains the two
+validators, with the structural/semantic split written out; a new `§ The content documents` states what
+`site/sources.public.yml` and the two JSON files cannot state about themselves — strict envelopes, a
+`version` that fails rather than degrades, `at: build`, `cache: manual` — and points at the tree for
+everything it can. `§ Adapter` is rewritten around `defineLandingPageData`: the default export is a
+`LandingPageDataConfig`, not a `LandingPageConfig`, and `A5` becomes a property of the build rather
+than a call Adapter makes. `A3`'s import list and `V16`'s citations follow.
+
+**What that invariant does and does not buy is written down, because they are not the same guarantee.**
+The old rule kept unvalidated records from reaching a derivation. That failure mode is now closed **by
+construction** — the records are JSON outside the module graph, and `Inventory` and `Testimonials` are
+constructible only by a validator — so the surviving rule protects something narrower: that there stays
+one validation entry point per document. Rejected — **dropping `C14` entirely** on the § *Single
+ownership* argument that an invariant restating a type-system guarantee is a second copy. Declined
+because `V16` and the test file both cite the id, and deleting it would leave the test's reason for
+existing written down nowhere in `design/`.
+
+Also settled: **the package pin's fifteen `0.3.0` references.** Every behavioural claim among them was
+**re-verified against the installed `0.4.1`** in this session rather than re-dated from memory —
+`config.styles` is still read nowhere, `hydrate` is read only as a type check during data validation,
+`LandingPageBodyRoute`'s shape is unchanged, `noScript` is still appended inside a body route's body,
+and `socialImageUrl`/`openGraph.imageUrl`/`twitter` are still omitted when absent. Bare pins move to
+`0.4.1`; dated answers in the `U*` blocks keep their original version and gain the supersession.
+Rejected — **find-and-replacing the numeral**, which would have re-asserted a verification nobody
+performed; rejected — **staging it for `/contract`**, since `## Open` is where the last two items sat
+for twelve days.
+
+Also settled: **`row` is retained with no call site**, and the contract now says so rather than
+describing it as a live layout. Its last user went with the section stack on 2026-08-10. It stays
+because `stylesheetFor` derives emission from the body, so an unused primitive reaches no document and
+costs nothing — which is what distinguishes it from the "permission with no user" `10-design.md`
+§ *Alternatives considered* refuses, where an unexercised permission widens what a document may
+contain. Rejected — **deleting it**, which is the stricter reading and stays cheap to do later; it is a
+code change, and this was a documentation pass whose only gates were `tsc --noEmit` and
+`check-design-counts`. The same paragraph's claim that `row` is the *only* primitive sizing a child it
+does not name is corrected: `grid`'s `break-inside` rule made that untrue on 2026-08-08.
+
+**Not resolved here, and deliberately:** `design/30-slices.md`'s S11 and S12 still specify the fold.
+`.claude/commands/reconcile.md` puts that document out of scope and forbids editing an unlanded slice's
+criteria in this pass — landing slice N and rewriting slice N+1's criteria is the churn loop this
+command owns the first link of. It goes to `/slices` (`opus`, `high`). `V16`'s `assertImportGraph` is
+still declared with no implementation; the contract now says so instead of implying otherwise.
+
+Reversibility: cheap for every edit here — this pass changed no code, and git carries the prior text.
+The two things it describes are not cheap to reverse and were not decided here: the fold's removal is
+recorded as expensive in the 2026-08-10 entry, and the JSON migration as moderate in the 2026-08-13
+one.
+
+---
+
+### 2026-08-20 — The apex is a tab switch after all; the brief's "all at once" clause is the stale half
+
+Context: `/reconcile` found the deployed apex hiding three of its four sections while
+`00-brief.md` § *Definition of done* required all four to render at once, "not hidden behind a tab",
+and while the 2026-08-10 entry below recorded that as an explicit owner instruction.
+[#79](https://github.com/The-Running-Dev/SubZeroDev.com/pull/79) reversed it thirteen hours after that
+entry was written, restoring the switch as a new `view` primitive with
+`tests/build/section-layout.test.ts` guarding it from a browser. That pull request's own body named the
+two contract statements it was leaving stale and said they needed sign-off; **the sign-off was never
+asked for and no entry was written**, so nothing went red and nothing was staged in `## Open`. The
+contradiction survived eight merges, a `/reconcile` staging pass on 2026-08-08 and PR #83's deferral
+note — both of which read this area — because the restored switch shares no vocabulary with the fold it
+replaced: every search for `foldRoutes`, `data-view` or `/testimonials/` returned clean while
+`:target`-based section hiding was live under a new name.
+
+Chosen: **the brief moves and the code does not.** #79 is the later decision and the better one on its
+own evidence — with every section visible, each nav link scrolled to its section instead of selecting
+it, no tab ever read as current, and the imported prototype (`SubZeroDev Landing.dc.html`) puts each
+section behind its own `sc-if` and shows exactly one. `00-brief.md` § *Definition of done* loses "not
+hidden behind a tab" and "all render on the same document at once", keeping the clause's real point,
+which is that testimonials is a **section of the apex rather than a route** — that half is unchanged by
+this entry and is what the 2026-08-10 merge actually bought. § *Source material* item 4 drops
+"always-visible" for the same reason. `20-contract.md`'s `PrimitiveName` opens from ten to twelve and
+declares `view` and `link-current` in the union rather than carrying one of them in prose alone; `view`
+gets the paragraph describing why a primitive naming one document's anchor ids is accepted here.
+
+Rejected — **reverting #79 and holding the brief.** The brief outranks the code and this was the
+default reading, put first when the fork was raised. Declined on the owner's ruling: the switch is the
+intended design, the four-sections-at-once instruction was given before its geometry had been seen
+rendered, and #78's single-column stack — which is independent and stays either way — is what exposed
+that. The cost of this direction is stated plainly: **the brief has now been amended twice in eleven
+days on the same clause**, which is the pattern *Working with me* asks to be told about rather than
+absorbed quietly.
+
+Rejected — **leaving both and staging the contradiction in `## Open` again.** It was already there in
+substance for ten days without being seen. A second deferral of a Definition-of-done contradiction that
+is live on both published targets is not a lighter-weight decision, it is the same decision taken by
+not taking it.
+
+Reversibility: cheap in code, expensive in intent. Deleting the `view` primitive, its class at
+`src/composition/apex.ts:128` and `tests/build/section-layout.test.ts` restores the all-visible page in
+one patch; what does not come back cheaply is a brief clause that has stopped being trusted as settled.
 
 ---
 
@@ -147,15 +275,14 @@ Reversibility: expensive. Reintroducing `/testimonials/` as a separate route, or
 switch, means re-deriving the CSS `:target`/`:has()` fold and the JS tab-activation layer this entry
 removes — both are recoverable from git history, but neither is a small patch on top of the merged shape.
 
-**Known debt, not resolved here:** `design/10-design.md` and `design/20-contract.md` still describe the
-three-route fold architecture in detail — the *Route*, *Composition* and *Adapter* sections, the `A4`/`A6`/
-`V2`/`C16`/`X8` invariant table entries naming `foldRoutes`/`testimonialsPath`, and the whole *Fold*
-narrative in `10-design.md` — and `design/30-slices.md`'s S11/S12 acceptance criteria still read as if that
-architecture ships. None of that is rewritten in this entry: the surface area is large, session boundaries
-put doc-reconciliation after implementation on purpose (`AGENTS.md` § *Session boundaries*), and a rushed
-inline rewrite of a contract document risks introducing exactly the drift `agent.md` already warns against.
-A `/reconcile` pass (fresh session, sonnet/medium) is the next step and should treat this entry as its
-starting brief.
+**Known debt, mostly closed on 2026-08-20.** This entry left `design/10-design.md` and
+`design/20-contract.md` describing the three-route fold architecture in detail, and
+`design/30-slices.md`'s S11/S12 acceptance criteria reading as if it ships — deliberately, because the
+surface area was large and session boundaries put doc-reconciliation after implementation on purpose
+(`AGENTS.md` § *Session boundaries*). The `/reconcile` pass ran on 2026-08-20 at `opus`/`high` and
+**removed the fold from both documents**; see that date's entry for what changed and what was rejected.
+**S11 and S12 are still outstanding** — `30-slices.md` is out of `/reconcile`'s scope by that command's
+own rule, and correcting an unlanded slice's criteria belongs to `/slices`.
 
 ---
 
