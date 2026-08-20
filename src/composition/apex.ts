@@ -15,11 +15,9 @@ import {
   contaminationForest,
   countByStage,
   ecosystemTree,
-  primarySlogan,
   projectTotal,
   resolvedHomes,
   sinceYear,
-  sourceUrl,
 } from "../content";
 import type {
   AbsoluteUrl,
@@ -33,6 +31,7 @@ import { primitives, stylesheetFor } from "../presentation";
 import type { BodyHtml } from "../presentation";
 import { enhancementScript } from "./enhancement";
 import { escapeHtml } from "./escape-html";
+import { renderHeader, renderOutbound } from "./header";
 import { organizationJsonLd } from "./json-ld";
 import { renderTestimonials, testimonialsHeading } from "./testimonials";
 import type { ComposedRoute } from "./types";
@@ -129,75 +128,6 @@ function openSection(section: Section): string {
     `<div class="${primitives.stack.className} ${primitives.view.className}" id="${section.anchor}">`,
     label,
     `<h2>${section.heading}</h2>`,
-  ].join("");
-}
-
-type NavTarget = {
-  readonly label: string;
-  readonly url: AbsoluteUrl;
-  readonly current?: boolean;
-};
-
-// Blog and Portfolio are the inventory's own homes, found by id rather than
-// restated — those URLs have one home, in the projects JSON document. Renaming either
-// record drops its link silently, because Composition is total and cannot
-// fail. Two tests go red instead: `tests/composition/apex-navigation.test.ts`
-// pins the drop-not-fake behaviour, and `tests/content/inventory.test.ts`
-// asserts the committed inventory still carries both ids (C14's call site).
-function homeOf(
-  hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>,
-  projectId: string,
-): AbsoluteUrl | undefined {
-  for (const [id, url] of hrefById) {
-    if (id === projectId) return url;
-  }
-  return undefined;
-}
-
-function target(label: string, url: AbsoluteUrl | undefined): NavTarget | null {
-  return url === undefined ? null : { label, url };
-}
-
-// `sourceUrl` addresses the account rather than a project, so it produces no
-// `ResolvedHome` and no gate checks it — the cost `20-contract.md` states.
-//
-// The self entry is built directly rather than through `target()`, which
-// exists to drop an *optional* inventory lookup — this entry is always
-// present, so there is nothing for it to drop.
-function outboundTargets(
-  hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>,
-  origin: string,
-): readonly NavTarget[] {
-  return [
-    { label: "SubZeroDev.com", url: `${origin}/` as AbsoluteUrl, current: true },
-    target("Blog", homeOf(hrefById, "publishing")),
-    target("Projects", sourceUrl),
-    target("Portfolio", homeOf(hrefById, "portfolio")),
-  ].filter((t): t is NavTarget => t !== null);
-}
-
-function renderLink(href: string, text: string, current?: boolean): string {
-  const classAttr = current
-    ? `${primitives.link.className} ${primitives["link-current"].className}`
-    : primitives.link.className;
-  const currentAttr = current ? ` aria-current="page"` : "";
-  return `<a class="${classAttr}" href="${href}"${currentAttr}>${text}</a>`;
-}
-
-function renderOutbound(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>, origin: string): string {
-  return outboundTargets(hrefById, origin)
-    .map((t) => renderLink(escapeHtml(t.url), t.label, t.current))
-    .join("");
-}
-
-function renderNav(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>, origin: string): string {
-  const inPage = sections.map((s) => renderLink(`#${s.anchor}`, s.navLabel ?? s.heading)).join("");
-
-  return [
-    `<nav class="${primitives.bar.className}">`,
-    `<p class="${primitives.meta.className}">${inPage}</p>`,
-    `<p class="${primitives.meta.className}">${renderOutbound(hrefById, origin)}</p>`,
-    `</nav>`,
   ].join("");
 }
 
@@ -304,16 +234,12 @@ export function composeApex(
   origin: string,
 ): ComposedRoute {
   const hrefById = new Map(resolvedHomes(inventory).map((h) => [h.projectId, h.url] as const));
+  const inPageLinks = sections.map((s) => ({ anchor: s.anchor, label: s.navLabel ?? s.heading }));
 
   const bodyHtml = [
     `<div class="${primitives.page.className}">`,
     `<div class="${primitives.stack.className}">`,
-    `<header class="${primitives.stack.className}">`,
-    `<h1>SubZeroDev</h1>`,
-    `<p class="${primitives.meta.className}">Professional uncertainty since ${sinceYear(inventory)}.</p>`,
-    `<p>${primarySlogan}</p>`,
-    `</header>`,
-    renderNav(hrefById, origin),
+    renderHeader(inPageLinks, hrefById, origin, sinceYear(inventory)),
     `<hr class="${primitives.rule.className}" />`,
     // The four sections stack in their own numbered order — 01 through 04 —
     // rather than sharing a `row`. The row was survivable only while the CSS
