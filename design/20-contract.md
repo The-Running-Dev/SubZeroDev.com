@@ -1302,10 +1302,13 @@ export type VerificationError = {
 **No error type.** The three raw Composition functions and Presentation operate only on validated
 values, cannot be malformed by construction, and perform no I/O.
 
-Adapter declares none of its own either, and **handles** `ContentError`: it is the sole
-`validateInventory` call site, and its whole response to `{ ok: false }` is to report every error and
-exit non-zero. There is no Adapter-specific failure to name — malformed content is a Content fault, and
-Composition has no failure of its own, both its functions being total.
+Adapter declares none of its own either, and **does not handle `ContentError`** — that changed with
+the 2026-08-11 migration and is written out in *Public signatures* § *Adapter*. Adapter declares each
+document's validator; the package's loader invokes it, flattens every `ContentError` into the single
+`message` the `Validator` contract permits, and refuses to call `compose` (`A5`). Adapter's own
+refusal is the malformed-`GITHUB_SHA` process exit, which carries no error type either. There is no
+Adapter-specific failure to name — malformed content is a Content fault, and Composition has no
+failure of its own, both its functions being total.
 
 **One bare-exception surface is ours.** `sourceUrl`'s module-load guard is written out in *Public
 signatures* § *Content*. It is not a recoverable content fault and does not gain an error union merely
