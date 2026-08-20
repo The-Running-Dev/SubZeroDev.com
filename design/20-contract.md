@@ -31,6 +31,17 @@ route's title and description, transcribed at slice time exactly as the inventor
 `question` were. Whether a social image exists is no longer open —
 [`U6`](#u6--whether-a-social-image-asset-exists) settled it: none.
 
+**Two routes were added on 2026-08-21 and this document is amended for them, not rewritten.** `/cv/`
+and `/portfolio/` fold the CV and portfolio material into this site as first-class routes served from
+two further versioned JSON documents. Everything that changed is an extension of a rule already here:
+`RoutePath` and `A4` carry four paths, Content gains two documents and two validators, Composition
+gains two total composers, `checkLinks` widens from `ResolvedHome` to `CheckedLink` so `V4` finally
+reaches `sourceUrl`, and `X1`'s derivation clause narrows to the apex —
+[`U11`](#u11--x1s-derivation-clause-is-narrowed-to-the-apex-pending-an-owner-edit-to-the-brief) is the
+one brief conflict that creates. `PrimitiveName` is unchanged and stays closed at twelve; no new
+dependency is introduced. `portfolio.subzerodev.com` is untouched and stays a separate live
+deployment.
+
 ---
 
 ## Types
@@ -166,6 +177,187 @@ guarantee nothing downstream demands and make `Testimonial` the one record shape
 which is harder to reason about than either end. `TestimonialUrlInvalid` is what earns the property
 instead, at the same point every other testimonial guarantee is earned.
 
+```ts
+export type CvLink = {
+  readonly label: string;
+  readonly href: AbsoluteUrl;
+};
+
+export type CvRole = {
+  readonly company: string;
+  readonly title: string;
+  readonly period: string;
+  readonly location: string;
+  readonly website?: AbsoluteUrl;
+  readonly summary: string;
+  readonly achievements: readonly [string, ...string[]];
+  readonly tech: readonly [string, ...string[]];
+};
+
+export type CvEducation = {
+  readonly school: string;
+  readonly degree: string;
+  readonly details: string;
+};
+
+export type CvProject = {
+  readonly title: string;
+  readonly link: AbsoluteUrl;
+  readonly description: string;
+  readonly tech: readonly [string, ...string[]];
+  readonly year: Year;
+};
+
+export type CvOpenSource = {
+  readonly title: string;
+  readonly link?: AbsoluteUrl;
+  readonly description: string;
+  readonly impact: string;
+  readonly tech: readonly [string, ...string[]];
+};
+
+export type CvEra = {
+  readonly period: string;
+  readonly focus: string;
+  readonly projects: readonly [string, ...string[]];
+};
+
+export type CvDocument = {
+  readonly header: {
+    readonly name: string;
+    readonly title: string;
+    readonly email: string;
+    readonly phone: string;
+    readonly links: readonly [CvLink, ...CvLink[]];
+  };
+  readonly about: { readonly title: string; readonly body: string };
+  readonly badges: readonly [string, ...string[]];
+  readonly chips: readonly [string, ...string[]];
+  readonly timelineTitle: string;
+  readonly roles: readonly [CvRole, ...CvRole[]];
+  readonly educationTitle: string;
+  readonly education: readonly [CvEducation, ...CvEducation[]];
+  readonly projectsTitle: string;
+  readonly projects: readonly [CvProject, ...CvProject[]];
+  readonly openSourceTitle: string;
+  readonly openSource: readonly [CvOpenSource, ...CvOpenSource[]];
+  readonly timelineProjectsTitle: string;
+  readonly timelineProjects: readonly [CvEra, ...CvEra[]];
+  readonly quote: string;
+};
+
+export type CvData = Branded<CvDocument, "CvData">;
+```
+
+**`CvData` is branded for the reason `Inventory` is: only `validateCv` can produce one.** A
+`CvDocument` is the structural decoder's output and carries no domain guarantee; the brand is what a
+composer's parameter type demands, so no route can be composed from records nothing checked. The same
+holds of `PortfolioData` below. Every list above is non-empty, and that is a real constraint rather
+than a convenience — a CV rendering a heading over nothing is the "silently empty section" failure
+`10-design.md` already refuses for the inventory.
+
+**Three fields of the source document are absent here, and each absence is load-bearing.**
+
+| Absent | Why |
+|---|---|
+| A badge's image `src` | The source pairs each technology label with a shields.io image URL. `V13` forbids any `src` that is not a data URI and the brief's non-goal forbids the request it would trigger, so the URL cannot be carried at all. What survives is the label, which is why `badges` is a list of strings rather than a list of one-field records: with the image gone, a badge **is** its text |
+| A role's `icon` | An icon-font token (`faRocket`). The font that resolves it is a linked asset `P1` and `V13` both forbid, and a token naming a glyph nothing can draw is a field that reads as a fact and is not one |
+| The source's `seo` block | Route `title` and `description` are Adapter's, transcribed as owner-supplied copy exactly as every other route's are (`A3` — Adapter obtains nothing renderable or derived from Content). Carrying them as content would make head metadata flow out of a Content document, which is a different module owning the head |
+
+**Field names follow the source document, except where the source name states something false about
+the value.** The transcription is checkable only by eye — nothing in this build may read either source
+— so a JSON document that reads like its source is the whole of what makes the comparison possible.
+`href`, `website`, `link`, `period`, `tech`, `chips` and `badges` are the source's own words and stay.
+Three names change and each is named here: `PortfolioStat.value` was `number`, which is untrue of a
+field holding `"Open Source"`; `TechNode.children` was `subCategories`, which is accurate only at the
+first level and calls a leaf technology a sub-category everywhere below it; and a badge is a string
+rather than a record, so `alt` — the name of the text that stood in for an image — has nothing left to
+name. `PortfolioDocument.projects` keeps the source's word while its entries are typed
+`PortfolioCategory`, because they are project *categories* rather than projects and the type is where
+that is worth saying.
+
+**`header.name` is the one field with no counterpart in the source document.** The source CV names a
+job title, an address and a phone line and never states whose CV it is, because the site it was
+written for supplied that from elsewhere. It is required here — a CV that does not name its subject is
+broken independently of any schema — and it is **owner-supplied at transcription time**. A slice
+reaching it with no supplied value stops and asks; it does not infer one from a git author, a domain
+or a repository name.
+
+**`email` and `phone` are checked for emptiness and for nothing else.** `phone` is prose — the source
+value is a country note and an availability statement, not a dialable number — and passes through
+verbatim. `email` is rendered as a `mailto:` and carries no format constraint either: an address's
+real validity cannot be established without sending mail, and a pattern strict enough to be worth
+having rejects valid addresses while still accepting dead ones. Stated plainly, on the same footing as
+`sourceUrl`'s: **these are the two CV fields whose shape nothing checks.** `V4` does not reach them —
+it speaks HTTP, and neither is an HTTP URL.
+
+**`tech` is a list, and the source's comma-separated prose is flattened once, by hand, at
+transcription.** The alternative is a `string` split at render time, which puts a parser over prose
+inside Composition and makes the page's chip boundaries a property of a regular expression rather than
+of the record. The transcription is a single human act performed once; a split is code that runs on
+every build and can be wrong every time.
+
+**`period` is prose and must never be normalised into dates.** `"2023 – Present"`, `"2023-2024"` and
+`"2019 – 2022"` all appear, and one of them has no end. A `Year` pair would have to invent a value for
+`Present` and would lose the era labels `timelineProjects` carries (`"2023-Present (SubZeroDev Era)"`).
+`Year` appears in exactly one place on this document — `CvProject.year` — which is why `validateCv`
+takes a `BuildContext` and `cvDocumentValidator` is a factory, exactly as `projectsDocumentValidator`
+is.
+
+```ts
+export type TechNode = {
+  readonly name: string;
+  readonly children?: readonly [TechNode, ...TechNode[]];
+};
+
+export type PortfolioCategory = {
+  readonly category: string;
+  readonly icon: string;
+  readonly description: string;
+};
+
+export type PortfolioStat = {
+  readonly value: string;
+  readonly label: string;
+};
+
+export type PortfolioDocument = {
+  readonly header: { readonly title: string; readonly subtitle: string };
+  readonly technologies: readonly [TechNode, ...TechNode[]];
+  readonly projects: readonly [PortfolioCategory, ...PortfolioCategory[]];
+  readonly stats: readonly [PortfolioStat, ...PortfolioStat[]];
+};
+
+export type PortfolioData = Branded<PortfolioDocument, "PortfolioData">;
+```
+
+**`TechNode` is one shape where the source has three.** The source encodes its technology tree as a
+top level of `{name, subCategories}`, a middle level that is either `{name}` or `{name, subCategories}`,
+and a leaf level of bare strings — three encodings of one idea. Normalising them to a single recursive
+node is transcription work done once, and it is what lets the renderer be one function rather than
+three. `children` is absent, never `undefined`-valued and never empty, on the same convention
+`Project.question` establishes.
+
+**The tree is at most three levels deep, and that bound is enforced rather than observed.** It is what
+makes a renderer total without unbounded recursion, and a fourth level would be a shape nobody designed
+a presentation for. `PortfolioTechDepthExceeded` is what earns it. Acyclicity needs no rule: a JSON
+document cannot express a cycle.
+
+**`PortfolioStat.value` is a string, and that is the honest type.** The source carries `"20+"`,
+`"50+"`, `"Open Source"` and the bare number `7` in one field. These are **authored display copy, not
+counts of anything in the document** — nothing here holds fifty projects to count — so a numeric type
+would be a claim the data cannot support and a union of `string | number` would push the same choice
+onto every reader. This is the concrete reason `X1` narrows; see [`U11`](#u11--x1s-derivation-clause-is-narrowed-to-the-apex-pending-an-owner-edit-to-the-brief).
+
+**Emoji ship verbatim.** `PortfolioCategory.icon` is a single emoji and several CV and portfolio
+headings open with one. They are text, not assets: nothing is fetched, no icon font resolves them, and
+`X5` escapes them like any other interpolated value. Neither `V13` nor `P1` is engaged.
+
+**Neither document carries a URL that is not an `AbsoluteUrl`, and the portfolio document carries no
+URL at all** — verified against all 379 lines of the source, which contains no `http` sequence. Every
+outbound address on the two new routes therefore comes from the CV document or from the masthead, and
+`checkedLinks` is where that set is enumerated.
+
 ### Content — derived shapes
 
 ```ts
@@ -192,10 +384,28 @@ export type ResolvedHome = {
   readonly projectId: ProjectId;
   readonly url: AbsoluteUrl;
 };
+
+export type CheckedLink = {
+  readonly label: string;
+  readonly url: AbsoluteUrl;
+};
 ```
 
 `EcosystemTree` carries exactly one group per `Stage`, in `stageOrder` order, including groups with
 no projects. `ResolvedHome` is produced only for `own` and `within` homes; `none` yields no entry.
+
+**`CheckedLink` is a URL and the name of what carries it, and it is Content's rather than
+Verification's** even though `checkLinks` is its only consumer. `V4`'s set is derived from content —
+the inventory's homes, `sourceUrl`, and the CV document's four link-bearing field paths — and a type
+Content produces cannot live in a module Content may not import (`C1`). It is the widening of
+`LinkCheckResult.target` from `ResolvedHome`, reopened on 2026-08-21; see
+[`90-decisions.md`](90-decisions.md).
+
+**`label` is diagnostic and carries no structure.** It names where the URL is written, so a failing
+gate points at the record to fix — a `ProjectId` for an inventory home, a field path for a CV link.
+It is deliberately not a `ProjectId`: most `CheckedLink`s belong to no project, and a synthetic id
+naming nothing is the shape the 2026-08-07 ruling rejected when it left `sourceUrl` outside `V4`.
+Nothing derives from a `label` and nothing matches on one.
 
 ### Presentation
 
@@ -385,12 +595,14 @@ is the text of a stylesheet with no `<style>` wrapper, because the package emits
 
 `ComposedRoute.stylesheet` is the stylesheet **that route's body requires**, not the union of every
 rule Presentation can produce. That is what makes `X4` checkable per document rather than only across
-the pair, and `P6` is what makes it true of every `ComposedRoute` rather than a habit.
+the route set, and `P6` is what makes it true of every `ComposedRoute` rather than a habit. It is also
+why four routes cost no new machinery: each derives its own stylesheet from its own body, so a route
+added is a route checked.
 
 ### Route
 
 ```ts
-export type RoutePath = "/" | "/404/";
+export type RoutePath = "/" | "/cv/" | "/portfolio/" | "/404/";
 ```
 
 The design's `Route` — path, prerendered body, required stylesheet, static head metadata — **is** the
@@ -411,7 +623,10 @@ type LandingPageBodyRoute = {
 };
 ```
 
-`RoutePath` narrows `path` to the two values `A4` permits. `body` carries a `BodyHtml` and
+`RoutePath` narrows `path` to the four values `A4` permits. **The miss path is written last and that
+ordering is not cosmetic**: it is the fallback route rather than a peer, and the union's order, the
+`config.routes` order and `A4`'s enumeration all state the same thing in the same sequence, so a
+reader meets one arrangement rather than three. `body` carries a `BodyHtml` and
 `stylesheet` a `StylesheetText`; both cross the boundary as bare `string`, which is what the brands
 exist to guard on this side. The metadata half is the package's `LandingPageMetadata` and needs no
 addition — the icon set travels in its existing `icons[].href` as data URIs.
@@ -468,7 +683,7 @@ export type Attestation = {
 };
 
 export type LinkCheckResult = {
-  readonly target: ResolvedHome;
+  readonly target: CheckedLink;
   readonly status: number | null;
   readonly attempts: number;
 };
@@ -534,7 +749,7 @@ Five things resemble persistence and are not:
 
 | Thing | Where it lives | Migration story |
 |---|---|---|
-| `Project` inventory and `Testimonial` collection | Two versioned JSON documents in this repository, read at build time | Re-read and re-validated on every build. There is **no migration path and none is planned**: the envelope carries a `version`, the schemas are strict, and a document at an unrecognised version or carrying an unknown key fails the build rather than being read leniently. That is the correct response to hand-edited content — the author is present and can fix it, which is exactly the condition under which lenient parsing is a liability. |
+| `Project` inventory, `Testimonial` collection, `CvData` and `PortfolioData` | Four versioned JSON documents in this repository, read at build time | Re-read and re-validated on every build. There is **no migration path and none is planned**: the envelope carries a `version`, the schemas are strict, and a document at an unrecognised version or carrying an unknown key fails the build rather than being read leniently. That is the correct response to hand-edited content — the author is present and can fix it, which is exactly the condition under which lenient parsing is a liability. |
 | Build marker | Injected by Artifact into each emitted document | No existing data. Every artifact is regenerated per commit; an older artifact is replaced, never migrated. |
 | Server configuration | Emitted by Artifact beside the output tree, never into it (`R6`) | Regenerated per build from the same source. Nothing reads a previous build's copy, and it is never published. |
 | Registry tags | The image registry | A commit tag is written once and never rewritten — the image it names is immutable. `latest` moves and is never an identity. No tag is ever migrated; an old tag stays resolvable, which is what makes a rollback expressible. |
@@ -564,6 +779,10 @@ export function projectsDocumentValidator(context: BuildContext): Validator<Inve
 
 export const testimonialsDocumentValidator: Validator<Testimonials>;
 
+export function cvDocumentValidator(context: BuildContext): Validator<CvData>;
+
+export const portfolioDocumentValidator: Validator<PortfolioData>;
+
 export function validateInventory(
   projects: readonly Project[],
   context: BuildContext,
@@ -572,6 +791,15 @@ export function validateInventory(
 export function validateTestimonials(
   testimonials: readonly Testimonial[],
 ): Result<Testimonials, ContentError>;
+
+export function validateCv(
+  cv: CvDocument,
+  context: BuildContext,
+): Result<CvData, ContentError>;
+
+export function validatePortfolio(
+  portfolio: PortfolioDocument,
+): Result<PortfolioData, ContentError>;
 
 export function testimonialTotal(testimonials: Testimonials): number;
 
@@ -588,6 +816,13 @@ export function contaminationForest(inventory: Inventory): ContaminationForest;
 export function sinceYear(inventory: Inventory): Year;
 
 export function resolvedHomes(inventory: Inventory): readonly ResolvedHome[];
+
+export function cvOutboundLinks(cv: CvData): readonly CheckedLink[];
+
+export function checkedLinks(
+  inventory: Inventory,
+  cv: CvData,
+): readonly [CheckedLink, ...CheckedLink[]];
 ```
 
 **There is no unvalidated export in this contract.** There were two until 2026-08-11 — `projects` and
@@ -595,7 +830,7 @@ export function resolvedHomes(inventory: Inventory): readonly ResolvedHome[];
 lives in two versioned JSON documents outside the module graph (*The content documents*, below), and
 the only way into it is a validator.
 
-**The two document validators are Content's entry points, and each is two checks in sequence.**
+**The four document validators are Content's entry points, and each is two checks in sequence.**
 `Validator<T>` is `subzerodev-data-json`'s type — `(raw: unknown) => { ok: true, value: T } | { ok:
 false, message: string }` — and the package's loader is what calls one. Each validator first decodes
 the document **structurally**, through a Zod schema over its envelope and record shapes, then hands the
@@ -605,26 +840,58 @@ guarantees on top of them. A structural failure short-circuits; a semantic failu
 the single `message` the `Validator` contract permits, joining every `ContentError` rather than
 reporting the first, so `A5`'s report-every-error property survives the narrower return type.
 
-`projectsDocumentValidator` takes a `BuildContext` and returns a validator, because `Year`'s constraint
-is relative to the build's UTC year and the context is not available where a module constant would be.
-`testimonialsDocumentValidator` needs none and is a constant.
+`projectsDocumentValidator` and `cvDocumentValidator` take a `BuildContext` and return a validator,
+because `Year`'s constraint is relative to the build's UTC year and the context is not available where
+a module constant would be — the inventory's `Project.year` and the CV's `CvProject.year` are the two
+places that type appears. `testimonialsDocumentValidator` and `portfolioDocumentValidator` need none
+and are constants.
 
-`validateInventory` and `validateTestimonials` remain exported and remain the semantic half, unchanged.
-They are still callable directly and the tests do so; what changed is that **production reaches them
-only through a document validator**. `validateTestimonials` is total over well-typed input and returns
-every violation rather than the first — empty `quote`, empty `author`, or an empty collection.
-`testimonialTotal` takes the validated `Testimonials` and is what keeps the count on the page a Content
-derivation rather than a typed literal (`X1`), on the same footing as `projectTotal`.
+**Every semantic validator remains exported and remains the semantic half.** They are still callable
+directly and the tests do so; what changed on 2026-08-11, and holds for the two added on 2026-08-21, is
+that **production reaches them only through a document validator**. Each is total over well-typed input
+and returns every violation rather than the first. `validateTestimonials`'s violations are an empty
+`quote`, an empty `author`, an empty collection and a malformed `url`. `validateCv`'s and
+`validatePortfolio`'s are enumerated in *Error semantics*.
+
+**`validateCv` and `validatePortfolio` return a branded value the caller could not otherwise
+construct**, which is the same guarantee `Inventory` and `Testimonials` carry and the reason
+`composeCv` and `composePortfolio` can be total. They are the only producers of `CvData` and
+`PortfolioData`.
+
+`testimonialTotal` takes the validated `Testimonials` and is what keeps the count on the apex a Content
+derivation rather than a typed literal (`X1`), on the same footing as `projectTotal`. **Neither new
+document has an equivalent**, and that is the narrowing `X1` records rather than an omission: the CV's
+and the portfolio's figures are authored, not counted.
 
 **The brands are still applied rather than earned**, which is why the *Error semantics* table
 anticipates raw values that fail their own constraints: the Zod schemas decode to `readonly Project[]`
 and `readonly Testimonial[]` by assertion at the transform, and the brands gate the derivations while
 runtime validation stays the semantic validators' alone.
 
-Every function other than `validateInventory`, `validateTestimonials` and `parseCommitId` takes either
-an `Inventory` or a validated `Testimonials`, and only the matching validator can produce one. They are
-total on that input and return no error. `validateInventory` and `validateTestimonials` are the two
+Every function other than the four semantic validators and `parseCommitId` takes a validated value —
+an `Inventory`, a `Testimonials`, a `CvData` or a `PortfolioData` — and only the matching validator can
+produce one. They are total on that input and return no error. The four semantic validators are the
 validating entry points into the module's data.
+
+**`checkedLinks` is the one derivation whose output leaves the render path**, and it is the single
+definition of `V4`'s set: one entry per `ResolvedHome`, one for `sourceUrl`, and one per outbound URL
+the CV document carries — `header.links[].href`, `roles[].website`, `projects[].link` and
+`openSource[].link`, which are the four link-bearing field paths and the whole of them. It is non-empty
+because `sourceUrl` is unconditional. `cvOutboundLinks` is the CV half, exported so it can be tested
+against a fixture without an inventory; nothing else may enumerate CV links, because a second
+enumeration is a second answer to what `V4` covers.
+
+**It does not deduplicate, and that is deliberate.** `portfolio.subzerodev.com` is carried both by the
+inventory's `portfolio` record and by the CV header's own Portfolio link, so a dead address there
+raises two errors naming two different records — which is correct, because both are places an author
+must edit. Deduplicating would report one and leave the other to be found later.
+
+**A `CheckedLink` is not a promise the link is on the page.** `checkedLinks` enumerates what the
+content documents carry; whether a composer renders a given one is Composition's, and `V4` is
+deliberately the wider set. The reverse direction is the one that would be a defect — a rendered
+outbound URL that `checkedLinks` does not enumerate is outside every gate, and the four field paths
+above are named exhaustively so that a fifth added to `CvDocument` is a visible amendment rather than a
+silent gap.
 
 `parseCommitId` is here because Content owns `CommitId` and Artifact depends on Content for that type.
 It returns `null` rather than an error variant: its one caller turns that into `CommitIdMalformed`, and
@@ -639,29 +906,40 @@ rather than an inventory field because it addresses the **account**, not a proje
 `Project` to reach `Home` would put a row in the ecosystem list and a `stage`, a `line` and a
 `question` on something that is none of those. It is written once and Composition never restates it.
 
-**It is deliberately outside `V4`, and that is a cost rather than an oversight.** `checkLinks` runs
-over `resolvedHomes(inventory)`, and `sourceUrl` produces no `ResolvedHome` — there is no project it
-belongs to, and a synthetic `projectId` to carry it would be a `ProjectId` naming nothing. The brief's
-*Definition of done* requires every outbound **project** link to resolve, and a code-forge account
-page is not one, so this sits outside that clause rather than violating it. Stated plainly: **this is
-the one outbound link on the page that no gate checks.** It was verified `200` by hand on 2026-08-07.
-The alternatives — widening `checkLinks`, or a full site-link type with project-reference resolution —
-were both put and both declined; see [`90-decisions.md`](90-decisions.md), 2026-08-07.
+**It was deliberately outside `V4` until 2026-08-21, and it no longer is.** `checkLinks` ran over
+`resolvedHomes(inventory)` alone, and `sourceUrl` produces no `ResolvedHome` — there is no project it
+belongs to, and a synthetic `projectId` to carry it would be a `ProjectId` naming nothing. That cost
+was accepted on 2026-08-07 and stated here plainly: it was the one outbound link on the page no gate
+checked, verified `200` by hand on the day. **The decision is reopened rather than replaced**, on
+evidence the original ruling could not have had: the CV route brings eighteen further outbound
+addresses onto this site, so the exposure the 2026-08-07 ruling weighed as one link is nineteen. The
+widening it declined — `checkLinks` over a `{ label, url }` shape rather than a `ResolvedHome` — is
+what `CheckedLink` now is, and `sourceUrl` enters `V4` through `checkedLinks` with it. See
+[`90-decisions.md`](90-decisions.md), 2026-08-07 and 2026-08-21.
 
-**It is therefore the one value in this contract guarded by a throw, and that is the exception the
-*Types* section points at.** `sourceUrl` is validated where it is declared — parsed through `URL`,
+What did **not** change is the brief's clause: *Definition of done* requires every outbound **project**
+link to resolve, and neither a code-forge account page nor a CV's employer link is one. `V4` is now
+wider than that clause rather than exactly it, which is the safe direction for a gate to be wrong in.
+
+**It is still the one value in this contract guarded by a throw, and that is the exception the
+*Types* section points at.** The throw is unaffected by the widening above: it checks the literal's
+**shape** at module load, before any network exists and before `checkedLinks` can be called, while
+`V4` checks whether the address **answers** — two different faults, caught at two different times.
+`sourceUrl` is validated where it is declared — parsed through `URL`,
 required to be `https:` — and a literal failing either check raises a bare `Error` at module load.
 Content has no other throwing path and no `ContentErrorCode` covers this: a `Result` returned from a
 module-level constant has no caller, which is the same shape that made `A5`'s handling a process exit
 rather than a returned error. The consequence is stated rather than hidden — a malformed `sourceUrl`
 fails the build through an uncaught exception during Adapter's module evaluation, **not** through
 `A5`'s report-every-error-then-exit path, so it is the one content fault that does not arrive
-alongside the others. The alternative is no check at all on the one outbound link no gate reaches,
-which is worse. Recorded on 2026-08-08; see [`90-decisions.md`](90-decisions.md).
+alongside the others. The alternative was no check at all on a link no gate reached; with `V4` widened
+that alternative is weaker still, because an unparseable literal would now reach `checkedLinks` and
+fail a networked gate minutes later instead of the build immediately. Recorded on 2026-08-08 and
+retained on 2026-08-21; see [`90-decisions.md`](90-decisions.md).
 
 #### The content documents
 
-Two files, declared to the package rather than imported by it. Their paths, ids and cache policy are
+Four files, declared to the package rather than imported by it. Their paths, ids and cache policy are
 in [`site/sources.public.yml`](../site/sources.public.yml) and their shape is in the Zod schemas in
 Content — **neither is restated here**, because both are in the tree and a copy in this document is the
 one that rots. What this contract states is what the tree cannot:
@@ -676,8 +954,28 @@ one that rots. What this contract states is what the tree cannot:
 - **The cache policy is `manual`.** The build is expected to re-read them every time. A time- or
   mtime-based policy would make a content edit's arrival on the page depend on a clock, which is the
   one thing an author changing a `line` must not have to reason about.
-- **They are the *only* source of `Project` and `Testimonial` values.** No TypeScript module carries
-  one, which is what makes `C14` a rule about validators rather than about records (*Invariants*).
+- **They are the *only* source of `Project`, `Testimonial`, CV and portfolio values.** No TypeScript
+  module carries one, which is what makes `C14` a rule about validators rather than about records
+  (*Invariants*).
+- **`cv.json` and `portfolio.json` are transcriptions, and each names its source in a required
+  `provenance` field on the envelope, beside `version`.** The canonical records live in sibling
+  repositories — `Portfolio`'s `config/cvData.yml` and `Docusaurus-Template`'s
+  `data/portfolioData.json` — and this build **cannot read either**: the brief's *no content derived
+  from sibling repositories* and *no network in the build* non-goals are both binding, and neither is
+  relaxed here. The transcription is therefore a one-time human act, and the copy here is
+  authoritative for what this site serves.
+
+  **It is a field rather than a comment, and that is forced twice over.** JSON has no comment syntax,
+  and these schemas are `.strict()`, so a `_note` key would fail the build. Making provenance *data*
+  is the better answer anyway: a comment is invisible to every check, while a field can be required,
+  asserted, and read by anyone comparing the two documents by hand. `provenance` is a non-empty string
+  and is the two documents' only envelope field beyond `version` — `projects.json` and
+  `testimonials.json` do not carry one and are not being changed to, because their content is authored
+  here and has no upstream to name.
+
+  **Nothing checks that a transcription stays in step with its source, and nothing is claimed to.**
+  The field records where the words came from so a later divergence is a question someone can ask
+  rather than a mystery.
 
 `site/dist/` is build output and is git-ignored; a stale document under it is not a content source and
 nothing reads one.
@@ -777,12 +1075,36 @@ export function composeApex(
   origin: string,
 ): ComposedRoute;
 
+export function composeCv(
+  inventory: Inventory,
+  cv: CvData,
+  origin: string,
+): ComposedRoute;
+
+export function composePortfolio(
+  inventory: Inventory,
+  portfolio: PortfolioData,
+  origin: string,
+): ComposedRoute;
+
 export function composeMiss(): ComposedRoute;
 ```
 
-These two functions and `ComposedRoute` above are the module's entire public surface. Both are total
-and cannot fail: an `Inventory` or a `Testimonials` cannot be malformed by construction, and neither
-performs I/O.
+These four functions and `ComposedRoute` above are the module's entire public surface. All four are
+total and cannot fail: a validated document cannot be malformed by construction, and none performs
+I/O.
+
+**`composeCv` and `composePortfolio` take an `Inventory` for the masthead and for nothing else.**
+Neither renders a project entry, a stage grouping, a contamination chain or a count. What the
+inventory supplies is what the shared header needs — the outbound nav's Blog href, resolved through
+`resolvedHomes` rather than restated, and the `sinceYear` in the tagline. **It must not acquire a
+default and must not become optional**: a header composed without it would either drop the Blog link
+silently or invent a year, and Composition is total and cannot report either. Deriving it inside the
+composer rather than passing `hrefById` and `sinceYear` in is what keeps `A3` closed — Adapter imports
+no Content derivation, so Adapter could not compute them.
+
+The parameter order is the shared value, then the route's own document, then `origin` — the same shape
+`composeApex(inventory, testimonials, origin)` already has, so the four signatures read as one family.
 
 **`composeApex` composes the whole apex, testimonials included.** It takes a `Testimonials` for the
 same reason it takes an `Inventory` — Composition holds no content of its own, and the testimonials
@@ -803,14 +1125,33 @@ Each composer produces its `bodyHtml` first, referencing classes only through `p
 primitives it used, and a route whose stylesheet describes a primitive its body does not carry is not
 expressible (`P6`).
 
-`composeMiss` takes no inventory because the miss document displays nothing derived from one. If it
-ever must — a project count, the since year — that is a contract amendment, not an implementer's call,
-because `X1` makes every figure on a page a Content derivation and a composition with no data cannot
-carry one.
+`composeMiss` takes no inventory because the miss document displays nothing derived from one — it is
+the one route with no masthead. If it ever must — a project count, the since year, the shared header —
+that is a contract amendment, not an implementer's call, because a composition with no data cannot
+carry a derived figure.
 
-**Adapter supplies the `Inventory` and the `Testimonials`.** `composeApex` takes both as parameters;
+**Adapter supplies every validated document.** Each composer takes what it needs as parameters;
 Composition never validates, never imports a document validator and never reads the environment. See
 *Adapter* below and [`U8`](#u8--the-validateinventory-call-site-and-load-time-failure).
+
+**Neither new composer writes `view`'s class, and that is a constraint a signature cannot carry.**
+`view`'s rules name the apex's four section anchors by id (*Types* § *Presentation*), and
+`stylesheetFor` emits a primitive's rules whenever its class is present in the body — so a `.view` on
+the CV or the portfolio document would emit five selectors naming ids that document does not have.
+`assertStyleAgreement` would not catch it: its `SelectorWithoutUser` half is over class selectors, and
+`nav [href="#effortless-action"]` carries none. The apex's tab switch stays the apex's; the two new
+routes are linear documents and select nothing.
+
+**Every class either new body carries is one of the other eleven primitives**, referenced through
+`primitives` exactly as `composeApex` and `composeMiss` reference theirs. `PrimitiveName` is unchanged
+by this amendment and stays closed at twelve — a CV timeline is `entry` records with `meta` lines, and
+a portfolio technology tree is a `grid` of `card`s, both of which the existing set expresses. A
+thirteenth member is a contract amendment, on the same footing every previous addition was.
+
+**The `Source`-link asymmetry does not repeat here.** `X8` fixes the testimonial citation's link text
+because that word is Composition's rather than the quoted person's. A CV link carries its own `label`
+and a project its own `title`, so those are content and are interpolated, escaped, like any other
+value.
 
 **`composeApex` also emits the JSON-LD block (`X6`), which is why it gained an `origin` parameter on
 2026-08-07.** The block is in the **body**, not the head, because the package owns the head and its
@@ -818,6 +1159,24 @@ metadata set is closed — there is no field for an arbitrary element, the same 
 marker Artifact's. `<script>` is flow content and is conforming in `<body>`, so this needs no exception
 to the output-shape rules the design asserts about itself. `composeMiss` emits none: a not-found
 document is not an `Organization`, and `X6` says so rather than leaving it to taste.
+
+**`composeCv` emits a second JSON-LD block, holding a `Person`, and `composePortfolio` emits none.**
+This was left open by the 2026-08-20 design pass and is settled here. The CV is the one document on
+this site whose subject is a person, and every value in the block is already visible prose on the same
+page read out of the same validated `CvData` — which is the exact justification the `Organization`
+block rests on, applied to the other entity this site describes. The portfolio has no such subject:
+`CollectionPage` or `ItemList` would describe the **page** rather than an entity, which is a different
+kind of claim from the one the apex makes, and a technology tree is not a thing schema.org has a type
+for. Two costs are accepted rather than hidden — a second escaping surface, guarded by the same
+`</script` check `X6` already applies, and a second block whose `name` is owner-supplied copy that no
+gate can check. The rejected alternatives are in [`90-decisions.md`](90-decisions.md), 2026-08-21.
+
+**The `Person` block omits the email address, and the omission is the decision.** `cv.header.email` is
+rendered as a visible `mailto:` — a deliberate, human-facing affordance, and the whole of the contact
+story the brief's no-forms non-goal leaves — while a JSON-LD `email` is a machine-readable restatement
+harvested by anything that fetches the page. It widens exposure and buys nothing the brief asks for.
+`phone` is omitted for the same reason and a second: its value is prose, not a dialable number, so a
+consumer parsing it would be parsing a sentence.
 
 `origin` is a **parameter rather than an import** because `X2` confines Composition to Content and
 Presentation, and the site origin is Adapter's (`A1`). Passing it keeps that edge closed. It is typed
@@ -832,28 +1191,41 @@ transcribed at slice time like every other route string.
 ```ts
 export const origin: "https://subzerodev.com";
 
-export type RoutePath = "/" | "/404/";
+export type RoutePath = "/" | "/cv/" | "/portfolio/" | "/404/";
 
 export const apexPath: "/";
+
+export const cvPath: "/cv/";
+
+export const portfolioPath: "/portfolio/";
 
 export const missPath: "/404/";
 
 declare const config: LandingPageDataConfig<{
   projects: Inventory;
   testimonials: Testimonials;
+  cv: CvData;
+  portfolio: PortfolioData;
 }>;
 export default config;
 ```
 
 `RoutePath` is declared **here**, not in Content or Composition, because the set of paths this site
-declares is Adapter's alone. `apexPath` and `missPath` are each written `satisfies RoutePath`, which is
-what makes a third path a compile error rather than a review finding; `tests/types/route-path.type-check.ts`
+declares is Adapter's alone. Each path constant is written `satisfies RoutePath`, which is
+what makes an undeclared path a compile error rather than a review finding; `tests/types/route-path.type-check.ts`
 pins the union by mutual assignability so that adding or removing a member fails the typecheck with no
 `@ts-expect-error` available to suppress it.
 
+**`cvPath` and `portfolioPath` are this site's own paths, and that is the whole of why the masthead
+changed.** `portfolio.subzerodev.com` remains a live deployment of its own and remains the inventory's
+`portfolio` record with an `own` home, so `resolvedHomes` still yields it, `checkedLinks` still carries
+it and `V4` still checks it — nothing about that subdomain is withdrawn, replaced or fronted by this
+repository. What changed is only which address the **nav entry labelled Portfolio** points at, and it
+now points here.
+
 **The default export is a `LandingPageDataConfig`, not a `LandingPageConfig`** — this changed with the
 2026-08-11 migration to JSON content and is the largest interface consequence of it. Adapter no longer
-*holds* a configuration; it declares two build-time **sources**, each paired with the validator that
+*holds* a configuration; it declares four build-time **sources**, each paired with the validator that
 gives it a type, and a **`compose` callback** the package invokes with the validated data. `config`
 therefore exists only as that callback's return value, once per build, after validation has already
 succeeded. The package's `defineLandingPageData(sources, config)` is what constructs it, and
@@ -861,40 +1233,57 @@ succeeded. The package's `defineLandingPageData(sources, config)` is what constr
 the package never authored, and an unchecked cast would make the type a lie. Verified against the
 published `0.4.1` source.
 
-`config.routes` is exactly two `LandingPageBodyRoute` values, in this order — the apex at `apexPath`
-carrying `composeApex(projects, testimonials, origin)`, and the miss at `missPath` carrying
-`composeMiss()`. Each route's `body` and `stylesheet` come from its own `ComposedRoute`. The miss stays
+`config.routes` is exactly four `LandingPageBodyRoute` values, in this order — the apex at `apexPath`
+carrying `composeApex(projects, testimonials, origin)`, the CV at `cvPath` carrying
+`composeCv(projects, cv, origin)`, the portfolio at `portfolioPath` carrying
+`composePortfolio(projects, portfolio, origin)`, and the miss at `missPath` carrying `composeMiss()`.
+Each route's `body` and `stylesheet` come from its own `ComposedRoute`. The miss stays
 last: it is the fallback route, not a peer, and the order documents that.
+
+**Only the miss route's emitted document is relocated.** The package emits `cv/index.html` and
+`portfolio/index.html` alongside `404/index.html`, and Artifact removes only the last of the three —
+a directory index served with a **200** is correct at `/cv/` and at `/portfolio/`, and is a soft 404
+at `/404/`. `R2`'s removal is about what that one path means, not about directory indexes, and
+extending it would delete two documents the site is for.
 
 No repository module imports Adapter — Verification's assertions over `A4` and `A6` necessarily do,
 which is the same reading Verification's own boundary rule takes.
 
 **Adapter no longer calls a validator, and that is the other half of the same change.** It *declares*
-`projectsDocumentValidator(context)` and `testimonialsDocumentValidator` against the two source ids;
+`projectsDocumentValidator(context)`, `testimonialsDocumentValidator`, `cvDocumentValidator(context)`
+and `portfolioDocumentValidator` against the four source ids;
 the package's loader invokes each exactly once, before `compose` runs, and refuses to call `compose`
-at all if either fails. The build's entry conditions are still read in exactly one place and the build
+at all if any fails. The build's entry conditions are still read in exactly one place and the build
 can still refuse to produce anything — the refusal simply belongs to the loader now, executing a
 validator this module handed it. That is what `A5` asserts, and it is why the contract no longer names
 Adapter as a *call site* (`C14`).
 
 **What Adapter still owns at build time is `BuildContext`.** It reads `GITHUB_SHA` from the
 environment, parses it with Content's `parseCommitId`, and exits non-zero on a malformed value before
-any source is resolved. `projectsDocumentValidator` takes that context, which is why it is a factory
-rather than a constant.
+any source is resolved. `projectsDocumentValidator` and `cvDocumentValidator` take that context, which
+is why each is a factory rather than a constant. **One `BuildContext` is read once and handed to
+both** — two reads of the same environment could disagree across a UTC midnight, and a build whose two
+`Year` ceilings differ is a build whose failure depends on when it started.
 
 Five fields are declared **absent**, in four groups, and each absence is load-bearing rather than a
 default:
 
 | Field | Absent because |
 |---|---|
-| `config.styles` | The package declares it and **reads it nowhere** — verified against the published source at `0.3.0` and re-verified at the pinned `0.4.1` on 2026-08-20, where only a body route's own `stylesheet` is read. `hydrate` is declared and unread in the same way; at `0.4.1` it is read only as a type check during data validation, never to hydrate anything. Presentation's output therefore travels in each route's own `stylesheet`, which is also what makes `X4` a per-document check rather than a check across the pair |
+| `config.styles` | The package declares it and **reads it nowhere** — verified against the published source at `0.3.0` and re-verified at the pinned `0.4.1` on 2026-08-20, where only a body route's own `stylesheet` is read. `hydrate` is declared and unread in the same way; at `0.4.1` it is read only as a type check during data validation, never to hydrate anything. Presentation's output therefore travels in each route's own `stylesheet`, which is also what makes `X4` a per-document check rather than a check across the route set |
 | `config.publicDir`, `config.allow` | This repository emits no public asset and imports nothing from outside the site root. Note that omitting `publicDir` does not disable it — the package falls back to a `public` directory beside the adapter, which this repository does not create. A public directory is the one path by which a linked asset could enter the tree, and `V13` is what catches one that does |
 | `metadata.noScript` | [`U5`](#u5--noscript-is-withdrawn-pending-an-owner-edit-to-the-brief). For a body route the package appends it **inside the body**, so a declaration here would put a false sentence in the document's prose |
 | `metadata.repositoryUrl` | The package's adapter path does not emit it. Declaring it would be inert, and an inert declaration reads as a fact about the document |
 
 `metadata.canonicalUrl` and `metadata.openGraph.url` are `origin` concatenated with that route's
 path; `metadata.openGraph.type` is `"website"`. `A1` asserts the pairing so no second origin string
-exists to drift.
+exists to drift, and it now covers four routes rather than two.
+
+**The CV's and the portfolio's `title` and `description` are owner-supplied copy, transcribed here.**
+They are deliberately not read from the content documents: head metadata is Adapter's, and sourcing it
+from Content would put a renderable-adjacent value on an edge `A3` closes. This is the same standing
+condition [`S13`](30-slices.md#s13--the-apexs-real-title-and-description) records for the apex — an
+implementing agent with no supplied copy stops and asks rather than writing brand voice.
 
 `metadata.themeColor` is Presentation's `themeColor`, and `metadata.icons` is exactly one entry whose
 `href` is Presentation's `iconDataUri`. One SVG data URI serves every size, so a second entry would be
@@ -904,7 +1293,9 @@ what `A7` forbids. Whatever else `LandingPageIcon` requires beside `href` is the
 declaration, transcribed at slice time against the pinned `0.4.1` the same way the route metadata's
 other package-owned fields are.
 
-**Adapter therefore imports two named things from Presentation, and only these two.** That is a
+**Adapter therefore imports two named things from Presentation, and only these two**, unchanged by
+the four-route amendment — a route added does not widen this edge, because everything renderable still
+arrives through Composition. That is a
 change to `A3`, which said it read nothing from Presentation, and to the clause in
 [`10-design.md`](10-design.md) § *Module boundaries* that it came from. Neither value is renderable
 and neither is derived from Content, so the property that clause exists to protect — exactly one path
@@ -919,7 +1310,10 @@ transcribes them; it does not invent them.
 `missPath` is the canonical declaration of the miss route's path. Artifact's `missEmittedEntry` is the
 package's emitted mapping of exactly this value and must change with it; `R5` asserts the pairing.
 No other route needs such a pairing — Artifact treats every `.html` entry identically (`R1`, `R3`),
-and only the miss route has a second, relocated published path.
+and only the miss route has a second, relocated published path. `cvPath` and `portfolioPath` emit
+`cv/index.html` and `portfolio/index.html` and those documents stay where the package put them: a
+directory index served with a 200 is what those two routes are **for**, and is a soft 404 only at
+`/404/`.
 
 **Adapter is where the build's entry conditions are read, and where it can still refuse to produce
 anything.** It is the module the package CLI loads. Two refusals live here, and they are different in
@@ -931,7 +1325,10 @@ kind:
    before any source is resolved.
 2. **Malformed content is the loader's**, through a validator this module declared. Every
    `ContentError` from the failing document is reported — not the first — and `compose` is never
-   called, so no route body, stylesheet or document is produced. That is the whole of `A5`.
+   called, so no route body, stylesheet or document is produced. That is the whole of `A5`. **Whether
+   a second failing document also reports is the loader's to decide and is not asserted here**: what
+   this contract requires is that each document reports all of its own faults, which is the property a
+   single validator can guarantee.
 
 The second was Adapter's own direct call until 2026-08-11 and is why `C14` no longer names Adapter as
 a *validation call site*: the only thing Adapter still holds is the **reference** to the validator,
@@ -1017,7 +1414,7 @@ export const deploymentPollRetry: RetryPolicy;
 export function readBuildMarker(documentHtml: string): Result<CommitId, VerificationError>;
 
 export function checkLinks(
-  targets: readonly ResolvedHome[],
+  targets: readonly CheckedLink[],
   policy: RetryPolicy,
 ): Promise<Result<readonly LinkCheckResult[], VerificationError>>;
 
@@ -1113,6 +1510,14 @@ checkable only against the stub that answered — see [`30-slices.md`](30-slices
 that has begun redirecting to a parked page, a registrar hold or a login wall satisfies `V4`. The
 gate proves an address still answers, not that what answers is still the project.
 
+**`checkLinks` took `readonly ResolvedHome[]` until 2026-08-21 and now takes `readonly CheckedLink[]`.**
+It is otherwise unchanged: the retry semantics, the redirect rule and the no-per-target-result-on-failure
+shape all hold as written. What the widening buys is that the function no longer decides what `V4`
+covers — `checkedLinks` does, in Content, where the content is — and what it costs is that a failing
+target is named by a `label` rather than by a `ProjectId`, so a diagnostic that was a typed identity is
+now a string. That is the trade the 2026-08-07 ruling declined and 2026-08-21 accepted; the evidence
+that reopened it is in [`90-decisions.md`](90-decisions.md).
+
 **Four codes previously had no producing function, and two invariants no callable surface.** The three
 signatures that close it are the two added above and `assertAttestation`'s changed first parameter:
 
@@ -1126,6 +1531,13 @@ signatures that close it are the two added above and `assertAttestation`'s chang
 names, and a parameter that cannot be absent cannot express it. The `attestation` job passes what it
 read from the run's approval record to `publish-release`, and `null` where there was none. The Pages
 preview does not call this function and does not depend on that job.
+
+**`assertContentPresent` covers the apex and is not extended to the two new routes.** `V3` exists to
+catch content that has come to depend on script execution, and neither the CV nor the portfolio
+document carries an executing script at all (`X10`) — the failure mode is structurally absent there,
+so a presence assertion would assert something nothing can break. The two routes' content is asserted
+instead by their own slices, against the emitted document, without a Verification signature. Stated
+plainly so it is a limit rather than an assumption.
 
 `assertContentPresent` takes the `Inventory` rather than a list of names, so a caller cannot satisfy
 `V3` by passing three of fourteen. `manifestoSentences` is non-empty for the same reason: an empty
@@ -1196,7 +1608,16 @@ export type ContentErrorCode =
   | "TestimonialAuthorEmpty"
   | "TestimonialRoleEmpty"
   | "TestimonialOrganizationEmpty"
-  | "TestimonialUrlInvalid";
+  | "TestimonialUrlInvalid"
+  | "CvFieldEmpty"
+  | "CvCollectionEmpty"
+  | "CvUrlInvalid"
+  | "CvYearInvalid"
+  | "CvYearAfterBuild"
+  | "PortfolioFieldEmpty"
+  | "PortfolioCollectionEmpty"
+  | "PortfolioTechDepthExceeded"
+  | "PortfolioDuplicateCategory";
 
 export type ContentError = {
   readonly code: ContentErrorCode;
@@ -1209,7 +1630,7 @@ export type ContentError = {
 Every variant is deterministic and **not retryable**. In every case the caller — the build — exits
 non-zero and publishes nothing. There is no default value, no fallback stage, no dropped project and
 no silently empty section. `validateInventory` reports **all** failures in one `Result`, never the
-first only. `validateTestimonials` holds to the same rule over its own six codes.
+first only. Every other semantic validator holds to the same rule over its own codes.
 
 The six testimonial codes reuse `ContentError` rather than earning a second error type: `projectId`
 is always `null` for them — a `Testimonial` has no `ProjectId` — and `detail` carries the offending
@@ -1219,6 +1640,23 @@ record's zero-based index, since there is no identity field to name it by instea
 one always-`null` field on these six variants and buys one error type, one `Result` shape and one
 caller-facing report format for both content sets — the alternative, a `TestimonialError` type with its
 own union, was considered and rejected for exactly that duplication.
+
+**The nine CV and portfolio codes extend that reuse, and `projectId` is `null` for every one of them.**
+Neither document has a `ProjectId` and neither will acquire one: the CV's employers and the portfolio's
+categories are not projects in this repository's inventory, and giving them synthetic ids to reach an
+existing field is the shape the 2026-08-07 `sourceUrl` ruling already rejected once.
+
+**They are coarser than the testimonial codes on purpose.** A `Testimonial` has five fields and takes
+five codes; `CvDocument` has more than thirty leaf fields across seven record types, and a code per
+field would be an enumeration nobody can read, kept in step with a schema by hand. What discriminates
+instead is `field`, which carries a **dotted path from the document root with a zero-based index at
+each list** — `roles[3].achievements[1]`, `header.links[0].href`. That is what makes a report
+actionable, and it is the one thing about these codes a reader may not assume from their names: the
+code says what kind of fault, `field` says where, and only `field` is precise.
+
+**`CvYearInvalid` takes precedence over `CvYearAfterBuild`** on a single bad value, exactly as
+`InvalidYear` does over `YearAfterBuild`, so one wrong year yields one error rather than two carrying
+the same `field`.
 
 **`TestimonialUrlInvalid` is the only testimonial code that is not an emptiness check**, and the
 asymmetry is worth naming: the other four field-level codes reject a field that is present and blank,
@@ -1247,6 +1685,15 @@ was entitled to carry one, which is authored and unenforceable (§ *Types*).
 | `TestimonialRoleEmpty` | A `role` is present but empty after trimming, at the index in `detail`. Absent is valid; present-and-empty is not (`X8` would otherwise render an empty metadata element) | `null` | `"role"` |
 | `TestimonialOrganizationEmpty` | An `organization` is present but empty after trimming, at the index in `detail`. Absent is valid; present-and-empty is not, for `TestimonialRoleEmpty`'s reason | `null` | `"organization"` |
 | `TestimonialUrlInvalid` | A `url` is present and is not an absolute `https:` URL, at the index in `detail`. Absent is valid. Emptiness needs no separate code — an empty string fails this one | `null` | `"url"` |
+| `CvFieldEmpty` | A required CV string is empty after trimming, or a present optional one is. Every string field of every CV record is required except `CvRole.website` and `CvOpenSource.link`, which are URLs and fail `CvUrlInvalid` when present and empty | `null` | the dotted path |
+| `CvCollectionEmpty` | A CV list the type declares non-empty has no entries — `header.links`, `badges`, `chips`, `roles`, `education`, `projects`, `openSource`, `timelineProjects`, a role's `achievements`, any record's `tech`, or an era's `projects` | `null` | the dotted path |
+| `CvUrlInvalid` | A `header.links[].href`, `roles[].website`, `projects[].link` or `openSource[].link` is present and is not an absolute `https:` URL. Absent is valid where the field is optional; present-and-empty fails here rather than as `CvFieldEmpty`, so one bad URL yields one error | `null` | the dotted path |
+| `CvYearInvalid` | A `projects[].year` is non-integer or outside 1000–9999 | `null` | the dotted path |
+| `CvYearAfterBuild` | A `projects[].year` exceeds `BuildContext.utcYear`, where it is otherwise a valid four-digit integer | `null` | the dotted path |
+| `PortfolioFieldEmpty` | A required portfolio string is empty after trimming — a `header` field, a `TechNode.name`, a `PortfolioCategory` field, or a `PortfolioStat` field. `PortfolioStat.value` is included: a stat with a label and no figure renders a dangling label | `null` | the dotted path |
+| `PortfolioCollectionEmpty` | `technologies`, `projects` or `stats` has no entries, or a `TechNode.children` is present and empty. Absent `children` is valid and is how a leaf is spelled; present-and-empty is not, on the same reasoning `TestimonialRoleEmpty` rests on | `null` | the dotted path |
+| `PortfolioTechDepthExceeded` | A `TechNode` is nested more than three levels deep. The bound is what makes a renderer total, and it is enforced rather than observed | `null` | the dotted path |
+| `PortfolioDuplicateCategory` | Two top-level `technologies` entries share a `name`, or two `projects` entries share a `category`. Either renders the same heading twice with different contents beneath it, which reads as a data error to a visitor and as nothing at all to the build | `null` | the dotted path |
 
 ### Artifact
 
@@ -1357,12 +1804,12 @@ export type VerificationError = {
 
 ### Composition, Presentation, Adapter
 
-**No error type.** The three raw Composition functions and Presentation operate only on validated
+**No error type.** The four Composition functions and Presentation operate only on validated
 values, cannot be malformed by construction, and perform no I/O.
 
 Adapter declares none of its own either, and **does not handle `ContentError`** — that changed with
-the 2026-08-11 migration and is written out in *Public signatures* § *Adapter*. Adapter declares each
-document's validator; the package's loader invokes it, flattens every `ContentError` into the single
+the 2026-08-11 migration and is written out in *Public signatures* § *Adapter*. Adapter declares all four
+document validators; the package's loader invokes each, flattens every `ContentError` into the single
 `message` the `Validator` contract permits, and refuses to call `compose` (`A5`). Adapter's own
 refusal is the malformed-`GITHUB_SHA` process exit, which carries no error type either. There is no
 Adapter-specific failure to name — malformed content is a Content fault, and Composition has no
@@ -1406,8 +1853,10 @@ where a separate module checks it, that is said in the row.
 | **C11** | `ecosystemTree` has one group per `Stage` in `stageOrder` order; within a group projects ascend by `id`; every project appears exactly once across all groups | Content |
 | **C12** | `countByStage` has one entry per `Stage` in `stageOrder` order, and its counts sum to `projectTotal` | Content |
 | **C13** | `resolvedHomes` yields one entry per `own` and `within` home and none for `none` | Content |
-| **C14** | Nothing imports `projectsDocumentValidator` or `testimonialsDocumentValidator` except Adapter, which declares them against the two build-time sources, and the tests that exercise them directly. No derivation function, no Composition entry and no Artifact step reads either. **Reachability, not naming**: a namespace import, an `export *`, a namespace re-export and a dynamic `import()` each reach a validator without writing its name, and the check fails closed on a clause shape it does not recognise | Content |
+| **C14** | Nothing imports `projectsDocumentValidator`, `testimonialsDocumentValidator`, `cvDocumentValidator` or `portfolioDocumentValidator` except Adapter, which declares them against the four build-time sources, and the tests that exercise them directly. No derivation function, no Composition entry and no Artifact step reads any of them. **Reachability, not naming**: a namespace import, an `export *`, a namespace re-export and a dynamic `import()` each reach a validator without writing its name, and the check fails closed on a clause shape it does not recognise. The set is closed by enumeration, so a fifth document validator that is not added here is one this invariant does not cover | Content |
 | **C15** | `parseCommitId` is the only implementation of the `CommitId` pattern in the repository | Content |
+| **C17** | `checkedLinks` is the only enumeration of `V4`'s target set. Every outbound URL any route renders is either in it or is not an HTTP address at all; no other function, test or workflow step assembles a list for `checkLinks` | Content |
+| **C18** | A `TechNode` tree is at most three levels deep, and a present `children` is non-empty | Content |
 | **P1** | Nothing in Presentation references a linked font, an external stylesheet, a gradient or an illustration asset. Neither `--font-sans` nor `--font-mono` names a webfont, and no rule is an `@font-face` | Presentation |
 | **P2** | The rendered page is legible in greyscale, in two parts. **(a)** Every foreground colour resolved against the background it is rendered on meets WCAG AA — 4.5:1, or 3:1 at `1.563rem` and above, WCAG's large-text threshold and the value `--step-2` names. The threshold is stated as a size rather than as a token because no rule references that token. `--rule` is **exempt, by name**: record separation is carried by the **spacing around a record**, so a divider reinforces and never signals. This clause named `--space-1` as that spacing until 2026-08-08; the `entry` primitive separates records with its own `clamp()` padding, so the exemption rests on the separation existing rather than on which value expresses it. **(b)** No meaning is carried by hue alone, which obliges the `link` primitive to declare a `text-decoration`, or a font weight distinct from body text. Part (b) is what makes this say greyscale rather than contrast: `--link` against `--fg` is 1.50:1, far below the 4.5:1 body-text threshold, so a link is not reliably separable from body text by luminance alone. The margin against `--bg` is not what is at issue — `--link` clears (a) there at 11.17:1 — which is why (b) is a separate half rather than a consequence of (a) | Presentation |
 | **P3** | Nothing **moves** under `prefers-reduced-motion: reduce`: no transform, translation, scale, rotation, position change or scroll behaviour is animated or transitioned. A transition of a non-positional property — `link`'s and `card`'s hover colour changes are the cases in the primitive set — is not motion and is permitted. Motion itself is not forbidden outright, only under `reduce`: `card`'s hover lift is the one rule in the set that moves, and it sits inside a `prefers-reduced-motion: no-preference` block, so under `reduce` the rule is absent rather than overridden. The preference addresses vestibular motion rather than change as such, which is why this names motion and not animation. `00-brief.md` § *Definition of done* states this same narrowed form as of its 2026-08-07 amendment, so the two agree — see [`90-decisions.md`](90-decisions.md) and [`U10`](#u10--p3-is-narrowed-to-motion-pending-an-owner-edit-to-the-brief) | Presentation |
@@ -1415,21 +1864,21 @@ where a separate module checks it, that is said in the row.
 | **P5** | No `StylesheetText` contains a `</style` sequence in any case — the package emits it unescaped inside a `<style>` element and throws on one | Presentation |
 | **P6** | A route's stylesheet is the token block followed by the `rules` of exactly those primitives whose `className` occurs in that route's `bodyHtml`, and nothing else. `stylesheetFor` derives every inclusion from the body, so no caller states it | Presentation |
 | **P7** | Exactly one primitive's `rules` reference `--font-mono`; no other primitive and no token-block rule does. What that primitive may carry is `X1`'s, not restated here | Presentation |
-| **X1** | No count, total, year or other figure on the page is a typed literal; each comes from a Content derivation | Composition |
-| **X2** | Composition imports only Content and Presentation, and nothing imports Composition except Adapter | Composition |
+| **X1** | No count, total, year or other figure on **any** route is a typed literal in Composition's source. On the **apex** each such figure is additionally a Content **derivation**, computed from the inventory or the testimonial collection and never authored. On `/cv/` and `/portfolio/` a figure may instead be **authored content** carried in that route's own validated document — `PortfolioStat.value` is `"20+"` and `"50+"`, which are the author's estimates rather than counts of anything the document holds, and `CvRole.period` is prose with no end date. The derivation clause narrowed to the apex on 2026-08-21; `00-brief.md` § *Definition of done* still states the broader form, so the two disagree on a released requirement until it is edited — see [`U11`](#u11--x1s-derivation-clause-is-narrowed-to-the-apex-pending-an-owner-edit-to-the-brief) | Composition |
+| **X2** | Composition imports only Content and Presentation, and nothing imports Composition except Adapter. It does not import `RoutePath`: the current route travels into `renderOutbound` as a plain `string`, for the reason `origin` does | Composition |
 | **X3** | The page contains no form, no analytics, no consent surface and no third-party script | Composition |
 | **X4** | For each `ComposedRoute`, every class referenced in `bodyHtml` has a matching selector in `stylesheet`, and every **class** selector in `stylesheet` has a user in `bodyHtml` — checked by `assertStyleAgreement`. The token block's `:root` rules fall outside both halves and need no exemption clause: they carry no class selector, and `Primitive.rules` roots every other rule at its own `className` | Composition |
-| **X5** | Every Content value interpolated into `bodyHtml` is HTML-escaped, in attribute position as well as in text position; `<`, `>`, `&`, `"` and `'` never reach the document unescaped from a content value. The rule is over every interpolated value, not over a named list of fields. The attribute half is not implied by the text half — `"` and `'` are inert in text and are exactly what closes an attribute early — a `ResolvedHome.url` carried in an `href` is the case the apex composition has, and a `Testimonial.url` in the `Source` link's `href` (`X8`) is a second one on the same document. Asserted with a fixture project carrying all five characters, in both positions. **One exception, and it is not a relaxation**: inside the `application/ld+json` block (`X6`) HTML escaping would corrupt the JSON — `&amp;` in a URL is a different URL — so values there are JSON-string-escaped instead, and `X6`'s `</script` guard is what keeps that safe rather than the escaping | Composition |
-| **X6** | The apex body carries **exactly one** `<script type="application/ld+json">` element; the miss body carries none. It holds a single JSON-LD `Organization` object; every value in it is JSON-string-escaped (`X5`), it contains no `</script` sequence in any case — checked as one of `ScriptElementPresent`'s raising conditions, not a separate code — and any figure in it is a Content derivation rather than a typed literal, exactly as `X1` requires of the visible page. The only other script element any document may carry is the single inline enhancement script `X10` admits; there is no third | Composition |
+| **X5** | Every Content value interpolated into `bodyHtml` is HTML-escaped, in attribute position as well as in text position; `<`, `>`, `&`, `"` and `'` never reach the document unescaped from a content value. The rule is over every interpolated value, not over a named list of fields. The attribute half is not implied by the text half — `"` and `'` are inert in text and are exactly what closes an attribute early — a `ResolvedHome.url` carried in an `href` is the case the apex composition has, a `Testimonial.url` in the `Source` link's `href` (`X8`) is a second one on the same document, and the CV's four link-bearing field paths are four more on a third. Asserted with a fixture project carrying all five characters, in both positions. **One exception, and it is not a relaxation**: inside the `application/ld+json` block (`X6`) HTML escaping would corrupt the JSON — `&amp;` in a URL is a different URL — so values there are JSON-string-escaped instead, and `X6`'s `</script` guard is what keeps that safe rather than the escaping | Composition |
+| **X6** | The apex body carries **exactly one** `<script type="application/ld+json">` element, holding a single `Organization` object. The **CV** body carries **exactly one**, holding a single `Person` object built from `CvData` and carrying neither `email` nor `phone`. The **portfolio** and **miss** bodies carry **none**. Every value in either block is JSON-string-escaped (`X5`), neither contains a `</script` sequence in any case — checked as one of `ScriptElementPresent`'s raising conditions, not a separate code — and any figure in either obeys `X1` as narrowed for that route. The only other script element any document may carry is the single inline enhancement script `X10` admits, on the apex alone | Composition |
 | **X7** | The apex renders only `EcosystemGroup`s carrying at least one project. `C11` keeps every `Stage` in the tree so counts, ordering and totals stay total and testable; a lifecycle stage nothing has reached yet is not rendered as a heading with nothing beneath it. The two are complementary rather than in tension — the derivation is complete, the page is not a list of empties — and this is stated because the design's "never a silently empty section" rule was written for an empty *inventory* and left the empty *group* unnamed | Composition |
 | **X8** | The apex's testimonials section renders every `Testimonial` `composeApex` is given, in input order — it sorts nothing and drops nothing. A testimonial carrying neither `role` nor `organization` omits the metadata line entirely rather than rendering an empty one. A present `url` renders as one further attribution line carrying a single link whose text is `Source` and whose `href` is that value; an absent `url` renders **no** such line and no placeholder, so a card without a citation is indistinguishable from a card that was never eligible for one. The link text is fixed and is Composition's own word rather than the quoted person's, so § *Public signatures*' rule that no testimonial field appears in Composition's source survives the addition intact | Composition |
 | **X9** | The apex body carries its four sections — Effortless Action, The Echo System, Contamination and Testimonials — each reached by a fragment link in the apex navigation, and each carrying the `view` primitive's class. Which one is visible is decided by that primitive's `:target` rules and by nothing the composition states; a document requested with no fragment shows the first. Those rules remain the whole of section selection with `X10`'s script never executed — the script enhances the switch and does not replace it | Composition |
-| **X10** | The apex body carries **at most one** script element beyond `X6`'s JSON-LD block: an **inline enhancement script** with no `src` attribute, containing no `</script` sequence in any case. The miss body carries none. It initiates **no** network request of any kind — no `fetch`, no `XMLHttpRequest`, no dynamic `import()`, and no element insertion that loads a resource — which is what keeps `V2` true of a document that now executes something. It is **strictly additive**: it may reveal, hide, filter, reorder or overlay content already present in `bodyHtml`, and is never the sole source of any content, figure or link on the page. That constraint is not review-enforced — `V3` asserts every manifesto sentence and project `name` in built HTML **with scripting never executed**, so a script that became load-bearing for content turns `V3` red. `P3` and `P4` bind it as they bind the primitive set: it introduces no motion under `prefers-reduced-motion: reduce`, and any overlay it opens preserves focus order and keyboard reachability | Composition |
+| **X10** | The apex body carries **at most one** script element beyond `X6`'s JSON-LD block: an **inline enhancement script** with no `src` attribute, containing no `</script` sequence in any case. The CV, portfolio and miss bodies carry none — what the script enhances is the apex's tab switch, its stage filtering and its detail overlay, none of which the other three documents have, so a copy there would be an element with nothing to act on. It initiates **no** network request of any kind — no `fetch`, no `XMLHttpRequest`, no dynamic `import()`, and no element insertion that loads a resource — which is what keeps `V2` true of a document that now executes something. It is **strictly additive**: it may reveal, hide, filter, reorder or overlay content already present in `bodyHtml`, and is never the sole source of any content, figure or link on the page. That constraint is not review-enforced — `V3` asserts every manifesto sentence and project `name` in built HTML **with scripting never executed**, so a script that became load-bearing for content turns `V3` red. `P3` and `P4` bind it as they bind the primitive set: it introduces no motion under `prefers-reduced-motion: reduce`, and any overlay it opens preserves focus order and keyboard reachability | Composition |
 | **A1** | Every URL in route metadata is built from `origin`; no origin string is written twice. Each route's `canonicalUrl` and `openGraph.url` equal `origin` concatenated with that route's `path` | Adapter |
 | **A2** | Every entry in `metadata.icons` carries a `DataUri` as its `href`; no icon is a linked asset | Adapter |
-| **A3** | Adapter obtains everything renderable from Composition; it imports Content only for `projectsDocumentValidator`, `testimonialsDocumentValidator`, `parseCommitId` and the types `BuildContext`, `Inventory` and `Testimonials`, and Presentation only for `themeColor` and `iconDataUri` — never a derivation function, a copy constant, a primitive or the stylesheet. Both import lists are enumerated, and nothing renderable is on either. Composition and the external package are closed as **modules**, not as name lists: `A3` bounds which modules Adapter may reach, and only Content's and Presentation's edges are further narrowed to exact names | Adapter |
-| **A4** | Exactly two routes are declared: `apexPath` and `missPath` | Adapter |
-| **A5** | Each content document is validated exactly once per build, before any route is composed. On either's failure every `ContentError` from that document is reported — not the first — and no route body, stylesheet or document is produced. Adapter declares the validators; the package's loader invokes them and refuses to call `compose`, which is why this is stated as a property of the build rather than as a call Adapter makes | Adapter |
+| **A3** | Adapter obtains everything renderable from Composition; it imports Content only for `projectsDocumentValidator`, `testimonialsDocumentValidator`, `cvDocumentValidator`, `portfolioDocumentValidator`, `parseCommitId` and the types `BuildContext`, `Inventory`, `Testimonials`, `CvData` and `PortfolioData`, and Presentation only for `themeColor` and `iconDataUri` — never a derivation function, a copy constant, a primitive or the stylesheet. Both import lists are enumerated, and nothing renderable is on either. Composition and the external package are closed as **modules**, not as name lists: `A3` bounds which modules Adapter may reach, and only Content's and Presentation's edges are further narrowed to exact names | Adapter |
+| **A4** | Exactly four routes are declared, in this order: `apexPath`, `cvPath`, `portfolioPath`, `missPath`. The miss is last because it is the fallback rather than a peer, and `RoutePath`'s member order states the same sequence | Adapter |
+| **A5** | Each of the four content documents is validated exactly once per build, before any route is composed, against one `BuildContext` read once. On any document's failure every `ContentError` from that document is reported — not the first — and no route body, stylesheet or document is produced. Adapter declares the validators; the package's loader invokes them and refuses to call `compose`, which is why this is stated as a property of the build rather than as a call Adapter makes | Adapter |
 | **A6** | Both routes are `LandingPageBodyRoute` values: none declares `entry`, `hydrate` or `noScript`, and the configuration declares no `styles`, `publicDir` or `allow`. Each route's stylesheet travels in its own `stylesheet` field | Adapter |
 | **A7** | No colour literal and no data URI is written in Adapter. `metadata.themeColor` is Presentation's `themeColor` and every `metadata.icons[].href` is Presentation's `iconDataUri`, by reference — the same rule `A1` applies to `origin`, applied to visual identity | Adapter |
 | **R1** | Every emitted document carries exactly one build marker, and it carries the commit being built | Artifact |
@@ -1439,21 +1888,28 @@ where a separate module checks it, that is said in the row.
 | **R5** | `missEmittedEntry` is the package's emitted entry for Adapter's `missPath` — checked against the emitted tree **before `R2`'s removal**, never assumed. A pairing asserted after the file is gone would assert nothing | Artifact |
 | **R6** | The emitted server configuration is written outside `outputDir` and never appears in the published tree, on either target | Artifact |
 | **V1** | No document reaches publication unless it carries the exact commit's marker | Verification |
-| **V2** | Loading a route document triggers zero requests other than the navigation document itself. Checked against `/` — the miss route is reached only through the unknown-path mechanism `V12` covers, not through direct navigation | Verification |
+| **V2** | Loading a route document triggers zero requests other than the navigation document itself. Checked against `/`, `/cv/` and `/portfolio/` — every directly navigable route, each reached from the masthead. The miss route is excluded because it is reached only through the unknown-path mechanism `V12` covers, not through direct navigation | Verification |
 | **V3** | Every manifesto sentence asserted, and every project `name`, appears in built HTML with scripting never executed | Verification |
-| **V4** | Every `ResolvedHome` responds 2xx or 3xx before release. The Pages preview does not wait on this networked gate | Verification |
+| **V4** | Every `CheckedLink` in `checkedLinks(inventory, cv)` responds 2xx or 3xx before release — the inventory's resolved homes, `sourceUrl`, and every outbound URL the CV document carries. It read *every `ResolvedHome`* until 2026-08-21, which left `sourceUrl` outside it by construction. The Pages preview does not wait on this networked gate | Verification |
 | **V5** | An `Attestation` is valid for exactly one `CommitId` and is never accepted for another. It gates the **release path only** — the registry push and the redeploy — and not the Pages deploy, which is why the preview's every-commit cadence is real; the cost is recorded in `10-design.md` § *Publication targets* | Verification |
 | **V6** | Publication happens only while this run's commit is the deployment-branch head | Verification |
-| **V7** | After content validation → render → package build → Artifact → offline verification, publication forks. The preview branch performs branch-head check → Pages deploy → Pages read-back (exact marker, bytes, unknown path) without waiting on the image gate, link gate or attestation. In parallel the release-preparation branch performs image build → in-CI image gate → networked link check, and continues on its own through truth attestation → **branch-head re-check** → registry push → redeploy trigger → endpoint read-back (exact marker, unknown path) → live claim. **The two branches never join**, and neither waits on the other: `V11`'s two halves each compare a served response against the emitted apex document rather than against each other, so neither is evidence the other needs. The head is checked **twice** because the attestation before release is a human gate of unbounded duration, and a check taken before it proves nothing after it | Verification |
+| **V7** | After content validation → render → package build → Artifact → offline verification, publication forks. The preview branch performs branch-head check → Pages deploy → Pages read-back (exact marker, bytes, unknown path) without waiting on the image gate, link gate or attestation. In parallel the release-preparation branch performs image build → in-CI image gate → networked link check, and continues on its own through truth attestation → **branch-head re-check** → registry push → redeploy trigger → endpoint read-back (exact marker, unknown path) → live claim. **The two branches never join**, and neither waits on the other: `V11`'s two halves each compare a served response against the corresponding emitted document rather than against each other, so neither is evidence the other needs. The head is checked **twice** because the attestation before release is a human gate of unbounded duration, and a check taken before it proves nothing after it | Verification |
 | **V8** | No live URL is stated or implied until `pollForCommit` returns `ok` for the exact commit **and** the unknown-path check passes **against the target that claim is about** — Pages for the preview URL, the endpoint for the site. A read-back on one target licenses no claim about the other | Verification |
 | **V9** | No image is pushed to the registry unless the in-CI gate passed for that image | Verification |
 | **V10** | The image tag equals the full commit id, and equals the marker the running image serves | Verification |
-| **V11** | What the running image serves for `/`, and what Pages serves for `/`, are **each** byte-identical to the emitted apex document. Both are compared, which is what makes the brief's "asserted rather than assumed" true of the pair rather than of one side of it. The endpoint is deliberately not compared — `V15` covers it with the marker and unknown-path pair instead, because a byte match across a proxy this repository does not own would fail on transport differences that are not divergence. It names `/` only, which since 2026-08-10 is the only content route there is | Verification |
+| **V11** | For each of `/`, `/cv/` and `/portfolio/`, what the running image serves and what Pages serves are **each** byte-identical to that route's own emitted document. Both targets are compared, which is what makes the brief's "asserted rather than assumed" true of the pair rather than of one side of it. The endpoint is deliberately not compared — `V15` covers it with the marker and unknown-path pair instead, because a byte match across a proxy this repository does not own would fail on transport differences that are not divergence. It named `/` only while that was the only content route; since 2026-08-21 it names `/`, `/cv/` and `/portfolio/`, because checking one document and arguing the others from shared construction is the reasoning this same invariant already rejected once when it covered one target and argued the other | Verification |
 | **V12** | An unknown path returns status 404 carrying the emitted miss document, on **both** targets | Verification |
-| **V13** | No emitted document contains a linked stylesheet, an external asset reference, or a script element carrying a `src` attribute. The apex document contains **at most two** script elements — its inert `application/ld+json` block (`X6`) and `X10`'s single inline enhancement script — while the miss document contains none; no document may contain a third. Both permitted elements are inline and fetch nothing. Any `src` attribute on any script element fails, as does any script element that is neither of the two permitted. The rule was a blanket ban until 2026-08-07, narrowed then to admit a non-executing block because it forbade one on the ground that it forbade execution; it was widened again on 2026-08-10 to admit one executing but request-free enhancement script, on the reasoning that what is worth checking is what a document **fetches** and whether its content survives with scripting off — which `V2` and `V3` check directly, against a real browser and against built HTML — rather than whether anything executes at all | Verification |
+| **V13** | No emitted document contains a linked stylesheet, an external asset reference, or a script element carrying a `src` attribute. The apex document contains **at most two** script elements — its inert `application/ld+json` block (`X6`) and `X10`'s single inline enhancement script; the **CV** document contains **exactly one**, its `Person` block; the **portfolio** and **miss** documents contain none. No document may contain more than its own count. Both permitted elements are inline and fetch nothing. Any `src` attribute on any script element fails, as does any script element that is neither of the two permitted. The rule was a blanket ban until 2026-08-07, narrowed then to admit a non-executing block because it forbade one on the ground that it forbade execution; it was widened again on 2026-08-10 to admit one executing but request-free enhancement script, on the reasoning that what is worth checking is what a document **fetches** and whether its content survives with scripting off — which `V2` and `V3` check directly, against a real browser and against built HTML — rather than whether anything executes at all | Verification |
 | **V14** | No image tag is stated or implied until the push for that tag has succeeded and the tag resolves in the registry | Verification |
 | **V15** | After the registry push, the redeploy is triggered and the endpoint serves the pushed commit's marker, with a unique unknown path answering 404 carrying the emitted miss document, before anything claims the site is deployed. **A successful push is not a deployment.** Both checks reuse `pollForCommit` and `assertUnknownPathResponse` against the endpoint; the trigger itself is workflow configuration and has no surface here, on the same footing as the registry push | Verification |
 | **V16** | The module import graph is exactly the one *Public signatures*, `C1`, `C14`, `X2` and `A3` describe — checked over `src` plus Adapter's own file, with the edges observed by the caller. **`assertImportGraph` is declared above and has no implementation**; the graph is currently checked by `tests/content/import-graph.test.ts` against a test-local AST helper, which is the arrangement `assertImportGraph` was written to replace and has not yet. It is the checkable home for the three import rules carrying no other id: Presentation imports only `Branded`, Artifact imports only `CommitId`, `parseCommitId` and `Result`, and no repository module imports Verification | Verification |
+
+**`C16` is retired and is not reused.** It was `S11`'s testimonial-import closure and merged into
+`C14` with the 2026-08-11 JSON migration; the two invariants added on 2026-08-21 take `C17` and `C18`
+rather than filling the gap. Four test-file comments still cite `C16` meaning the old rule, and
+reusing the number would silently repoint them at a rule about link checking. Ids are never reused
+here for the reason `30-slices.md` gives for criterion ids: a renumbering rewrites what an existing
+citation refers to.
 
 Three things the design states that this contract deliberately does **not** encode as build-time
 checks, because encoding them would duplicate a fact another module owns or claim a check that cannot
@@ -1462,6 +1918,14 @@ be performed:
 - **`home.url` addresses the project's own site.** Checking that its host is a subdomain of the apex
   would require Content to know the apex origin, which Adapter owns (`A3`). Covered by the release
   attestation and by `V4`, not by a Content assertion.
+- **`site/cv.json` and `site/portfolio.json` still say what their source repositories say.** They are
+  hand transcriptions of `Portfolio`'s `config/cvData.yml` and `Docusaurus-Template`'s
+  `data/portfolioData.json`, and the brief forbids this build from reading either — no content derived
+  from sibling repositories, no network in the build. Nothing detects a divergence and nothing can;
+  each document's `provenance` field is what makes the question askable.
+- **A CV `email` is deliverable and a `phone` is reachable.** Both are checked for emptiness and for
+  nothing else. `V4` speaks HTTP and neither is an HTTP address, so this is the same honest limit
+  `V4` has for a project's site, applied to the two contact fields.
 - **`genre` and `stage` are true of the project.** Both are authored facts. `Genre` is closed at the
   type level; whether the assigned value is the right one is attestation work.
 - **The deployed compose stack *keeps* serving the published image.** This entry read "the deployed
@@ -1799,3 +2263,43 @@ it is numbered for the same reason: a brief conflict recorded only in an append-
 nobody re-reads. It blocks nothing — `P3` stays Presentation's to maintain, and
 [`U9`](#u9--accessibility-has-no-verification-surface) still owns the question of what would check
 it.
+
+### U11 — `X1`'s derivation clause is narrowed to the apex, pending an owner edit to the brief
+
+`00-brief.md` § *Definition of done* requires that *"No count, project total or figure anywhere on the
+page is a typed literal."* `X1` as it now stands keeps the typed-literal half over **every** route —
+no figure is ever written into Composition's source — and narrows the **derivation** half to the apex:
+on `/cv/` and `/portfolio/` a figure may be authored content carried in that route's own validated
+document.
+
+**Adjudicated 2026-08-21: the narrow form is correct and the brief states the broader one.** The
+source data does not support deriving most of these figures, and the two that look derivable are the
+ones that show why. `PortfolioStat.value` carries `"20+"`, `"50+"` and `"Open Source"` — the author's
+estimates about a twenty-year career, not counts of anything either document holds; the portfolio
+document lists eleven technology categories, not fifty projects, so there is nothing to count.
+`CvRole.period` is prose with no end date (`"2023 – Present"`), which no `Year` pair expresses. A
+derivation over data that does not contain the fact would have to invent it, and a figure invented by
+code is worse than one an author typed, because the author knew it was an estimate.
+
+Two things this does **not** relax. A figure still never appears as a literal in Composition's source
+on any route — that half of `X1` is unchanged and is what the rule was written to prevent. And the
+apex is untouched: `projectTotal`, `countByStage`, `sinceYear` and `testimonialTotal` remain
+derivations, and a count added to the apex is still a derivation or a contract amendment.
+
+**The brief outranks this document, so until it is edited the two disagree on a released requirement.**
+Remaining: the owner narrows that clause in `00-brief.md`. A model may interrogate that file but not
+author it, so the edit is not made here. The bullet to change reads, in full:
+
+> - No count, project total or figure anywhere on the page is a typed literal.
+
+and the narrowed form it needs to state is that no figure on any route is a typed literal in rendering
+code; that every figure on the apex is derived from the project inventory or the testimonial
+collection; and that on the CV and portfolio routes a figure may instead be authored content carried
+in that route's own content document.
+
+This is the same shape as [`U5`](#u5--noscript-is-withdrawn-pending-an-owner-edit-to-the-brief) and
+[`U10`](#u10--p3-is-narrowed-to-motion-pending-an-owner-edit-to-the-brief), and it is numbered for the
+same reason: a brief conflict recorded only in an append-only log is one nobody re-reads. It blocks
+nothing — `X1` stays Composition's to maintain, and the two routes ship under it as narrowed, exactly
+as `P3` shipped under `U10`. The ruling and its rejected alternatives are in
+[`90-decisions.md`](90-decisions.md), 2026-08-21.

@@ -539,8 +539,15 @@ second clause rules out; a reveal that only ever adds visibility is in scope. Ch
 2026-08-08 fold was additive at the Adapter wiring.
 ## Outstanding
 
-One slice. Everything else this document allocated has landed; what is left beyond this sits under
+Six slices. `S13` predates the rest and is a copy swap; `S14` through `S18` were appended on
+2026-08-21 and carry the CV and portfolio routes. What is left beyond them sits under
 [`## Blocked`](#blocked) and is waiting on a decision rather than on work.
+
+**`S14` through `S18` run in order and each ends runnable.** `S14` widens the link gate, `S15` commits
+and validates the two content documents with nothing rendering them, `S16` and `S17` add a route each,
+and `S18` rewires the masthead once both routes exist. The order is not arbitrary: the masthead cannot
+point at a route that is not declared, and a content document that nothing renders is still a build
+that fails when the document is wrong. **`S13` is independent of all five** and may land at any point.
 
 ## S13 — The apex's real title and description
 
@@ -581,6 +588,203 @@ Out of scope: The miss route's copy, which landed real in
 question rather than a copy swap. The manifesto prose, the section headings, the testimonials and the
 footer quote — all already real copy, none of it touched here. Any change to how metadata reaches the
 document: this slice changes six strings and nothing structural.
+
+---
+
+## S14 — The link gate stops caring what a link belongs to
+
+Delivers: The one outbound link on the site that no gate has ever checked starts being checked. Today
+the CI step that goes red when a project's site dies only knows how to look at project links — so the
+Projects entry in the site's own navigation, which points at a code-forge account page, has been
+verified exactly once, by hand, over two weeks ago. This teaches the gate to check a link that belongs
+to no project, which is also what the CV route needs before it can bring eighteen more onto the site.
+Nothing a visitor sees changes; a gate that was quietly narrower than its own description stops being
+so.
+
+Touches: Content — a `CheckedLink` type and a `checkedLinks` derivation, exported. Verification —
+`checkLinks`'s parameter and `LinkCheckResult.target`. The live link-check test and
+`vitest.link-check.config.ts`. `30-slices.md` — S3's row in the `## Landed` index, which still reads
+`—` and must record this supersession.
+
+Depends on: S3, and on nothing this amendment adds.
+
+**`checkedLinks` lands here at one parameter and gains its second in S15.**
+[`20-contract.md`](20-contract.md) states the finished signature, `(inventory, cv)`, because that is
+what `V4` will mean; this slice cannot write it, because `CvData` does not exist until S15 and a
+parameter typed against a type nothing validates is worse than an arity that changes once. `S15.14`
+is the criterion that closes the gap, and until it lands this slice's `checkedLinks` is honestly
+narrower than `V4` as written — which is the direction that fails safe, since the links it omits are
+links no route yet renders.
+
+Acceptance:
+  - S14.1 `checkLinks` takes `readonly CheckedLink[]` and `LinkCheckResult.target` is a `CheckedLink`. The three S3 behaviours are asserted unchanged against the same stub server: a 2xx passes at one attempt, a 4xx fails as `LinkNotOk` at one attempt without exhausting the policy, and a refused connection retries to `linkCheckRetry.attempts` and fails as `LinkUnreachable`.
+  - S14.2 A failing target's `VerificationError.detail` names its `label` and its `url`. Asserted against a fixture whose label is not a `ProjectId` — the diagnostic that used to be a typed identity is now a string, and this is what pins that it still identifies the record.
+  - S14.3 `checkedLinks(inventory)` yields one entry per `ResolvedHome`, labelled by that home's `ProjectId`, plus one for `sourceUrl`. Asserted against a fixture inventory entry by entry, including a `none` home yielding no entry.
+  - S14.4 `checkedLinks` does not deduplicate: a fixture inventory carrying two records whose homes resolve to the same URL yields **two** entries with different labels. Demonstrated red by deduplicating.
+  - S14.5 `checkedLinks` over the committed `site/projects.json` contains `sourceUrl`. That is the assertion this slice exists for: `V4` now reaches the link it did not.
+  - S14.6 The live link-check shard runs `checkLinks` over `checkedLinks(...)` rather than over `resolvedHomes(...)`, and its target count is read from the derivation rather than typed. Asserted by the shard failing when the derivation returns an empty list.
+  - S14.7 `C17` has teeth: no module, test or workflow step other than the live link-check shard calls `checkLinks`, asserted over the tree by the existing import-graph helper.
+  - S14.8 S3's row in the `## Landed` index names this supersession — `S3`'s criteria are written against `ResolvedHome` and three of them turn on `LinkCheckResult.target`.
+
+Out of scope: The CV half of `checkedLinks` and `cvOutboundLinks` — S15, which is where `CvData`
+exists. Following redirects, or distinguishing a redirect to a parked page from a live one — the
+2026-08-05 ruling stands and `V4` still proves an address answers rather than that what answers is
+still the project. A scheduled post-deploy re-check, which stays under `## Blocked`. Any change to
+`linkCheckRetry`'s values.
+
+---
+
+## S15 — The CV and portfolio content documents
+
+Delivers: The material that has lived on a separate subdomain and in two sibling repositories becomes
+this site's own content — a CV and a technology portfolio, committed here as data, checked on every
+build the same way the project list is. Nothing renders yet; what this slice buys is that the words
+exist in this repository, in a shape the build refuses to accept when it is wrong.
+
+Touches: `site/cv.json` and `site/portfolio.json`, each with a `provenance` field naming its source.
+`site/sources.public.yml` — two more `at: build` entries. Content — the `CvDocument`/`CvData` and
+`PortfolioDocument`/`PortfolioData` type sets, two Zod document schemas, `cvDocumentValidator` and
+`portfolioDocumentValidator`, `validateCv` and `validatePortfolio`, and nine `ContentErrorCode`
+members, and `cvOutboundLinks` plus `checkedLinks`'s second parameter. Adapter — two more source
+declarations and the `LandingPageDataConfig` type parameter; the `compose` callback receives two
+values it does not yet use. The live link-check shard, which starts passing the CV. `30-slices.md` —
+S1's row in the `## Landed` index, whose `ContentErrorCode` count is about to be wrong again.
+
+Depends on: S1, S2, S14. And on **owner-supplied copy — one string**: `cv.header.name`. The source CV
+names a job title, an address and a phone line and never states whose CV it is. An implementing agent
+that reaches this with no supplied name **stops and asks**; it does not take one from a git author, a
+domain or a repository name.
+
+Acceptance:
+  - S15.1 `site/cv.json` and `site/portfolio.json` are committed, each carrying `"version": 1` and a non-empty `provenance` string naming its source file in the sibling repository. Asserted by decoding both documents and matching the field against the expected source path, and by a fixture with `provenance` absent failing the schema. `site/projects.json` and `site/testimonials.json` are unchanged and carry no such field.
+  - S15.2 Both are declared in `site/sources.public.yml` with `at: build`, a local `path` and `cache: manual` — the same three properties `projects` and `testimonials` carry, asserted field by field.
+  - S15.3 Both document validators accept the committed documents, asserted by calling each against the file's parsed contents and requiring `ok: true`. **Positive count: 2.**
+  - S15.4 Each schema is `.strict()` and rejects an unknown key, and each rejects a `version` other than `1`. Asserted with a fixture per document per fault. **Negative count: 4.**
+  - S15.5 `validateCv` raises `CvFieldEmpty`, `CvCollectionEmpty`, `CvUrlInvalid`, `CvYearInvalid` and `CvYearAfterBuild`, each against its own fixture, with `field` carrying the dotted path and index of the offending value and `projectId` `null`. **Negative count: 5.**
+  - S15.6 `validatePortfolio` raises `PortfolioFieldEmpty`, `PortfolioCollectionEmpty`, `PortfolioTechDepthExceeded` and `PortfolioDuplicateCategory`, each against its own fixture, on the same `field`/`projectId` rule. **Negative count: 4.** A four-level technology tree is the depth fixture and a three-level one passes beside it.
+  - S15.7 Each semantic validator reports **every** fault in one `Result`, not the first: a fixture carrying four independent faults yields four `ContentError`s. Demonstrated red by returning early.
+  - S15.8 `CvYearInvalid` takes precedence over `CvYearAfterBuild`: a fixture year of `99999` yields one error, not two.
+  - S15.9 `CvData` and `PortfolioData` are constructible only by their validators — asserted at the type level, in the style of `tests/types/`, by a raw `CvDocument` failing to satisfy `CvData` with no `@ts-expect-error` available to suppress it.
+  - S15.10 Neither committed document contains an image URL, an icon-font token, or a `src` of any kind. Asserted over the raw file text, which is what stops a later edit reintroducing the shields.io badges the transcription dropped.
+  - S15.11 `C14` covers four validators: nothing outside Adapter and the document-validator tests imports any of them, asserted by the existing reachability check extended to the two new names, demonstrated red by adding an import.
+  - S15.12 The build still emits exactly the routes S6 declares, with the two new sources validated and unused. `A5` holds over four documents: a fixture adapter whose CV source is malformed produces no route body, stylesheet or document, asserted the way `tests/build/malformed-testimonials-adapter.config.ts` already asserts it for testimonials.
+  - S15.13 S1's row in the `## Landed` index names the new `ContentErrorCode` count.
+  - S15.14 `checkedLinks` takes `(inventory, cv)` and its output additionally carries one entry per URL at each of `header.links[].href`, `roles[].website`, `projects[].link` and `openSource[].link`. Asserted against a fixture CV carrying an absent `roles[].website` and an absent `openSource[].link` so both optional paths are exercised, and against the committed `site/cv.json` by count. This closes the gap `S14` states: `checkedLinks` now means what `V4` says it means.
+  - S15.15 `cvOutboundLinks` is exported and returns the CV half alone, asserted against the same fixture with no inventory in scope.
+  - S15.16 `checkedLinks` still does not deduplicate across the two halves: the committed CV header's Portfolio link and the inventory's `portfolio` record both appear, carrying different labels. Demonstrated red by deduplicating.
+
+Out of scope: Rendering either document — S16 and S17. Any route declaration. The masthead. Reading
+either source repository, at build time or otherwise: the brief forbids it and this slice's whole
+premise is that the transcription is committed here.
+
+---
+
+## S16 — The `/cv/` route
+
+Delivers: A CV lives at `subzerodev.com/cv/`, in the site's own voice and typography, with no image,
+no icon font and nothing to load. A recruiter who follows a link from a commit trailer or a business
+card reaches a document that reads as part of this site rather than a stop on a different one — and a
+search engine reaches a machine-readable `Person` record describing the same page.
+
+Touches: Composition — `composeCv`, an internal CV renderer, and a `Person` JSON-LD builder beside the
+existing `Organization` one. Adapter — `cvPath`, the `RoutePath` union, the third route declaration
+and its metadata. `tests/types/route-path.type-check.ts` — the pinned union. Verification's build
+shard — a third emitted document to assert over.
+
+Depends on: S15, and on **owner-supplied copy — four strings**: the CV route's `title` and
+`description` and its Open Graph title and description. The same standing condition
+[`S13`](#s13--the-apexs-real-title-and-description) records for the apex applies here, and it applies
+before this route ships rather than after: an implementing agent with no supplied copy stops and asks.
+
+Acceptance:
+  - S16.1 `RoutePath` is exactly `"/" | "/cv/" | "/portfolio/" | "/404/"`, pinned by mutual assignability in `tests/types/route-path.type-check.ts` so adding or removing a member fails the typecheck. `cvPath` is `"/cv/"` and is written `satisfies RoutePath`.
+  - S16.2 The emitted tree carries `cv/index.html`, and Artifact does **not** remove it — asserted after `finalizeArtifact`, beside the existing assertion that `404/index.html` is gone.
+  - S16.3 `assertStyleAgreement` returns `{ ok: true }` for the CV route's `ComposedRoute`, and its stylesheet is the token block plus exactly the primitives its body carries and nothing else (`P6`).
+  - S16.4 The CV body carries no `view` class. Asserted directly against `bodyHtml` and demonstrated red by adding one — this is the constraint `assertStyleAgreement` cannot catch, because `view`'s nav-colouring selectors carry no class.
+  - S16.5 `assertSelfContained` returns `{ ok: true }` for the emitted CV document, which carries **exactly one** script element: the `Person` block. Demonstrated red by adding a second.
+  - S16.6 The `Person` block parses as JSON out of the emitted document, carries `name`, `jobTitle`, `url` and `sameAs`, and carries **no** `email` and **no** `telephone`. Asserted against the emitted document rather than the module constants.
+  - S16.7 A fixture CV field containing `<`, `>`, `&`, `"` and `'` is HTML-escaped in text and attribute position in the body (`X5`) and JSON-string-escaped inside the `Person` block, leaving no `</script` sequence in any case.
+  - S16.8 Every `CvData` outbound URL the body renders appears in `checkedLinks` for that same document. Asserted by extracting every `href` from the body, subtracting the masthead's own entries, and requiring the remainder to be a subset of the derivation's URLs — the direction that would be a defect is a rendered link no gate checks.
+  - S16.9 `composeCv` renders no project entry, no stage grouping, no contamination chain and no count from the inventory — asserted by composing against an inventory whose records carry sentinel `line` values and requiring none to appear in the body.
+  - S16.10 No figure on the CV document is a literal in `src/composition/` — asserted by requiring every rendered year and period to appear in `site/cv.json` (`X1` as narrowed, `U11`).
+  - S16.11 The emitted CV document carries the supplied title, meta description and Open Graph fields, its canonical URL and `og:url` are `origin` + `cvPath`, and it carries no `og:image` and no `twitter` element (`A1`, `U6`).
+  - S16.12 Loading the emitted CV document in a real browser triggers zero requests beyond the navigation document (`V2`), asserted by the existing request capture extended to the new route.
+
+Out of scope: The masthead's fifth entry and the Portfolio entry's redirection — S18. The portfolio
+route — S17. Any change to `portfolio.subzerodev.com`, its repository, its deployment, or anything
+fronting it. A `worksFor` link between the `Person` and the apex's `Organization`, which couples two
+documents and buys nothing this brief asks for.
+
+---
+
+## S17 — The `/portfolio/` route
+
+Delivers: The technology-and-category portfolio lives at `subzerodev.com/portfolio/` — eleven
+technology categories as a readable tree, six project categories, and the stats strip — in this site's
+typography rather than a second site's. It is the evidence half of what the apex asserts, one click
+from it.
+
+Touches: Composition — `composePortfolio` and an internal portfolio renderer, including the recursive
+technology-tree walk. Adapter — `portfolioPath`, the fourth route declaration and its metadata.
+Verification's build shard — a fourth emitted document.
+
+Depends on: S15, S16 — the `RoutePath` widening lands with the CV route and this one adds a value to a
+union already opened. And on **owner-supplied copy — four strings**: the route's `title`,
+`description` and Open Graph pair, on `S16`'s condition.
+
+Acceptance:
+  - S17.1 `portfolioPath` is `"/portfolio/"`, written `satisfies RoutePath`, and `config.routes` is exactly four entries in the order apex, CV, portfolio, miss (`A4`) — asserted against the declared configuration, with the miss last.
+  - S17.2 The emitted tree carries `portfolio/index.html` and Artifact does not remove it.
+  - S17.3 The technology tree renders every node at every level, asserted against a three-level fixture by requiring each node's `name` to appear, and the renderer is one recursive function rather than one per level — asserted by a fixture that is three levels deep in one branch and one level deep in another.
+  - S17.4 `assertStyleAgreement` returns `{ ok: true }` for the portfolio route, its stylesheet is the token block plus exactly its own primitives, and its body carries no `view` class — demonstrated red as `S16.4` is.
+  - S17.5 `assertSelfContained` returns `{ ok: true }` and the emitted portfolio document carries **zero** script elements. Demonstrated red by adding one.
+  - S17.6 Every emoji in the committed portfolio document appears in the emitted document unchanged, byte for byte, and triggers no request — asserted against the emitted HTML and against the `V2` capture.
+  - S17.7 No stat value is a literal in `src/composition/`: every rendered figure appears in `site/portfolio.json` (`X1` as narrowed, `U11`).
+  - S17.8 `composePortfolio` renders nothing from the inventory but the masthead — asserted on `S16.9`'s sentinel method.
+  - S17.9 A fixture portfolio field containing `<`, `>`, `&`, `"` and `'` is HTML-escaped in both positions (`X5`).
+  - S17.10 The emitted portfolio document carries the supplied metadata and its canonical URL and `og:url` are `origin` + `portfolioPath` (`A1`).
+  - S17.11 Loading it in a real browser triggers zero additional requests (`V2`).
+  - S17.12 `V11` covers three content routes: the image gate compares served bytes against the emitted document for `/`, `/cv/` and `/portfolio/`, and the Pages read-back does the same. Demonstrated red by serving a modified byte on one of the two new routes.
+
+Out of scope: The masthead — S18. Migrating, redirecting, retiring or changing
+`portfolio.subzerodev.com` in any way; the inventory's `portfolio` record and its `own` home are
+untouched and `V4` keeps checking that subdomain. A search or filter affordance over the technology
+tree, which would need `X10`'s script on a document this slice gives none.
+
+---
+
+## S18 — The masthead's five entries
+
+Delivers: The navigation finally names everything this site has. Portfolio and CV join SubZeroDev.com,
+Blog and Projects, and the two that are now this site's own routes point at this site rather than off
+it — so a visitor moving between the manifesto, the CV and the portfolio never leaves, and always sees
+which of the three they are reading.
+
+Touches: Composition — `renderOutbound` and its target derivation, which gains the current-route
+parameter and loses its only `homeOf(hrefById, "portfolio")` call site; the module comment in
+`src/composition/header.ts` that describes the group as outbound and names Portfolio as an inventory
+lookup, both of which stop being true. `composeApex`, `composeCv` and `composePortfolio` — each passes
+its own path. `tests/composition/apex-navigation.test.ts`. `tests/content/inventory.test.ts`, whose
+assertion that the inventory still carries the `portfolio` id was the guard against that nav link
+vanishing silently and now guards only the ecosystem list.
+
+Depends on: S16, S17.
+
+Acceptance:
+  - S18.1 The masthead renders exactly five entries in the order SubZeroDev.com, Blog, Projects, Portfolio, CV — asserted against each of the three routes that carry it.
+  - S18.2 Portfolio resolves to `origin` + `portfolioPath` and CV to `origin` + `cvPath`, neither to an inventory home and neither to `portfolio.subzerodev.com`. Asserted by `href`.
+  - S18.3 **Exactly one** entry carries `link-current`'s class and `aria-current="page"` on each of `/`, `/cv/` and `/portfolio/`, and it is the one whose `href` equals `origin` + that route's path. Demonstrated red by marking on a path prefix instead, which would mark SubZeroDev.com current on all three.
+  - S18.4 The apex's footer repeats the same five entries with the same current marking, from the same helper — asserted by comparing the two rendered strings rather than by asserting the footer's contents separately.
+  - S18.5 Blog is still found by resolving the inventory's `publishing` id and is still dropped rather than faked when that id is absent — the S3-era behaviour, asserted unchanged against a fixture inventory with no `publishing` record.
+  - S18.6 `homeOf(hrefById, "portfolio")` has no call site, asserted over `src/composition/`, and `src/composition/header.ts`'s module comment no longer describes Portfolio as an inventory lookup or the group as purely outbound. Demonstrated by the comment's text, since a stale comment is what this criterion exists to catch.
+  - S18.7 The inventory's `portfolio` record is unchanged, still yields a `ResolvedHome`, still appears in `checkedLinks`, and still appears in the apex's ecosystem list with its own link — asserted against the committed inventory and the emitted apex document. **No outbound link is lost by this change.**
+  - S18.8 `assertStyleAgreement` returns `{ ok: true }` for all four routes after the change, and `link-current`'s rule still has a user on each of the three routes that carry the masthead.
+  - S18.9 A fixture origin containing `<`, `>`, `&`, `"` and `'` is escaped in the `href` (`X5`) — the masthead's own URLs are now built from `origin` on three routes rather than one.
+
+Out of scope: Adding the masthead to the miss route, which composes no header today and takes no
+inventory. Reordering or renaming the three existing entries. Any redirect from
+`portfolio.subzerodev.com` to `/portfolio/`, which is delivery configuration and is out of scope by
+the brief's hosting non-goal.
 
 ---
 ## Blocked
@@ -646,6 +850,14 @@ heading is retained unchanged because three documents cite the anchor.
 
 The same edit closed `U10`, whose motion clause the brief now carries in `P3`'s narrowed wording. It
 had no entry in this section.
+
+**A third of this shape opened on 2026-08-21 and is outstanding:**
+[`U11`](20-contract.md#u11--x1s-derivation-clause-is-narrowed-to-the-apex-pending-an-owner-edit-to-the-brief)
+narrows `X1`'s derivation clause to the apex, and the brief's *Definition of done* still states the
+broader form. It gets no entry of its own here for `U10`'s reason — **it blocks nothing.** `S16` and
+`S17` ship under `X1` as narrowed, exactly as `S4` shipped under `P3` before the brief caught up. It
+is named here so a reader of this section knows a brief edit is pending rather than discovering it in
+an append-only log.
 
 ## The publication CI
 

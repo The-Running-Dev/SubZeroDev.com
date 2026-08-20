@@ -198,16 +198,57 @@ consumer supplying real customer quotes gets a plain list rather than an editori
 escalation this repository's own collection depends on lives in the committed record order, not in
 component logic that would have to know it exists.
 
+### CV and portfolio
+
+**Two further record sets, added 2026-08-21, and neither is an entity this repository invented.** Both
+are hand transcriptions of documents that already exist and already drive published sites — a CV in
+the `Portfolio` repository and a technology-and-category portfolio in `Docusaurus-Template`. What is
+new here is that they are *this* site's content: committed as two more versioned JSON documents,
+validated by two more Content validators, and rendered by two more compositions.
+
+**The transcription is one-way and one-time, and the build cannot check it.** `00-brief.md`'s
+non-goals forbid content derived from sibling repositories and forbid any network in the build, and
+neither is relaxed. So the copy here is what this site serves, the source is named in a required
+`provenance` field on each document's envelope so the question *which is current?* can at least be
+asked, and **nothing detects a divergence.** That is the cost of the non-goal, paid deliberately
+rather than routed around. It is a field rather than a comment because JSON has no comments and these
+schemas reject unknown keys — and because a comment is invisible to every check, while a field can be
+required and asserted.
+
+**Two shapes in the source do not survive transcription, and both for the same reason:** they are
+assets. A badge pairs a technology label with a shields.io image URL, and a role carries an icon-font
+token. A linked image is a request the brief forbids and `V13` rejects; an icon font is a linked asset
+`P1` rejects. The label survives and the image does not, so a badge becomes what it always was on a
+page that cannot load pictures — a word. **Emoji are the opposite case and are kept verbatim**: they
+are text, nothing fetches them, and the source's category icons and section headings carry them.
+
+**The figures on these two documents are authored, and that is what makes them different from the
+apex's.** The apex's counts are derivations — remove a project and the total changes. A portfolio stat
+reading `"50+ Projects Delivered"` counts nothing in any document here; it is the author's estimate
+about twenty years of work, and no data this site holds could produce it. A CV period reading
+`"2023 – Present"` has no end date to model. So these figures are *content* rather than *derived*, and
+`X1` narrows to say so — see [`20-contract.md`](20-contract.md) § `U11`, which records the brief
+conflict that creates.
+
+**A technology tree is one recursive shape, though the source encodes it as three.** Categories carry
+sub-categories carry bare strings; normalising them to a single named node with optional children is
+transcription work done once, and it is what lets one renderer walk the whole tree instead of three
+functions handling three encodings. The depth is bounded at three, enforced, because a fourth level is
+a shape nothing was designed to present.
+
 ### Route
 
-**Two.** `/` is the apex and the miss route is the second. There is no third, and there has been none
-since 2026-08-10; the *One document, rather than routes per section* rejection in *Alternatives
-considered* holds as originally written, and the note beneath it records the three-route arrangement
-that was tried in between.
+**Four, since 2026-08-21.** `/` is the apex, `/cv/` and `/portfolio/` are the two routes this
+amendment adds, and the miss route is last. The *One document, rather than routes per section*
+rejection in *Alternatives considered* is untouched by that and is annotated there: it rejects
+splitting **the apex** into `/manifesto`, `/projects` and `/philosophy`, and a CV is not a section of
+a manifesto.
 
-**The apex is one document carrying four sections** — Effortless Action, The Echo System,
+**The apex is still one document carrying four sections** — Effortless Action, The Echo System,
 Contamination and Testimonials — reached by fragment links in its own navigation, with one visible at
-a time. That selection is **CSS**, in Presentation's `view` primitive: `.view` is hidden and
+a time. **The two new routes are linear documents and select nothing.** The `view` primitive stays the
+apex's alone, because its rules name the apex's four anchor ids and would otherwise be emitted into a
+document that has none. That selection is **CSS**, in Presentation's `view` primitive: `.view` is hidden and
 `#<anchor>.view:target` is shown, so it holds with scripting off. One inline enhancement script
 (`X10`) upgrades it and adds filtering and a detail overlay; the CSS is what runs with the script never
 executed, and remains the whole of section selection without it. Nothing here loads a second document
@@ -215,7 +256,10 @@ or starts a request.
 
 A `Route` carries:
 
-- its **path**. The package's declared path type admits `/` or a trailing-slash path only, so the
+- its **path**. The package's declared path type admits `/` or a trailing-slash path only, which is
+  why `/cv/` and `/portfolio/` carry trailing slashes and are emitted at `cv/index.html` and
+  `portfolio/index.html`. Those two stay where the package puts them — a directory index served with a
+  200 is exactly what a content route wants. The
   miss route is declared as `/404/` and the package emits it at `404/index.html`. The conventional
   root `404.html` is produced afterwards by *Artifact*, not by the route declaration — and *Artifact*
   then **removes** the emitted `404/index.html`, because a directory index is served with a **200**,
@@ -228,6 +272,17 @@ A `Route` carries:
   theme colour, and an icon set. The package's icon declaration is an `href` string, so **icons are
   embedded as data URIs in that existing field** rather than as linked assets. No package change is
   needed for this, and no additional request is triggered.
+
+**The masthead carries five outbound entries and is shared by three of the four routes.** SubZeroDev.com,
+Blog, Projects, Portfolio and CV — of which three resolve to this site's own paths and two leave it.
+The entry naming the route being rendered is marked current, and exactly one entry is, because the
+match is on the path itself rather than on a prefix. The miss route carries no masthead; it is the one
+document with no way back except its own single link.
+
+**Portfolio now points here, and `portfolio.subzerodev.com` is untouched.** That subdomain stays a
+separate live deployment with its own repository and its own genre, stays the inventory's `portfolio`
+record with an `own` home, and is still reached from the ecosystem list and still checked by `V4`.
+What moved is one nav entry's destination, not a site.
 
 There is deliberately **no `<noscript>` content**. `<noscript>` renders precisely when scripting is
 off; on a document that needs no scripting there is no fallback for it to describe. The brief's
@@ -259,7 +314,7 @@ Two, and they publish the same tree.
 | Cadence | every commit, and genuinely so — nothing human is in front of it | every release |
 
 **The two targets serve identical bytes.** Both are built from one emitted tree; neither transforms
-it. That is asserted by comparing what **each** serves for `/` against the corresponding emitted file
+it. That is asserted by comparing what **each** serves for each content route against the corresponding emitted file
 — the running image at the CI gate, and Pages at its read-back — and it is the only thing that makes a
 preview evidence about a release. Comparing one side and arguing the other from shared construction
 was the earlier form, and it left the target the brief's clause is half about unchecked.
@@ -289,12 +344,18 @@ testimonial documents, and the derivation functions that turn a validated invent
 groupings and the contamination chain. Depends on **nothing** in this repository. Exposes typed data
 and pure functions.
 
-**It does not own the records themselves.** Since 2026-08-11 the hand-authored content is two
-versioned JSON documents outside the module graph, declared to the external package and read by its
-loader at build time. Content owns the **decoders** for them: a structural Zod schema per document,
-wrapped around the semantic validator that earns the domain guarantees. That split is deliberate —
-JSON makes strings and numbers available, and nothing else. See
+**It does not own the records themselves.** Since 2026-08-11 the hand-authored content is versioned
+JSON documents outside the module graph — two then, four since 2026-08-21 — declared to the external
+package and read by its loader at build time. Content owns the **decoders** for them: a structural Zod
+schema per document, wrapped around the semantic validator that earns the domain guarantees. That
+split is deliberate — JSON makes strings and numbers available, and nothing else. See
 [`20-contract.md`](20-contract.md) § *The content documents*.
+
+**Content also owns the one enumeration of what the link gate checks.** `checkedLinks` collects the
+inventory's resolved homes, `sourceUrl` and every outbound URL the CV document carries, and it is the
+only such list. That is where it belongs for the reason every URL here belongs to Content — a URL is
+data — and it is what finally brings `sourceUrl` inside `V4`, which the 2026-08-07 ruling knowingly
+left outside when the exposure was one link.
 
 *The binding rule of this design:* **Content imports nothing from Composition, Presentation, Adapter
 or Artifact.** That is what makes every count testable without a DOM, and what stops a number from
@@ -315,34 +376,45 @@ Per `Idea.md`: minimal, dark, typography-first, large whitespace, no gradients, 
 illustrations, no webfont. The stylesheet is a value this module produces, not a file another tool
 discovers, because it has to be handed to the package as a string.
 
-**Composition** — owns the two page compositions and the prose. Depends on **Content** and
+**Composition** — owns the four page compositions and the prose. Depends on **Content** and
 **Presentation**. Each composition exposes prerendered body HTML plus the stylesheet that body
 requires, obtained by asking Presentation for the stylesheet its own body needs. It is the only module
-that turns data and tokens into markup, and it is **total**: neither function can fail, because
-validated content cannot be malformed and neither performs I/O.
+that turns data and tokens into markup, and it is **total**: no function can fail, because
+validated content cannot be malformed and none performs I/O.
 
 The apex composition carries all four of the apex's sections, testimonials included. Which one is
 visible is Presentation's, through the `view` primitive's `:target` rules — Composition writes the
 class and states nothing about the outcome. A third composition and a fold across two of them existed
 between 2026-08-08 and 2026-08-10; see *Alternatives considered*.
 
+**The CV and portfolio compositions share the masthead and nothing else.** Each takes the inventory —
+for the header's Blog href and its since-year, never to render a project — plus its own validated
+document and the origin. The shared header block is an internal helper the three composers call rather
+than a thing any of them restates, which is what keeps the identity block from drifting three ways.
+**Neither new composition adds a primitive**: a CV timeline is `entry` records with `meta` lines, a
+technology tree is a `grid` of `card`s, and the closed set of twelve already expresses both.
+
 **Adapter** — owns the **source declarations**, the route declarations, their static head metadata, and
 the single origin constant those URLs are built from. Depends on **Composition**, the **external
-package**, **Content** for six named things only — `projectsDocumentValidator`,
-`testimonialsDocumentValidator`, `parseCommitId` and the types `BuildContext`, `Inventory` and
-`Testimonials` — and **Presentation** for two: `themeColor` and `iconDataUri`.
+package**, **Content** for ten named things only — the four document validators,
+`parseCommitId` and the types `BuildContext`, `Inventory`, `Testimonials`, `CvData` and
+`PortfolioData` — and **Presentation** for two: `themeColor` and `iconDataUri`.
+
+**A route added widens neither Content edge nor the Presentation one beyond its own document.** The
+CV route brought one validator and one type; everything renderable on it still arrives through
+Composition, so there is still exactly one path from data to markup.
 
 It is the module the package CLI loads, so it is the one place in the import graph where the build's
 entry conditions are read. **Two refusals sit here and they belong to different owners.** A malformed
 `GITHUB_SHA` is Adapter's own and exits the process during module evaluation, before any source is
 resolved. Malformed *content* is the package loader's: Adapter pairs each declared source with the
 validator that types it, and the loader invokes each exactly once and refuses to call the composition
-callback at all if either fails, reporting every error rather than the first. Adapter therefore no
+callback at all if any fails, reporting every error from a failing document rather than the first. Adapter therefore no
 longer calls a validator, and the build's ability to refuse is unchanged — it moved one layer out, into
 code that runs before this module's own composition callback does.
 
-Once both documents validate, the package hands them back and Adapter composes the apex and the miss
-route and declares the two. Everything **renderable** still comes from Composition, and nothing
+Once every document validates, the package hands them back and Adapter composes the apex, the CV, the
+portfolio and the miss route and declares the four, the miss last. Everything **renderable** still comes from Composition, and nothing
 renderable comes from Presentation — its two imports there are head-metadata values, neither derived
 from Content — so there is exactly one path from data to markup.
 
@@ -411,12 +483,12 @@ import.
 ```
 Presentation ─► Content (Branded)
 Composition ──► Content, Presentation
-Adapter ──────► Composition, External package, Content (document validators, parseCommitId),
+Adapter ──────► Composition, External package, Content (four document validators, parseCommitId),
                 Presentation (themeColor, iconDataUri)
 Artifact ─────► Content (CommitId, parseCommitId, Result), emitted tree
 Verification ─► any module, emitted tree, running image
 
-JSON documents ─validated by─► Content's document validators
+Four JSON documents ─validated by─► Content's document validators
                                        │
 Package CLI ──loads──► Adapter ────────┴─emits──► tree ──► Artifact ──► publishable tree
                                                                    │
@@ -440,15 +512,17 @@ asserted. That is why byte identity is checked at the image gate rather than arg
 
 ### 1. Author changes content, and the site redeploys
 
-The only content write path. Author edits `site/projects.json`, `site/testimonials.json`, or copy in
-Content → the network-free build resolves both declared sources and validates each exactly once —
+The only content write path. Author edits `site/projects.json`, `site/testimonials.json`,
+`site/cv.json`, `site/portfolio.json`, or copy in
+Content → the network-free build resolves all four declared sources and validates each exactly once —
 structurally, then semantically — and recomputes Content's derivations → Composition
-renders the apex and miss compositions → Adapter declares those two routes → the package CLI emits the documents →
+renders the apex, CV, portfolio and miss compositions → Adapter declares those four routes → the package CLI emits the documents →
 **Artifact** produces root
-`404.html`, injects the commit marker and emits the server configuration → offline Verification
+`404.html`, injects the commit marker into every emitted document and emits the server configuration → offline Verification
 asserts against the finished output, not intent. The flow then forks. Pages publishes and is read back
 as preview/development output immediately from that finished build. In parallel, the image gate and
-the separate networked outbound-link check prepare the release path; only that path proceeds through
+the separate networked outbound-link check — now over the inventory's homes, `sourceUrl` and the CV's
+own outbound addresses — prepare the release path; only that path proceeds through
 the author's commit-bound truth attestation and into release publication.
 
 **The attestation gates the release, not the preview.** Pages exists specifically for preview and
@@ -462,7 +536,7 @@ prove what the preview serves; they do not make it a release.
 Publication and read-back share one critical section. Immediately before publishing, the workflow
 confirms that its commit is still the current deployment-branch head; an obsolete run stops. It then
 deploys to Pages, polls `/` until the served build marker equals that commit, **compares the served
-bytes against the emitted apex document**, and requests a unique unknown path to verify the 404
+bytes of each content route against that route's emitted document**, and requests a unique unknown path to verify the 404
 composition is served **with a 404 status**. Only that complete read-back licenses a claim about the
 preview. A green build or merged pull request does not.
 
@@ -470,7 +544,7 @@ preview. A green build or merged pull request does not.
 the release publishes without waiting for the preview. This section required the release to wait for
 the Pages read-back until 2026-08-08, on the reasoning that a release should ship only bytes a preview
 had already proved identical. That reasoning does not survive naming what `V11` compares: **both
-halves compare a served response against the emitted apex document, never against each other**, so the
+halves compare a served response against the corresponding emitted document, never against each other**, so the
 image gate establishes the release's byte identity on its own and the Pages read-back adds nothing to
 it. The wait bought a schedule rather than a proof, at the price of stalling every release behind a
 publisher this repository does not run. See [`90-decisions.md`](90-decisions.md), 2026-08-08.
@@ -495,8 +569,8 @@ with the full commit id.
 
 **It is gated before it is published, not after.** CI runs the image it just built, polls it until
 the served build marker equals the commit, requests a unique unknown path and requires a 404 status
-carrying the miss composition, and compares the bytes it serves for `/` against the corresponding
-emitted file. That last comparison is what makes the Pages preview evidence about the release rather
+carrying the miss composition, and compares the bytes it serves for `/`, `/cv/` and `/portfolio/`
+against the corresponding emitted files. That last comparison is what makes the Pages preview evidence about the release rather
 than a separate thing that happens to look similar.
 
 Only a gate that passes licenses the push to the registry. An image that fails is never published, so
@@ -547,6 +621,18 @@ is unchanged and the switch still works.
 **Every section is in the response either way**, which is what keeps this a presentation choice rather
 than a content one: a crawler, a reader with scripting off and a reader with CSS off all receive all
 four, and `V3` asserts exactly that against built HTML.
+
+### 3b. Visitor requests `/cv/` or `/portfolio/`
+
+The same delivery path and the same shell, from the masthead's CV or Portfolio entry or from an
+address typed directly. **Neither document executes anything.** The portfolio carries no script element
+at all; the CV carries one, an inert `Person` block for crawlers, which fetches nothing and computes
+nothing. There is no tab switch, no filtering and no overlay — these are documents to read top to
+bottom, and everything on them is in the first response.
+
+**The masthead marks the entry naming the route being read**, so a visitor on `/cv/` sees CV as
+current and SubZeroDev.com as a link home. Exactly one entry is marked on each of the three routes
+that carry the masthead.
 
 ### 4. Visitor requests an unknown path
 
@@ -660,7 +746,7 @@ wrong body is a broken page, and the right body with a 200 is a soft 404.
 stale tree copied into the image, a `latest` tag pointing at a different build. The preview then
 proves nothing about the release, which is the entire reason the preview exists.
 
-**Detected by:** the image gate comparing what the running container serves for `/` against the
+**Detected by:** the image gate comparing what the running container serves for each content route against the
 corresponding emitted file, and requiring the marker in the served document to equal the commit the
 image is tagged with. Divergence is a mismatch, not a warning.
 
@@ -760,7 +846,10 @@ questions* 7 and 8.
 
 **What fails:** an empty inventory; a project with no `id`, invalid `year` or duplicate `id`; a
 `Home.Within` with a missing or non-`Own` parent or an origin-replacing path; an `escapedFrom` edge
-with a missing target, self-reference or cycle.
+with a missing target, self-reference or cycle. On the two documents added 2026-08-21: an empty
+required field or list, a malformed outbound URL, a CV project year that is not a four-digit integer
+or that postdates the build, a technology tree nested past three levels, and a duplicate top-level
+category.
 
 **Detected by:** Content-level assertions that run before anything renders, reporting **every** fault
 in one pass rather than the first.
@@ -775,6 +864,20 @@ groups with members. A lifecycle stage nothing has reached yet is a true fact ab
 malformed inventory, and it appears as an absence rather than as a heading with nothing beneath it.
 This rule was unwritten until 2026-08-07 — the sentence above was about an empty inventory and had been
 read as covering both.
+
+### The CV or portfolio transcription drifts from its source repository
+
+**What fails:** `Portfolio`'s `config/cvData.yml` or `Docusaurus-Template`'s
+`data/portfolioData.json` changes, and this repository's transcription does not.
+
+**Detected by:** **nothing, and nothing can be added.** The brief forbids content derived from sibling
+repositories and forbids network access in the build, so no gate here may read either source. This is
+named as a failure mode precisely because it has no detector — a risk with no assertion behind it is
+one a reader has to be told about.
+
+**Response:** each document's `provenance` field names its source, so the question is at
+least askable by hand. What this site serves is what is committed here; the transcription is
+authoritative for this site and claims nothing about the other.
 
 ### The package is unavailable or drifts
 
@@ -993,7 +1096,16 @@ non-goal: it makes the build depend on twelve repositories' internal formats or 
 
 ### One document, rather than routes per section
 
-**Chosen:** `/` and the miss route.
+**Chosen:** `/` and the miss route — and, since 2026-08-21, `/cv/` and `/portfolio/` beside them.
+
+**That addition does not reverse this rejection, and the distinction is the whole of why.** What is
+rejected below is splitting **the apex** into `/manifesto`, `/projects` and `/philosophy` — carving one
+document into pieces that are each less than the document. A CV and a technology portfolio are not
+pieces of a manifesto; they are separate material with separate audiences that until now lived on a
+separate subdomain. The chrome objection is answered by what shipped: the persistent link row this
+paragraph feared already exists on the apex, has since 2026-08-07, and carrying two more entries on it
+is not the multi-route navigation state the visual identity rules out. See
+[`90-decisions.md`](90-decisions.md), 2026-08-21.
 
 **Rejected — separate `/manifesto`, `/projects`, `/philosophy` routes.** The apex's genre is the plain
 document, and a document is one thing. Splitting it produces a small site, which is what every child
