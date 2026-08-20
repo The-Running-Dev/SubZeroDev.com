@@ -50,6 +50,51 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 
 ---
 
+### 2026-08-20 — A testimonial may carry a citation URL; `design/` is the stale half
+
+Context: `/contract` compared `20-contract.md` against the tree and found a contradiction neither
+document nor `## Open` had recorded. `10-design.md` § *Testimonial* declares four fields and rejects a
+citation link by name — *"`source` was considered as an outbound citation link, but every candidate
+rendering either duplicates `organization` as inert text or turns a fabricated attribution into a
+clickable claim, which the *testimonials* carve-out in `00-brief.md` § *Source material* does not
+extend to"* — and `20-contract.md` carries the same four fields, the same sentence, an eighteen-member
+`ContentErrorCode` and the phrase "the five testimonial codes". The tree has carried a fifth field
+since 5f1bd16 ([#75](https://github.com/The-Running-Dev/SubZeroDev.com/pull/75), 2026-08-10): an
+optional `url`, validated as an absolute `https:` URL, rendered as a `Source` link in the card's
+attribution, and used by exactly one entry — a real quote from a real issue in
+`SubZeroDev.GameEngine`. This is a **public interface**, so it escalated rather than being corrected in
+place (`AGENTS.md`, *Hard rules*).
+
+The design's rejection is entirely an argument about **fabricated** attributions, and the one entry
+using the field is not one. That is why this is a stale document rather than a defect in the tree: the
+reasoning was sound and simply never contemplated a quote that could be cited.
+
+Chosen, **on the owner's ruling**: `design/` moves and the code does not. `Testimonial` gains the
+optional `url`; `ContentErrorCode` gains `TestimonialUrlInvalid`; the testimonial codes become six;
+`X8` gains the `Source`-line clause alongside the existing metadata-line rule. The brief moves too, in
+two clauses that the real quote makes false — § *Definition of done*'s "a fixed collection of
+**fabricated** testimonials" and § *Source material* item 4's "**every** quote in it is fabricated".
+The bounded exception itself is unchanged: the page still labels nothing on it as fictional.
+
+Rejected: **remove `url` from the tree**, restoring the documents as written and leaving the brief
+untouched. It is the cheaper edit and it keeps one property the chosen option gives up — a `Source`
+link on one card among fifteen is a **tell**, inviting a reader to notice which quotes can be checked
+and which cannot, which is a cost to the joke the section exists for. Declined because the house rule
+that nothing may be funnier than it is true favours the citation where one exists, and because the
+quote is genuinely checkable evidence about a SubZeroDev repository, which is the site's own subject.
+Rejected: **keep the field and render nothing** — an inert declaration, which this design refuses
+elsewhere by name.
+
+Reversibility: cheap in code, expensive in the brief. Item 4's carve-out is load-bearing for the
+section, and narrowing "every quote is fabricated" to "every fabricated quote is unlabelled" is the
+kind of clause that is re-argued rather than reverted.
+
+**Not applied here.** `/contract` may not write a signature `10-design.md` determines the opposite of,
+so the sequence is `00-brief.md` and `10-design.md` first — `/design`, `opus`/`high`, fresh session —
+then `/contract` again over § *Types*, § *Error semantics* and `X8`. The single descriptive drift this
+pass did correct on the spot is in 7d83b99 and is unrelated.
+
+
 ### 2026-08-20 — `design/` is reconciled to the two-route tree and to the JSON content documents
 
 Context: the two items staged in `## Open` on 2026-08-11, adjudicated together because they overlap in
