@@ -237,7 +237,7 @@ export type PrimitiveSet = { readonly [N in PrimitiveName]: Primitive };
 | `HexColor` | Matches `/^#[0-9A-F]{6}$/`. Six digits, uppercase, no shorthand and no alpha — so one colour has exactly one spelling and two references to it cannot compare unequal |
 | `DataUri` | Begins with `data:`. It is what makes `A2` a property of the value rather than a promise about it |
 | `ClassName` | Matches `/^[a-z][a-z0-9-]*$/` |
-| `Primitive.rules` | CSS text. Every selector in it **begins with** that primitive's own class selector, and each selector in a selector list is anchored independently. What follows the anchor is unconstrained — any pseudo-class, pseudo-element, combinator or universal selector — because the property that has to hold is that no rule can match an element the class is absent from, and the anchor alone establishes it. A reusable Presentation rule that could match without the class belongs in the token block, not in a primitive, because `stylesheetFor` emits a primitive's rules only when its class is present. **There is no exception to this**: the fold's composition-wiring rules were one until 2026-08-10, and `stylesheetFor` now emits the token block and matching primitive rules and nothing else. Rules may sit inside an `@media` block; `row`'s single-column wrap and `P3`'s `prefers-reduced-motion` rules are the cases that need one. Contains no `</style` sequence (`P5`) |
+| `Primitive.rules` | CSS text. Every selector in it either **begins with** that primitive's own class selector or carries it in the selector's **subject compound** — the rightmost compound, after the last top-level combinator — and each selector in a selector list is checked independently. The property that has to hold is that no rule reaches an element outside the class's reach, and the two forms establish it by different means: an opening anchor bounds every match to a subtree rooted at the class, which is what lets `page` style an `h1` and `row` size a `> *`; a subject compound bounds the match to an element carrying the class itself, which is what `.stack > .view` and `#effortless-action.view:target` do. This read *begins with* alone until 2026-08-20, which was never a statement of the property — it excluded both of those while admitting nothing safer, and the check written from it compared *contains* instead, which admits selectors that satisfy neither form. What follows an opening anchor is unconstrained: any pseudo-class, pseudo-element, combinator or universal selector. A reusable Presentation rule that could match without the class belongs in the token block, not in a primitive, because `stylesheetFor` emits a primitive's rules only when its class is present. **One exception, named rather than general** — `view`'s five nav-colouring selectors, described below. The fold's composition-wiring rules were a second until 2026-08-10, and `stylesheetFor` now emits the token block and matching primitive rules and nothing else. Rules may sit inside an `@media` block: `page`, `row`, `bar` and `grid` each wrap at `720px`, and `card` guards its hover lift behind `prefers-reduced-motion: no-preference`. Contains no `</style` sequence (`P5`) |
 
 `PrimitiveName` is **closed at twelve**. The set reached ten with the 2026-08-08 amendment adding
 `grid` and `card` for the testimonials route, which followed the 2026-08-07 amendment adding `bar`
@@ -257,9 +257,27 @@ is the same property the deleted fold rested on. It is its own primitive rather 
 because its selectors name the apex's four anchors and the miss route carries `.page` without them;
 emitting them there would leave a selector with no user, which `assertStyleAgreement` rejects. This is
 the one primitive whose rules name a **specific document's** ids rather than a reusable shape, and
-that is a cost accepted rather than an oversight: the alternative is a `Primitive.rules` carve-out for
-composition-wiring CSS, which is the shape the fold's `data-view` blocks had and which this set
-deliberately no longer carries.
+that is a cost accepted rather than an oversight.
+
+**It is also the one exception to `Primitive.rules`' anchoring constraint, and the exception is five
+selectors rather than a category.** The nav-colouring rules — `.page:not(:has(.view:target)) nav
+[href="#effortless-action"]` and the four `.page:has(#<anchor>.view:target) nav [href="#<anchor>"]`
+— have a nav link as their subject, and that link carries `link`'s class and not `.view`. They
+neither begin with `.view` nor carry it in the subject compound, so they can match an element the
+class is absent from, which is the one thing the constraint exists to forbid. **This is the
+`Primitive.rules` carve-out for composition-wiring CSS that the fold's `data-view` blocks had and
+that this set was written to avoid**, taken deliberately on the owner's ruling of 2026-08-20 rather
+than arrived at: CSS has no combinator reaching a section's `:target` state from its nav link, so a
+selector anchored at the link cannot express the current-tab affordance at all, and the alternatives
+were dropping the affordance or moving these five rules into the token block — where they would be
+emitted into the miss document, naming four ids it does not have. **The cost, stated plainly:** the
+anchoring constraint no longer bounds `view` by itself. What bounds it is the emission guard —
+`stylesheetFor` reaches a primitive's rules only from a body already carrying its class — so these
+five rules never enter a document without `.view` in it, but they are unbounded *within* one. A
+sixth selector of this shape, or a first in any other primitive, is a contract amendment and not an
+implementer's call; `tests/presentation/primitives.test.ts` enumerates exactly these five and fails
+on a sixth. The alternatives and their costs are in [`90-decisions.md`](90-decisions.md),
+2026-08-20 — *"`view`'s nav-colouring rules are a named exception to `Primitive.rules`"*.
 
 `link-current` is `.link-current { color: var(--fg); }`, applied alongside `link`'s own class on the
 outbound nav entry that names the current site, so that entry resolves to `--fg` rather than `--link`
@@ -273,12 +291,23 @@ than forcing every row to the tallest cell's height. It collapses to a single co
 not name: each direct child gets `break-inside: avoid`, so a card is never split across the column
 break, on the same footing `row`'s width rule already established for reaching an unnamed child.
 
-`card` is a bordered, padded container for one attributed quote. It carries no colour rule beyond
-`--rule` for its border (`P2`(a)'s named exemption, on the same reasoning `entry` already rests on) and
-no type rule of its own — a card's quote text and attribution reuse `page`'s and `meta`'s existing
-rules. It is deliberately its own primitive rather than a `grid > *` selector, because a card is
-meaningful outside a grid — a future consumer rendering one testimonial needs the container without the
-multi-column flow.
+`card` is a bordered, padded container for one attributed quote. It carries **no type rule of its
+own** — a card's quote text and attribution reuse `page`'s and `meta`'s existing rules — and two
+colour rules, both on its border: `--rule` at rest (`P2`(a)'s named exemption, on the same reasoning
+`entry` already rests on) and `--fg-muted` on hover, which needs no exemption because it clears
+`P2`(a) against `--bg` at 6.62:1. It is deliberately its own primitive rather than a `grid > *`
+selector, because a card is meaningful outside a grid — a future consumer rendering one testimonial
+needs the container without the multi-column flow.
+
+**It is also the only primitive that moves**, and the only rule anywhere in this design that does: a
+`translateY(-2px)` hover lift, with its transition, inside a `@media (prefers-reduced-motion:
+no-preference)` block. `P3` is satisfied by construction rather than by inspection — the guard is
+what makes the motion unreachable under `reduce`, so the rule is absent rather than overridden, and
+nothing has to compute which declaration wins. It is retained on the owner's ruling of 2026-08-20;
+the alternatives and their costs are in [`90-decisions.md`](90-decisions.md), 2026-08-20 —
+*"`card`'s hover lift is retained, and is the only motion in the design"*. The hover
+*colour* change is deliberately not inside the guard, so a reader under `reduce` still gets hover
+feedback rather than none.
 
 `row` lays its direct children out left-to-right, each taking an equal share of the available width,
 wrapping to a single column at the same `720px` breakpoint `page` already uses. Its **one** spacing
@@ -1381,7 +1410,7 @@ where a separate module checks it, that is said in the row.
 | **C15** | `parseCommitId` is the only implementation of the `CommitId` pattern in the repository | Content |
 | **P1** | Nothing in Presentation references a linked font, an external stylesheet, a gradient or an illustration asset. Neither `--font-sans` nor `--font-mono` names a webfont, and no rule is an `@font-face` | Presentation |
 | **P2** | The rendered page is legible in greyscale, in two parts. **(a)** Every foreground colour resolved against the background it is rendered on meets WCAG AA — 4.5:1, or 3:1 at `1.563rem` and above, WCAG's large-text threshold and the value `--step-2` names. The threshold is stated as a size rather than as a token because no rule references that token. `--rule` is **exempt, by name**: record separation is carried by the **spacing around a record**, so a divider reinforces and never signals. This clause named `--space-1` as that spacing until 2026-08-08; the `entry` primitive separates records with its own `clamp()` padding, so the exemption rests on the separation existing rather than on which value expresses it. **(b)** No meaning is carried by hue alone, which obliges the `link` primitive to declare a `text-decoration`, or a font weight distinct from body text. Part (b) is what makes this say greyscale rather than contrast: `--link` against `--fg` is 1.50:1, far below the 4.5:1 body-text threshold, so a link is not reliably separable from body text by luminance alone. The margin against `--bg` is not what is at issue — `--link` clears (a) there at 11.17:1 — which is why (b) is a separate half rather than a consequence of (a) | Presentation |
-| **P3** | Nothing **moves** under `prefers-reduced-motion: reduce`: no transform, translation, scale, rotation, position change or scroll behaviour is animated or transitioned. A transition of a non-positional property — a colour change on hover or focus is the case in the primitive set — is not motion and is permitted. The preference addresses vestibular motion rather than change as such, which is why this names motion and not animation. `00-brief.md` § *Definition of done* states this same narrowed form as of its 2026-08-07 amendment, so the two agree — see [`90-decisions.md`](90-decisions.md) and [`U10`](#u10--p3-is-narrowed-to-motion-pending-an-owner-edit-to-the-brief) | Presentation |
+| **P3** | Nothing **moves** under `prefers-reduced-motion: reduce`: no transform, translation, scale, rotation, position change or scroll behaviour is animated or transitioned. A transition of a non-positional property — `link`'s and `card`'s hover colour changes are the cases in the primitive set — is not motion and is permitted. Motion itself is not forbidden outright, only under `reduce`: `card`'s hover lift is the one rule in the set that moves, and it sits inside a `prefers-reduced-motion: no-preference` block, so under `reduce` the rule is absent rather than overridden. The preference addresses vestibular motion rather than change as such, which is why this names motion and not animation. `00-brief.md` § *Definition of done* states this same narrowed form as of its 2026-08-07 amendment, so the two agree — see [`90-decisions.md`](90-decisions.md) and [`U10`](#u10--p3-is-narrowed-to-motion-pending-an-owner-edit-to-the-brief) | Presentation |
 | **P4** | Focus order matches visual order and every interactive element is keyboard-reachable | Presentation |
 | **P5** | No `StylesheetText` contains a `</style` sequence in any case — the package emits it unescaped inside a `<style>` element and throws on one | Presentation |
 | **P6** | A route's stylesheet is the token block followed by the `rules` of exactly those primitives whose `className` occurs in that route's `bodyHtml`, and nothing else. `stylesheetFor` derives every inclusion from the body, so no caller states it | Presentation |

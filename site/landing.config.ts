@@ -9,10 +9,9 @@
 // validator; the package's loader is what invokes them, once per document,
 // before `compose` runs. So Adapter no longer *calls* `validateInventory` or
 // `validateTestimonials` itself — `src/content/documents.ts` holds those call
-// sites, inside the validators declared here. `design/20-contract.md` still
-// describes the pre-migration arrangement (`A3`, `A5`, `C14`, `C16`, `V16`);
-// that divergence is staged in `design/90-decisions.md` § Open for a later
-// `/reconcile` and is deliberately not resolved here.
+// sites, inside the validators declared here. `A3`, `A5` and `C14` in
+// `design/20-contract.md` describe that arrangement as it now stands;
+// `/reconcile` brought them to it on 2026-08-20.
 //
 // PLACEHOLDER COPY: the apex route's `title`, `description` and Open Graph
 // fields below are deliberate placeholders. Leave them unchanged.

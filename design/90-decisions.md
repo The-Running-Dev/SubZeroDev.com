@@ -5,17 +5,15 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-- **Two source comments cite `C16` and a `/reconcile` that has already run.** `C16` is not a contract
-  invariant — the `C` series stops at `C15`, and `C16` was an `S11` acceptance-criterion id merged into
-  `C14` on 2026-08-20 — so `src/composition/testimonials.ts:7` reads as a contract citation that does
-  not resolve. `site/landing.config.ts:13`–`15` cites it too, and adds two claims that were true when
-  written and are now false: that `20-contract.md` "still describes the pre-migration arrangement", and
-  that the divergence "is staged in `design/90-decisions.md` § Open for a later `/reconcile`". That
-  `/reconcile` ran on 2026-08-20 and resolved it. The 2026-08-20 contract entry recorded the `C16`
-  citation and left it to `S11`'s re-cut; `/slices` ruled `S11` **landed** rather than re-cut on the
-  same day, so that resolution path is gone and this needs its own carrier. Both are code comments —
-  `/slices` writes `design/30-slices.md` only, and correcting descriptive drift in source is `/slice`'s
-  or `/fix`'s. Issues are disabled, so it stays staged here.
+- **Five testimonials are ruled real and are waiting on their citation URLs.** The owner ruled on
+  2026-08-20 that the five `"What Would Lucifer Do?"` entries in `site/testimonials.json` are real
+  lines and take citations under `00-brief.md` § *Source material* item 4. The five URLs are
+  **owner-supplied and were not available in that pass**; a slice transcribes them and does not invent
+  one, and a guessed citation is worse than none because it is the one testimonial property nothing in
+  the tree can check. Until they arrive the tree holds a rule the brief states and the content does
+  not. `validateTestimonials` already enforces the shape (`TestimonialUrlInvalid`) and `X8` already
+  renders the `Source` line, so nothing but the JSON changes. Issues are disabled, so this is its
+  carrier — the shape [`agent.md`](../agent.md) § *Drift* names, given one deliberately.
 
 - **`V16`'s `assertImportGraph` is declared in the contract and has no implementation.** The import
   graph is checked instead by `tests/content/import-graph.test.ts` against a test-local AST helper,
@@ -51,6 +49,123 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-20 — `view`'s nav-colouring rules are a named exception to `Primitive.rules`, not a relaxation of it
+
+Context: `/reconcile` found that `20-contract.md` required every selector in a primitive's `rules` to
+**begin with** that primitive's own class selector — *"There is no exception to this"* — while
+`S4.4` (landed 2026-08-06) restated that as **contains**, and
+`tests/presentation/primitives.test.ts` asserted `toContain` from the criterion rather than from the
+contract. Eleven of `view`'s selectors fail *begins with*. Six of them keep `.view` on the subject
+compound and hold the property the rule exists to guarantee. **Five do not**: the nav-colouring rules
+match a nav link carrying `link`'s class and no `.view` at all, which is precisely "a rule that can
+match an element the class is absent from". Nothing caught it — `assertStyleAgreement` compares only
+class selectors, and `nav [href="#…"]` carries none. Live on both published targets since
+2026-08-10.
+
+**Chosen: keep a strong default, name the five as the exception, and state the rule as the property
+rather than as one spelling of it.** `Primitive.rules` now admits a selector that either begins with
+the class **or** carries it in the subject compound — two ways of bounding a match, by ancestry or by
+identity — which admits `.stack > .view` and `#effortless-action.view:target` without an exception,
+since both plainly hold the property that *begins with* was reaching for. The five nav-colouring
+selectors are then written out by name in the `view` paragraph, with the cost stated: the anchoring
+constraint no longer bounds `view` by itself, and what bounds it is the **emission guard** —
+`stylesheetFor` reaches a primitive's rules only from a body already carrying its class — so those
+rules never enter a document without `.view` but are unbounded within one. The test now checks the
+two admitted forms and enumerates exactly those five; a sixth of that shape, or a first in any other
+primitive, is a contract amendment.
+
+**Verified rather than asserted**: the tightened check was demonstrated red by adding a sixth
+selector of the forbidden shape (`.page:has(.view:target) footer p`) — it reported six unanchored
+against five expected — then reverted, with `git diff` clean and the file's 32 assertions green.
+
+Rejected — **restating the constraint as `contains`**, matching the tree and `S4.4`. Honest about
+what has actually been bounding the set, needs no exception list, and is the smaller edit. Declined
+because it gives up the property for all twelve primitives to accommodate one, and puts nothing in
+its place: `contains` admits any selector that merely *mentions* the class, which is the exact shape
+that shipped unflagged. Rejected — **changing the code to satisfy the doc.** CSS has no combinator
+reaching a section's `:target` state from its nav link, so a selector anchored at the link cannot
+express the current-tab affordance at all; the options were dropping the affordance, or moving the
+five rules into the token block, where they would be emitted into the miss document naming four ids
+it does not have. Also not this command's tier.
+
+Not fixed, and named rather than hidden: `S4.4` and `S11.3` still read *contains*. They are landed
+criteria, and the 2026-08-20 ruling on `30-slices.md` holds that a landed criterion keeps its id and
+its wording — it was true when it was accepted, which is all a landed criterion claims. The test now
+enforces the contract rather than the criterion, and says so where it does.
+
+Reversibility: cheap. One paragraph in `20-contract.md`, one row in its *Types* table, and one
+`describe` block.
+
+---
+
+### 2026-08-20 — `card`'s hover lift is retained, and is the only motion in the design
+
+Context: `/reconcile` found `src/presentation/primitives.ts` giving `card` a `translateY(-2px)` hover
+lift and a `transform` transition, inside `@media (prefers-reduced-motion: no-preference)`. It landed
+in [#79](https://github.com/The-Running-Dev/SubZeroDev.com/pull/79), a pull request titled for the tab
+switch, with **no decision-log entry** — and it made two contract sentences untrue: `card` was
+described as carrying no colour rule beyond `--rule` (it also sets `--fg-muted` on hover), and `P3`'s
+parenthetical claimed a hover colour change was *the* case of a transition in the primitive set.
+
+**Chosen: keep it.** `P3` is satisfied by construction rather than by inspection — the guard is
+`no-preference`, so under `reduce` the rule is *absent* rather than overridden and nothing has to
+compute which declaration wins. A 2px lift on a card that is already an interactive-looking container
+is a conventional affordance, and the brief's bullet forbids motion under `reduce`, not motion. The
+two contract sentences are corrected in the same commit as this entry rather than left for a later
+pass — [`agent.md`](../agent.md) § *Drift* records that a note about another file survives its own
+resolution unless the edit and the note land together.
+
+**Also chosen, and worth naming: the hover *colour* change stays outside the guard.** A reader under
+`reduce` therefore still gets hover feedback rather than none, which is what makes the motion an
+enhancement instead of the affordance itself. It clears `P2`(a) against `--bg` at 6.62:1, so it needs
+no exemption of its own — the `--rule` exemption covers the resting border only.
+
+Rejected — **removing the block**, returning the site to zero motion and making both contract
+sentences true again with no edit. The cheaper reversal, and a real argument on a site whose genre is
+*the plain document*. Declined because the rule violates nothing: the guard is exactly the mechanism
+the brief's narrowed `P3` was amended to permit, and removing shipped behaviour to make a sentence
+true is the wrong direction when the sentence is the thing that drifted. Rejected — **keeping the lift
+and dropping the hover colour**, so `card` carries the one colour rule the contract already described
+and no correction is needed. Declined because it makes the hover affordance depend entirely on the
+thing that disappears under `reduce`.
+
+Reversibility: cheap. Five lines of CSS and two sentences.
+
+---
+
+### 2026-08-20 — A real testimonial takes its citation; the five `What Would Lucifer Do?` lines are real
+
+Context: `/reconcile` found that `site/testimonials.json` carries 24 entries of which exactly one has
+a `url`, while five are attributed to `"What Would Lucifer Do?"` and four of those read as product UI
+strings. All six landed together in
+[5f1bd16](https://github.com/The-Running-Dev/SubZeroDev.com/commit/5f1bd16), whose second bullet is
+*"Add canonical testimonial sources"*. The 2026-08-20 citation ruling requires a real line from a real
+SubZeroDev repository to carry its source. `20-contract.md` § *Types* states plainly that this rule is
+**authored rather than enforced** — nothing in the tree can tell a real quote from an invented one —
+so no gate could have found this and none can settle it.
+
+**Chosen: the five are real, and take citations.** The ruling applies to them as written. The
+transcription is **not** done here: the five URLs are owner-supplied and were not available in this
+pass, and a citation is the one testimonial property a reader cannot check against the tree, so a
+guessed URL is worse than an absent one. Staged in `## Open` above with the reasoning, since issues
+are disabled on this repository and an amendment with no carrier is invisible from the moment it is
+written.
+
+Rejected — **narrowing the ruling instead**, on the ground that `"What Would Lucifer Do?"` is not in
+the project inventory and so arguably is not "a real SubZeroDev repository". It would have closed the
+finding at zero cost and it was put second rather than dismissed, because the clause genuinely does
+not name it. Declined by the owner: the house rule that nothing may be funnier than it is true does
+not turn on whether the source happens to have an inventory row. Rejected — **removing the five**,
+which is cleanest against the ruling and also removes some of the "tell" `10-design.md`
+§ *Testimonial* already accepts as the cost of having any citation at all; declined because they were
+deliberately preserved in [#75](https://github.com/The-Running-Dev/SubZeroDev.com/pull/75). Rejected
+— **treating them as fabricated**, which would have made the tree already correct; declined on the
+owner's own knowledge of where the lines came from.
+
+Reversibility: cheap for the ruling, cheap for the edit — five string fields in one JSON document.
 
 ---
 

@@ -241,11 +241,14 @@ export function composeApex(
     `<div class="${primitives.stack.className}">`,
     renderHeader(inPageLinks, hrefById, origin, sinceYear(inventory)),
     `<hr class="${primitives.rule.className}" />`,
-    // The four sections stack in their own numbered order — 01 through 04 —
-    // rather than sharing a `row`. The row was survivable only while the CSS
-    // fold hid all but one section, so it never had two visible children;
-    // with every section always visible it put 02 beside 01 and 03, which
-    // reads out of order and leaves a column of void next to the ecosystem.
+    // The four sections are siblings of the outer stack, in their own
+    // numbered order — 01 through 04 — rather than sharing a `row`. Which one
+    // is shown is Presentation's `view` primitive, in CSS (`X9`); this
+    // composition writes the class and states nothing about the outcome.
+    // The `row` went on 2026-08-10, in the two-day window between the fold's
+    // removal (#77) and the tab switch's restoration (#79), when every section
+    // was visible at once and the row put 02 beside 01 and 03 — out of order,
+    // with a column of void next to the ecosystem.
     renderManifesto(),
     renderEcosystem(inventory, hrefById),
     renderContamination(inventory, hrefById),

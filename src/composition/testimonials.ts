@@ -4,7 +4,7 @@
 //
 // Deterministic and content-agnostic: renders every entry in input order
 // (X8) and knows nothing about who is being quoted — it takes the data as a
-// parameter exactly as `composeApex` takes `Inventory` (C16), and carries no
+// parameter exactly as `composeApex` takes `Inventory` (C14), and carries no
 // testimonial content of its own — the heading below is this site's words,
 // not any quoted person's.
 

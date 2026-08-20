@@ -20,12 +20,13 @@
 //
 // Four behaviours, each additive over markup already in the DOM, and each a
 // transcription of the imported prototype (`SubZeroDev Landing.dc.html`)
-// rather than an invention of this module — with one deliberate departure:
-// the prototype's nav shows exactly one section at a time by toggling a
-// `view` state; this site keeps Effortless Action, The Echo System,
-// Contamination and Testimonials all visible on the same page at once, so the
-// nav's four links are plain same-document anchors and nothing here
-// intercepts their click:
+// rather than an invention of this module. The prototype's nav shows exactly
+// one section at a time by toggling a `view` state; this site does the same,
+// but in CSS — Presentation's `view` primitive hides `.view` and shows
+// `#<anchor>.view:target` (`X9`). So the nav's four links stay plain
+// same-document anchors, nothing here intercepts their click, and the switch
+// holds with this script absent or broken. All four sections are in the
+// response body either way, which is what `V3` asserts:
 //   - each section's heading is moved above its index label, the order the
 //     prototype uses — a reorder of nodes already present, never a rewrite;
 //   - the manifesto's lines are numbered and alternated left/right, and its
