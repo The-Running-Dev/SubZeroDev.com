@@ -5,28 +5,14 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-- **`assertSelfContained`'s permitted script counts and `R2`'s `404/` directory clause are written
-  into the contract and are not yet in the tree.** `/contract` made both edits on 2026-08-21 —
-  `PermittedScripts` and the widened signature, and `R2`'s directory clause with its restated property;
-  the four entries below are the two `/reconcile` rulings and the two additions `/contract` made
-  beyond them. What remains is implementation. The `assertSelfContained` change rides with
-  [`S16`](https://github.com/The-Running-Dev/SubZeroDev.com/issues/96), whose `S16.5` is written
-  against the unamended signature and needs the counts added; the `R2` clause is carried by a
-  `Done when` on **this item's own issue** rather than by a slice — ruled 2026-08-21, entry below —
-  and that assertion goes in the build shard that reads the finished tree, since `EmittedDocument`
-  cannot see a directory. Staged rather than left in the log because an amendment landing outside an
-  open slice has no carrier and nothing goes red — see [`agent.md`](../agent.md).
+(the kit-record-citation item staged 2026-08-21 became
+[#112](https://github.com/The-Running-Dev/SubZeroDev.com/issues/112) on 2026-08-21;
 
-- **Three kit commands cite `design/10-design.md` § *Record*, which this repository's `10-design.md`
-  does not have.** `.claude/commands/reconcile.md`, `contract.md` and `design.md` each gate that
-  citation on `design/state/` existing — and it does exist here, as `/track`'s WorkRef mirror written
-  by `tools/Update-WorkMirror.ps1`. So the condition fires and points at nothing, on every run of all
-  three. Staged 2026-08-21 by `/reconcile`, which hit it while deciding where its own decision-log
-  entries go. Either this repository never adopted the record-writing sequence and the citation should
-  be conditional on the *section*, or `10-design.md` is missing a section the kit expects; the fix is
-  the kit's, not this repository's `design/`.
+the `assertSelfContained`/`R2` item staged 2026-08-21 became
+[#111](https://github.com/The-Running-Dev/SubZeroDev.com/issues/111) on 2026-08-21, once the two
+`/contract` amendments it staged had landed;
 
-(the four items staged 2026-08-20/2026-08-21 — the testimonials' waiting citation URLs, the
+the four items staged 2026-08-20/2026-08-21 — the testimonials' waiting citation URLs, the
 `tools/*.Tests.ps1` failures, the stale `C16` citations, and `assertImportGraph`'s missing
 implementation — became [#99](https://github.com/The-Running-Dev/SubZeroDev.com/issues/99),
 [#100](https://github.com/The-Running-Dev/SubZeroDev.com/issues/100),
