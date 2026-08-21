@@ -6,12 +6,21 @@
 
 import { describe, expect, it } from "vitest";
 
-import { composeApex } from "../../src/composition";
+import { composeApex, composeCv, composePortfolio } from "../../src/composition";
+import { escapeHtml } from "../../src/composition/escape-html";
 import { sourceUrl } from "../../src/content";
-import type { Inventory, Project, Testimonials } from "../../src/content";
+import type { CvData, Inventory, PortfolioData, Project, Testimonials } from "../../src/content";
 import { primitives } from "../../src/presentation";
 import { assertStyleAgreement } from "../../src/verification";
-import { makeProject, makeTestimonial, pid, TEST_ORIGIN, url } from "../content/fixtures";
+import {
+  makeCv,
+  makePortfolio,
+  makeProject,
+  makeTestimonial,
+  pid,
+  TEST_ORIGIN,
+  url,
+} from "../content/fixtures";
 
 const publishing = makeProject({
   id: pid("publishing"),
@@ -106,25 +115,39 @@ describe("the testimonials nav link is a short label, distinct from its own head
   });
 });
 
-describe("the outbound group carries SubZeroDev.com, Blog, Projects and Portfolio", () => {
+const cv = makeCv() as CvData;
+const portfolioData = makePortfolio() as PortfolioData;
+const cvPath = "/cv/";
+const portfolioPath = "/portfolio/";
+
+// S18 — the masthead's five entries. Each route composes the same header and
+// footer, and each marks a different one of the three current — asserted
+// once per route below rather than only against the apex, since S18.3 and
+// S18.8 are properties of all three.
+const routes = [
+  { name: "apex", ...composeApex(full, testimonials, TEST_ORIGIN), path: "/" },
+  { name: "CV", ...composeCv(full, cv, TEST_ORIGIN), path: cvPath },
+  { name: "portfolio", ...composePortfolio(full, portfolioData, TEST_ORIGIN), path: portfolioPath },
+];
+
+describe("the outbound group carries SubZeroDev.com, Blog, Projects, Portfolio and CV", () => {
   const { bodyHtml } = composeApex(full, testimonials, TEST_ORIGIN);
 
   it("SubZeroDev.com's href is the origin, slashed", () => {
     expect(bodyHtml).toContain(`href="${TEST_ORIGIN}/" aria-current="page">SubZeroDev.com</a>`);
   });
 
-  it("SubZeroDev.com renders first, ahead of Blog, Projects and Portfolio", () => {
+  it("S18.1 — renders in order SubZeroDev.com, Blog, Projects, Portfolio, CV in both bars", () => {
     const bars = [...bodyHtml.matchAll(/<(nav|div) class="bar">(.*?)<\/\1>/gs)].map((m) => m[2]!);
     expect(bars).toHaveLength(2);
     for (const bar of bars) {
-      const selfIndex = bar.indexOf(">SubZeroDev.com</a>");
-      const blogIndex = bar.indexOf(">Blog</a>");
-      const projectsIndex = bar.indexOf(">Projects</a>");
-      const portfolioIndex = bar.indexOf(">Portfolio</a>");
-      expect(selfIndex).toBeGreaterThanOrEqual(0);
-      expect(selfIndex).toBeLessThan(blogIndex);
-      expect(selfIndex).toBeLessThan(projectsIndex);
-      expect(selfIndex).toBeLessThan(portfolioIndex);
+      const indices = [">SubZeroDev.com</a>", ">Blog</a>", ">Projects</a>", ">Portfolio</a>", ">CV</a>"].map(
+        (needle) => bar.indexOf(needle),
+      );
+      for (const i of indices) expect(i).toBeGreaterThanOrEqual(0);
+      for (let i = 1; i < indices.length; i++) {
+        expect(indices[i - 1]!).toBeLessThan(indices[i]!);
+      }
     }
   });
 
@@ -132,8 +155,19 @@ describe("the outbound group carries SubZeroDev.com, Blog, Projects and Portfoli
     expect(bodyHtml).toContain(`href="https://blog.example.test">Blog</a>`);
   });
 
-  it("Portfolio's href is the portfolio project's own home", () => {
-    expect(bodyHtml).toContain(`href="https://portfolio.example.test">Portfolio</a>`);
+  it("S18.2 — Portfolio's masthead entry is origin + portfolioPath, not the inventory's portfolio home", () => {
+    expect(bodyHtml).toContain(`href="${TEST_ORIGIN}${portfolioPath}">Portfolio</a>`);
+    // The inventory's own portfolio record keeps its own link in the
+    // ecosystem list (S18.7) — its href is checked in the two nav bars only,
+    // since the ecosystem entry legitimately shares the same href and label.
+    const bars = [...bodyHtml.matchAll(/<(nav|div) class="bar">(.*?)<\/\1>/gs)].map((m) => m[2]!);
+    for (const bar of bars) {
+      expect(bar).not.toContain(`href="https://portfolio.example.test">Portfolio</a>`);
+    }
+  });
+
+  it("S18.2 — CV's href is origin + cvPath", () => {
+    expect(bodyHtml).toContain(`href="${TEST_ORIGIN}${cvPath}">CV</a>`);
   });
 
   it("Projects' href is Content's sourceUrl", () => {
@@ -143,7 +177,7 @@ describe("the outbound group carries SubZeroDev.com, Blog, Projects and Portfoli
   // Counted inside the two bars rather than over the whole document: a label
   // like "Portfolio" is also a project `name`, so it legitimately renders a
   // third time in the ecosystem list and a naive count over bodyHtml is wrong.
-  it.each(["SubZeroDev.com", "Blog", "Projects", "Portfolio"])(
+  it.each(["SubZeroDev.com", "Blog", "Projects", "Portfolio", "CV"])(
     "%s appears in both the header nav and the footer",
     (label) => {
       const bars = [...bodyHtml.matchAll(/<(nav|div) class="bar">(.*?)<\/\1>/gs)].map((m) => m[2]!);
@@ -167,11 +201,85 @@ describe("the outbound group carries SubZeroDev.com, Blog, Projects and Portfoli
     ).toBe(2);
   });
 
-  it.each(["Blog", "Projects", "Portfolio"])("%s does not carry link-current or aria-current", (label) => {
-    for (const match of bodyHtml.matchAll(new RegExp(`<a class="([^"]*)"[^>]*>${label}</a>`, "g"))) {
-      expect(match[1]).not.toContain(primitives["link-current"].className);
-      expect(match[0]).not.toContain("aria-current");
+  it.each(["Blog", "Projects", "Portfolio", "CV"])(
+    "%s does not carry link-current or aria-current on the apex",
+    (label) => {
+      for (const match of bodyHtml.matchAll(new RegExp(`<a class="([^"]*)"[^>]*>${label}</a>`, "g"))) {
+        expect(match[1]).not.toContain(primitives["link-current"].className);
+        expect(match[0]).not.toContain("aria-current");
+      }
+    },
+  );
+});
+
+describe("S18.3, S18.4 — exactly one masthead entry is current, on each of the three routes", () => {
+  const labelFor: Record<string, string> = { "/": "SubZeroDev.com", [cvPath]: "CV", [portfolioPath]: "Portfolio" };
+
+  it.each(routes)("$name marks exactly the entry whose href equals origin + its own path", ({ bodyHtml, path }) => {
+    const bars = [...bodyHtml.matchAll(/<(nav|div) class="bar">(.*?)<\/\1>/gs)].map((m) => m[2]!);
+    expect(bars).toHaveLength(2);
+    const currentLabel = labelFor[path]!;
+    for (const bar of bars) {
+      const currentMatches = [
+        ...bar.matchAll(new RegExp(`<a class="([^"]*)" href="([^"]*)" aria-current="page">([^<]*)</a>`, "g")),
+      ];
+      expect(currentMatches).toHaveLength(1);
+      const [, classAttr, href, label] = currentMatches[0]!;
+      expect(label).toBe(currentLabel);
+      expect(href).toBe(`${TEST_ORIGIN}${path}`);
+      expect(classAttr).toContain(primitives["link-current"].className);
     }
+  });
+
+  it("S18.4 — the footer repeats the same current marking as the header, from the same helper", () => {
+    for (const { bodyHtml } of routes) {
+      const bars = [...bodyHtml.matchAll(/<(nav|div) class="bar">(.*?)<\/\1>/gs)].map((m) => m[2]!);
+      expect(bars).toHaveLength(2);
+      const currentOnBar = bars.map(
+        (bar) => [...bar.matchAll(/aria-current="page"/g)].length,
+      );
+      expect(currentOnBar).toEqual([1, 1]);
+    }
+  });
+});
+
+describe("S18.5 — Blog is still dropped, not faked, when the inventory carries no publishing id", () => {
+  it.each(routes.map((r) => r.name))("%s: no Blog link when the inventory has no publishing record", (name) => {
+    const only = inventory(portfolio);
+    const bodyHtml =
+      name === "apex"
+        ? composeApex(only, testimonials, TEST_ORIGIN).bodyHtml
+        : name === "CV"
+          ? composeCv(only, cv, TEST_ORIGIN).bodyHtml
+          : composePortfolio(only, portfolioData, TEST_ORIGIN).bodyHtml;
+    expect(bodyHtml).not.toContain(">Blog</a>");
+  });
+});
+
+describe("S18.8 — assertStyleAgreement holds for all three routes carrying the five-entry masthead", () => {
+  it.each(routes)("$name", ({ bodyHtml, stylesheet }) => {
+    expect(assertStyleAgreement(bodyHtml, stylesheet)).toEqual({ ok: true, value: null });
+  });
+});
+
+describe('S18.9 — a fixture origin containing <, >, &, ", \' is escaped in the href on all three routes', () => {
+  const dirtyOrigin = `https://sub<>&"'zerodev.test`;
+
+  it("Portfolio's and CV's hrefs are escaped on the apex", () => {
+    const { bodyHtml } = composeApex(full, testimonials, dirtyOrigin);
+    expect(bodyHtml).toContain(`href="${escapeHtml(dirtyOrigin)}${portfolioPath}">Portfolio</a>`);
+    expect(bodyHtml).toContain(`href="${escapeHtml(dirtyOrigin)}${cvPath}">CV</a>`);
+    expect(bodyHtml).not.toContain(`href="${dirtyOrigin}${portfolioPath}"`);
+  });
+
+  it("SubZeroDev.com's href is escaped on the CV route", () => {
+    const { bodyHtml } = composeCv(full, cv, dirtyOrigin);
+    expect(bodyHtml).toContain(`href="${escapeHtml(dirtyOrigin)}/">SubZeroDev.com</a>`);
+  });
+
+  it("SubZeroDev.com's href is escaped on the portfolio route", () => {
+    const { bodyHtml } = composePortfolio(full, portfolioData, dirtyOrigin);
+    expect(bodyHtml).toContain(`href="${escapeHtml(dirtyOrigin)}/">SubZeroDev.com</a>`);
   });
 });
 
@@ -179,21 +287,21 @@ describe("the outbound group carries SubZeroDev.com, Blog, Projects and Portfoli
 // the two derived links are found by the id strings written in apex.ts, so a
 // renamed record drops its link with no error. This is what that looks like.
 describe("a derived link is dropped — not faked — when its project is absent", () => {
-  it("no Blog link when nothing carries the publishing id", () => {
+  it("no Blog link when nothing carries the publishing id — Portfolio survives, being S18's own route rather than a lookup", () => {
     const { bodyHtml } = composeApex(inventory(portfolio), testimonials, TEST_ORIGIN);
     expect(bodyHtml).not.toContain(">Blog</a>");
     expect(bodyHtml).toContain(">Portfolio</a>");
   });
 
-  it("Projects survives regardless, being a constant rather than a lookup", () => {
+  it("Projects and Portfolio survive regardless, being constants rather than lookups", () => {
     const { bodyHtml } = composeApex(
       inventory(makeProject({ id: pid("unrelated") })),
       testimonials,
       TEST_ORIGIN,
     );
     expect(bodyHtml).toContain(`href="${sourceUrl}">Projects</a>`);
+    expect(bodyHtml).toContain(`href="${TEST_ORIGIN}${portfolioPath}">Portfolio</a>`);
     expect(bodyHtml).not.toContain(">Blog</a>");
-    expect(bodyHtml).not.toContain(">Portfolio</a>");
   });
 });
 
