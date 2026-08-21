@@ -3,27 +3,27 @@
     {
       "name": "Typecheck",
       "status": "Passed",
-      "detail": "npm run typecheck (tsc --noEmit) \u2014 no errors."
+      "detail": "npm run typecheck (tsc --noEmit) — exit 0, no diagnostics. Covers the type-level assertions in tests/types/, including cv-portfolio.type-check.ts and route-path.type-check.ts."
     },
     {
       "name": "Test",
       "status": "Passed",
-      "detail": "npm test (vitest run) \u2014 Test Files 39 passed (39), Tests 459 passed (459)."
+      "detail": "npm test (vitest run) — Test Files 39 passed (39), Tests 461 passed (461), duration 10.56s. The offline content gate, derivations, composition and verification unit assertions."
     },
     {
       "name": "Interrogate the build artifact",
       "status": "Passed",
-      "detail": "GITHUB_SHA=<commit> npm run build, then npx vitest run --config vitest.build.config.ts \u2014 Test Files 10 passed (10), Tests 54 passed (54)."
+      "detail": "npm run build then npx vitest run --config vitest.build.config.ts, both with GITHUB_SHA set to 241d15d24f81786f609883da3bdd1556da88960e — Test Files 10 passed (10), Tests 54 passed (54), duration 17.19s. Includes the real-browser request capture (V2). First invocation without GITHUB_SHA and without the preceding build failed with 'CommitIdMalformed (entry: -): \"\" is not a forty-character lowercase hex commit id.' — that was an incomplete local translation of the CI step, not a repository failure; CI sets GITHUB_SHA itself and runs npm run build first."
     },
     {
       "name": "Image gate",
       "status": "Passed",
-      "detail": "docker build -t subzerodev-com:<commit> ., docker run -d -p 8080:80, then GITHUB_SHA=<commit> SERVED_BASE_URL=http://localhost:8080 npm run image-gate \u2014 Test Files 1 passed (1), Tests 2 passed (2)."
+      "detail": "docker build, docker run -d -p 8080:80, wait for :8080, then npm run image-gate with SERVED_BASE_URL=http://localhost:8080 — Test Files 1 passed (1), Tests 2 passed (2), duration 1.59s. Container removed afterwards. First invocation without the container failed with ECONNREFUSED on 127.0.0.1:8080 and ::1:8080 — again an incomplete translation, since CI starts the container in unflagged plumbing steps before the flagged gate."
     },
     {
       "name": "Check links",
-      "status": "Failed",
-      "detail": "npm run check-links (vitest run --config vitest.link-check.config.ts) \u2014 FAIL tests/verification/live/link-check.test.ts > S14.6 \u2014 every checked link in the committed inventory and CV answers > checkLinks(checkedLinks(inventory, cv), linkCheckRetry) returns ok: true\nError: LinkNotOk: roles[3].website (https://derivco.com) responded 403.; LinkNotOk: projects[7].link (https://github.com/The-Running-Dev/QuickSync) responded 404.\nTest Files 1 failed (1), Tests 1 failed (1)."
+      "status": "Passed",
+      "detail": "npm run check-links (vitest run --config vitest.link-check.config.ts) — Test Files 1 passed (1), Tests 1 passed (1), duration 4.30s, networked. It passes only because tests/verification/live/link-check.test.ts still carries the informal .filter() removing https://derivco.com; the gate is green but narrower than V4 as written. Closing that is S19's work and is not done on this branch."
     }
   ]
 }
