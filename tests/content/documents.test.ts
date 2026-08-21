@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
 import { describe, expect, it } from "vitest";
 
 import {
@@ -124,9 +121,8 @@ describe("testimonials document structure", () => {
 });
 
 describe("S15.10 — neither committed document carries an image URL, icon-font token or src", () => {
-  const repoRoot = resolve(import.meta.dirname, "../..");
-  const cvText = readFileSync(resolve(repoRoot, "site/cv.json"), "utf8");
-  const portfolioText = readFileSync(resolve(repoRoot, "site/portfolio.json"), "utf8");
+  const cvText = JSON.stringify(rawCvDocument);
+  const portfolioText = JSON.stringify(rawPortfolioDocument);
 
   it.each([
     ["cv.json", () => cvText],
