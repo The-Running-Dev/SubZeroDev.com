@@ -52,6 +52,69 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 
 ---
 
+### 2026-08-21 — An exemption must still name live content, and `C19` is what says so
+
+Context: the entry below rules that Content gains an enumerated exemption set and that `V4` exempts
+exactly its members. It says nothing about what happens when the content moves on. `derivco.com`
+reaches `checkedLinks` through `roles[3].website` in [`site/cv.json`](../site/cv.json); delete that
+role, or repoint it, and the exemption survives as a standing licence over an address nothing on the
+site carries — invisible, because a set that exempts nothing looks exactly like a set doing its job.
+The next author to add that URL back would inherit an exemption nobody granted them.
+
+Chosen: **`C19`, which requires every member to be live, justified and not this repository's own
+address.** Live means the `url` is carried by `resolvedHomes` or `cvOutboundLinks` over the committed
+documents, so a member the content dropped turns the invariant red rather than lingering; justified
+means a non-empty `reason`, on the argument `provenance` already won here; and the `sourceUrl` bar is
+what keeps `checkedLinks` non-empty, since a `V4` covering nothing is a gate switched off rather than
+a gate narrowed. Both existing functions are already exported, so the check needs no new surface.
+**This is an addition beyond the ruling below**, which is why it has its own entry: that entry
+authorised the mechanism, not its maintenance rule. Signed off before the contract was written.
+
+Rejected: **the set exactly as ruled, with no liveness clause** — strictly what was approved, declined
+because a carve-out accumulating unnoticed is the failure the ruling itself named when it refused the
+informal route; a mechanism that cannot go stale is the only version of it worth having. **A review
+date on each member instead** — richer, and declined because nothing in this repository runs on a
+clock, so the field would record an intention no gate could ever act on. **Host or pattern matching**
+— declined in the contract's own words: a pattern exempts addresses nobody has looked at.
+
+Reversibility: cheap. The clause is one assertion; dropping it leaves the mechanism the ruling
+approved.
+
+---
+
+### 2026-08-21 — The raw shape carries the qualifier, not the validated one
+
+Context: the ruling below settles that `CvData` and `PortfolioData` regain their compile-time
+non-empty guarantee by splitting the decoder's output from the validated shape. It does not settle
+which of the two keeps the plain name, and the choice is a public-interface one — `validateCv`'s
+parameter type and every name a composer can reach both follow from it.
+
+Chosen: **`CvDocument`, `CvRole` and the rest keep their names and their non-empty lists; the loose
+shapes become `RawCvDocument`, `RawCvRole`, `RawCvProject`, `RawCvOpenSource`, `RawCvEra`,
+`RawTechNode` and `RawPortfolioDocument`.** Three reasons, in order of weight: the loose shape appears
+in exactly one signature and no composer ever names it, so the qualifier lands on the rarer name;
+[`20-contract.md`](20-contract.md)'s declarations were already written with the non-empty tuples, so
+this direction leaves them untouched and the amendment is an addition rather than a rewrite; and each
+`Raw` type is declared as a **difference** — `Omit<CvRole, "tech"> & { tech: readonly string[] }` —
+so a field added later appears on both without being written twice. `RawTechNode` is the one
+exception and is written out in full, because a recursive type cannot be expressed as a difference
+from itself.
+
+Rejected: **qualifying the validated shape** — `CvDocument` keeps its current meaning as the
+decoder's output and `ValidatedCvDocument` carries the tuples. Declined on cost and on emphasis: the
+contract's whole `Types` block would have to be rewritten to plain arrays and a second set of
+declarations added beside it, and the qualifier would end up on the shape composers actually consume.
+**A recursive mapped type** turning every array field non-empty in one declaration — declined because
+it must special-case optional fields and branded primitives, and a type-level construct that is wrong
+quietly is worse than seven declarations that are wrong loudly. **A generic over the list
+constructor**, `CvRole<"raw" | "checked">` — declined for readability; this document is read by people
+deciding whether an implementation matches it.
+
+Reversibility: cheap while nothing composes these documents, which is the same window the entry below
+relies on.
+
+---
+
 ### 2026-08-21 — `V4` gains a named exemption set, and the derivco skip stops being informal
 
 Context: `S14` and `S15` widened `V4`'s target set from twelve owner-controlled project subdomains to

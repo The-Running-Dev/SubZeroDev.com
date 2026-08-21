@@ -42,6 +42,16 @@ one brief conflict that creates. `PrimitiveName` is unchanged and stays closed a
 dependency is introduced. `portfolio.subzerodev.com` is untouched and stays a separate live
 deployment.
 
+**Two further amendments landed on 2026-08-21, both from rulings
+[`90-decisions.md`](90-decisions.md) records rather than from a new design pass.** Content gains
+`linkCheckExemptions`, a named set of addresses `V4` deliberately does not reach, so the one
+bot-blocking employer link stops being an informal filter written inside a test — `C17` is
+strengthened by it rather than carved out of. And the CV and portfolio record shapes split in two:
+the structural decoder's output is now `RawCvDocument` and `RawPortfolioDocument`, while
+`CvDocument` and `PortfolioDocument` keep the non-empty lists this document has always declared, so
+the guarantee a composer's parameter type promises is one a typechecker holds it to. Neither is a
+new capability; both make a clause already written here true of the tree.
+
 ---
 
 ## Types
@@ -247,14 +257,63 @@ export type CvDocument = {
 };
 
 export type CvData = Branded<CvDocument, "CvData">;
+
+export type RawCvRole = Omit<CvRole, "achievements" | "tech"> & {
+  readonly achievements: readonly string[];
+  readonly tech: readonly string[];
+};
+
+export type RawCvProject = Omit<CvProject, "tech"> & { readonly tech: readonly string[] };
+
+export type RawCvOpenSource = Omit<CvOpenSource, "tech"> & { readonly tech: readonly string[] };
+
+export type RawCvEra = Omit<CvEra, "projects"> & { readonly projects: readonly string[] };
+
+export type RawCvDocument = Omit<
+  CvDocument,
+  | "header"
+  | "badges"
+  | "chips"
+  | "roles"
+  | "education"
+  | "projects"
+  | "openSource"
+  | "timelineProjects"
+> & {
+  readonly header: Omit<CvDocument["header"], "links"> & { readonly links: readonly CvLink[] };
+  readonly badges: readonly string[];
+  readonly chips: readonly string[];
+  readonly roles: readonly RawCvRole[];
+  readonly education: readonly CvEducation[];
+  readonly projects: readonly RawCvProject[];
+  readonly openSource: readonly RawCvOpenSource[];
+  readonly timelineProjects: readonly RawCvEra[];
+};
 ```
 
 **`CvData` is branded for the reason `Inventory` is: only `validateCv` can produce one.** A
-`CvDocument` is the structural decoder's output and carries no domain guarantee; the brand is what a
-composer's parameter type demands, so no route can be composed from records nothing checked. The same
-holds of `PortfolioData` below. Every list above is non-empty, and that is a real constraint rather
-than a convenience — a CV rendering a heading over nothing is the "silently empty section" failure
-`10-design.md` already refuses for the inventory.
+`RawCvDocument` is the structural decoder's output and carries no domain guarantee; the brand is what
+a composer's parameter type demands, so no route can be composed from records nothing checked. The
+same holds of `PortfolioData` below. Every list on `CvDocument` is non-empty, and that is a real
+constraint rather than a convenience — a CV rendering a heading over nothing is the "silently empty
+section" failure `10-design.md` already refuses for the inventory.
+
+**The two shapes differ in exactly one respect, and the `Raw` declarations are written as the
+difference rather than as a second copy.** Each names only the fields whose list-ness changes and
+inherits every other field from the shape above it, so a field added to `CvRole` appears on both
+without being written twice — which is what stops the pair from drifting the way two hand-maintained
+copies of a thirty-field record would. `CvLink`, `CvEducation` and `CvEra`'s scalar fields carry no
+list and therefore need no `Raw` twin at all.
+
+**The split exists because a brand cannot manufacture a guarantee the branded type does not carry.**
+`CvData` is `Branded<CvDocument, "CvData">`, so whatever `CvDocument` promises about emptiness is
+what a composer receives. Declaring `CvDocument` with plain arrays — which the tree did between
+`S15` and this amendment, on the correct observation that the Zod schema admits an empty array —
+made the brand gate *provenance* while promising nothing about *shape*, so `validateCv`'s
+`checkCvCollection` was the only thing standing between a composer and a heading over nothing, and a
+typechecker had no opinion. Qualifying the **raw** name rather than the validated one is deliberate:
+the loose shape is the odd one out, it appears in exactly one signature (`validateCv`'s parameter),
+and no composer ever names it. See [`90-decisions.md`](90-decisions.md), 2026-08-21.
 
 **Three fields of the source document are absent here, and each absence is load-bearing.**
 
@@ -329,7 +388,26 @@ export type PortfolioDocument = {
 };
 
 export type PortfolioData = Branded<PortfolioDocument, "PortfolioData">;
+
+export type RawTechNode = {
+  readonly name: string;
+  readonly children?: readonly RawTechNode[];
+};
+
+export type RawPortfolioDocument = Omit<
+  PortfolioDocument,
+  "technologies" | "projects" | "stats"
+> & {
+  readonly technologies: readonly RawTechNode[];
+  readonly projects: readonly PortfolioCategory[];
+  readonly stats: readonly PortfolioStat[];
+};
 ```
+
+**`RawTechNode` is written out rather than derived, and it is the one exception to the rule above.**
+A recursive type cannot be expressed as a difference from itself — `Omit<TechNode, "children">` would
+still reach `TechNode` through the field being replaced — so the node is declared twice in full. It
+costs two fields, which is why the exception is affordable here and would not be on `CvRole`.
 
 **`TechNode` is one shape where the source has three.** The source encodes its technology tree as a
 top level of `{name, subCategories}`, a middle level that is either `{name}` or `{name, subCategories}`,
@@ -389,6 +467,11 @@ export type CheckedLink = {
   readonly label: string;
   readonly url: AbsoluteUrl;
 };
+
+export type LinkCheckExemption = {
+  readonly url: AbsoluteUrl;
+  readonly reason: string;
+};
 ```
 
 `EcosystemTree` carries exactly one group per `Stage`, in `stageOrder` order, including groups with
@@ -406,6 +489,26 @@ gate points at the record to fix — a `ProjectId` for an inventory home, a fiel
 It is deliberately not a `ProjectId`: most `CheckedLink`s belong to no project, and a synthetic id
 naming nothing is the shape the 2026-08-07 ruling rejected when it left `sourceUrl` outside `V4`.
 Nothing derives from a `label` and nothing matches on one.
+
+**A `LinkCheckExemption` is an address `V4` deliberately does not reach, and the constraint the
+declaration cannot carry is *what earns membership*.** A member is an address that has been
+established by hand to be live and human-reachable while refusing automated requests — the
+bot-blocking case, which is a property of the responder rather than of the link. **A dead address is
+never a member**: a permanently-404 link on a published page is the thing `V4` exists to catch, not
+a case for its exemption mechanism, and the 2026-08-21 ruling declined exactly that use for the
+CV's retired QuickSync link. That rule is **authored rather than enforced** — nothing in the tree
+can tell a bot-block from an outage — which is why `reason` exists and why it is a field.
+
+**`reason` is a field for the reason `provenance` is one**, and the argument is not repeated here:
+see § *The content documents*. What it must record is the evidence — what was observed by hand, and
+when — because an exemption is the one place this repository accepts a human's word in place of a
+gate, and a carve-out whose justification was never written down is indistinguishable from one
+nobody checked.
+
+**Matching is by exact URL and never by host or pattern.** A pattern exempts addresses nobody has
+looked at, including ones added later, which turns a per-address judgement into a standing licence.
+The cost is that a second path on an exempt host is a second entry someone must justify, and that
+cost is the mechanism working.
 
 ### Presentation
 
@@ -793,12 +896,12 @@ export function validateTestimonials(
 ): Result<Testimonials, ContentError>;
 
 export function validateCv(
-  cv: CvDocument,
+  cv: RawCvDocument,
   context: BuildContext,
 ): Result<CvData, ContentError>;
 
 export function validatePortfolio(
-  portfolio: PortfolioDocument,
+  portfolio: RawPortfolioDocument,
 ): Result<PortfolioData, ContentError>;
 
 export function testimonialTotal(testimonials: Testimonials): number;
@@ -818,6 +921,8 @@ export function sinceYear(inventory: Inventory): Year;
 export function resolvedHomes(inventory: Inventory): readonly ResolvedHome[];
 
 export function cvOutboundLinks(cv: CvData): readonly CheckedLink[];
+
+export const linkCheckExemptions: readonly LinkCheckExemption[];
 
 export function checkedLinks(
   inventory: Inventory,
@@ -876,10 +981,27 @@ validating entry points into the module's data.
 **`checkedLinks` is the one derivation whose output leaves the render path**, and it is the single
 definition of `V4`'s set: one entry per `ResolvedHome`, one for `sourceUrl`, and one per outbound URL
 the CV document carries — `header.links[].href`, `roles[].website`, `projects[].link` and
-`openSource[].link`, which are the four link-bearing field paths and the whole of them. It is non-empty
-because `sourceUrl` is unconditional. `cvOutboundLinks` is the CV half, exported so it can be tested
+`openSource[].link`, which are the four link-bearing field paths and the whole of them — **less the
+addresses `linkCheckExemptions` names**. It is non-empty because `sourceUrl` is unconditional and
+because no exemption may name `sourceUrl` (`C19`); those two facts together are what the return type
+asserts, and neither alone is enough. `cvOutboundLinks` is the CV half, exported so it can be tested
 against a fixture without an inventory; nothing else may enumerate CV links, because a second
 enumeration is a second answer to what `V4` covers.
+
+**The subtraction happens inside `checkedLinks`, and that placement is the whole point of the
+mechanism.** It replaced an informal `.filter()` written in the live link-check test, which was
+accepted in session on 2026-08-21 and recorded nowhere — an arrangement that put the tree outside
+`V4` and `C17` at once, because a test that removes a target is a test assembling its own list. With
+the subtraction in Content, `C17` is **strengthened** rather than carved out of: there is still
+exactly one enumeration, the exemptions are part of it, and the gate's caller passes
+`checkedLinks(inventory, cv)` unmodified. A future exemption is therefore an edit to a reviewed
+module constant rather than a line inside whichever test happens to be red.
+
+**An exemption removes a URL from the gate, never from the page.** Composition renders what the
+content documents carry and consults nothing here; `V4` narrowing is not a licence to stop
+publishing a link, and a reader of the emitted document cannot tell an exempt address from a checked
+one. That asymmetry is deliberate — the exemption is an admission about what can be *verified*, not
+a claim about what is *shown*.
 
 **It does not deduplicate, and that is deliberate.** `portfolio.subzerodev.com` is carried both by the
 inventory's `portfolio` record and by the CV header's own Portfolio link, so a dead address there
@@ -1856,8 +1978,9 @@ where a separate module checks it, that is said in the row.
 | **C13** | `resolvedHomes` yields one entry per `own` and `within` home and none for `none` | Content |
 | **C14** | Nothing imports `projectsDocumentValidator`, `testimonialsDocumentValidator`, `cvDocumentValidator` or `portfolioDocumentValidator` except Adapter, which declares them against the four build-time sources, and the tests that exercise them directly. No derivation function, no Composition entry and no Artifact step reads any of them. **Reachability, not naming**: a namespace import, an `export *`, a namespace re-export and a dynamic `import()` each reach a validator without writing its name, and the check fails closed on a clause shape it does not recognise. The set is closed by enumeration, so a fifth document validator that is not added here is one this invariant does not cover | Content |
 | **C15** | `parseCommitId` is the only implementation of the `CommitId` pattern in the repository | Content |
-| **C17** | `checkedLinks` is the only enumeration of `V4`'s target set. Every outbound URL any route renders is either in it or is not an HTTP address at all; no other function, test or workflow step assembles a list for `checkLinks` | Content |
+| **C17** | `checkedLinks` is the only enumeration of `V4`'s target set, **exemptions included** — it applies `linkCheckExemptions` itself, so its return value is the set the gate runs over with nothing added and nothing removed. Every outbound URL any route renders is either in `checkedLinks`, or named by `linkCheckExemptions`, or is not an HTTP address at all; no other function, test or workflow step assembles, filters or extends a list for `checkLinks`. The filter clause is what the informal test-local skip of 2026-08-21 breached and is stated explicitly for that reason | Content |
 | **C18** | A `TechNode` tree is at most three levels deep, and a present `children` is non-empty | Content |
+| **C19** | Every `linkCheckExemption` is **live, justified and not this repository's own address**: its `url` is carried by `resolvedHomes(inventory)` or `cvOutboundLinks(cv)` over the committed documents, its `reason` is non-empty after trimming, and it is never `sourceUrl`. The liveness clause is what stops the set accumulating carve-outs for addresses the content no longer has — a stale member would silently re-exempt the URL the day someone adds it back — and the `sourceUrl` clause is what keeps `checkedLinks` non-empty. `linkCheckExemptions` carries no duplicate `url`. Checked by a test, not by the typechecker | Content |
 | **P1** | Nothing in Presentation references a linked font, an external stylesheet, a gradient or an illustration asset. Neither `--font-sans` nor `--font-mono` names a webfont, and no rule is an `@font-face` | Presentation |
 | **P2** | The rendered page is legible in greyscale, in two parts. **(a)** Every foreground colour resolved against the background it is rendered on meets WCAG AA — 4.5:1, or 3:1 at `1.563rem` and above, WCAG's large-text threshold and the value `--step-2` names. The threshold is stated as a size rather than as a token because no rule references that token. `--rule` is **exempt, by name**: record separation is carried by the **spacing around a record**, so a divider reinforces and never signals. This clause named `--space-1` as that spacing until 2026-08-08; the `entry` primitive separates records with its own `clamp()` padding, so the exemption rests on the separation existing rather than on which value expresses it. **(b)** No meaning is carried by hue alone, which obliges the `link` primitive to declare a `text-decoration`, or a font weight distinct from body text. Part (b) is what makes this say greyscale rather than contrast: `--link` against `--fg` is 1.50:1, far below the 4.5:1 body-text threshold, so a link is not reliably separable from body text by luminance alone. The margin against `--bg` is not what is at issue — `--link` clears (a) there at 11.17:1 — which is why (b) is a separate half rather than a consequence of (a) | Presentation |
 | **P3** | Nothing **moves** under `prefers-reduced-motion: reduce`: no transform, translation, scale, rotation, position change or scroll behaviour is animated or transitioned. A transition of a non-positional property — `link`'s and `card`'s hover colour changes are the cases in the primitive set — is not motion and is permitted. Motion itself is not forbidden outright, only under `reduce`: `card`'s hover lift is the one rule in the set that moves, and it sits inside a `prefers-reduced-motion: no-preference` block, so under `reduce` the rule is absent rather than overridden. The preference addresses vestibular motion rather than change as such, which is why this names motion and not animation. `00-brief.md` § *Definition of done* states this same narrowed form as of its 2026-08-07 amendment, so the two agree — see [`90-decisions.md`](90-decisions.md) and [`U10`](#u10--p3-is-narrowed-to-motion-pending-an-owner-edit-to-the-brief) | Presentation |
@@ -1891,7 +2014,7 @@ where a separate module checks it, that is said in the row.
 | **V1** | No document reaches publication unless it carries the exact commit's marker | Verification |
 | **V2** | Loading a route document triggers zero requests other than the navigation document itself. Checked against `/`, `/cv/` and `/portfolio/` — every directly navigable route, each reached from the masthead. The miss route is excluded because it is reached only through the unknown-path mechanism `V12` covers, not through direct navigation | Verification |
 | **V3** | Every manifesto sentence asserted, and every project `name`, appears in built HTML with scripting never executed | Verification |
-| **V4** | Every `CheckedLink` in `checkedLinks(inventory, cv)` responds 2xx or 3xx before release — the inventory's resolved homes, `sourceUrl`, and every outbound URL the CV document carries. It read *every `ResolvedHome`* until 2026-08-21, which left `sourceUrl` outside it by construction. The Pages preview does not wait on this networked gate | Verification |
+| **V4** | Every `CheckedLink` in `checkedLinks(inventory, cv)` responds 2xx or 3xx before release — the inventory's resolved homes, `sourceUrl`, and every outbound URL the CV document carries, **less exactly the members of `linkCheckExemptions`** and no others. It read *every `ResolvedHome`* until 2026-08-21, which left `sourceUrl` outside it by construction; the exemption set was added the same day, so this invariant is now checkable where it previously read as held while a test quietly removed a target. What an exemption costs is stated plainly rather than hidden: an exempt address is the one kind of outbound link on a published page that no gate observes, and `C19` is the whole of what bounds that set. The Pages preview does not wait on this networked gate | Verification |
 | **V5** | An `Attestation` is valid for exactly one `CommitId` and is never accepted for another. It gates the **release path only** — the registry push and the redeploy — and not the Pages deploy, which is why the preview's every-commit cadence is real; the cost is recorded in `10-design.md` § *Publication targets* | Verification |
 | **V6** | Publication happens only while this run's commit is the deployment-branch head | Verification |
 | **V7** | After content validation → render → package build → Artifact → offline verification, publication forks. The preview branch performs branch-head check → Pages deploy → Pages read-back (exact marker, bytes, unknown path) without waiting on the image gate, link gate or attestation. In parallel the release-preparation branch performs image build → in-CI image gate → networked link check, and continues on its own through truth attestation → **branch-head re-check** → registry push → redeploy trigger → endpoint read-back (exact marker, unknown path) → live claim. **The two branches never join**, and neither waits on the other: `V11`'s two halves each compare a served response against the corresponding emitted document rather than against each other, so neither is evidence the other needs. The head is checked **twice** because the attestation before release is a human gate of unbounded duration, and a check taken before it proves nothing after it | Verification |
@@ -1906,15 +2029,16 @@ where a separate module checks it, that is said in the row.
 | **V16** | The module import graph is exactly the one *Public signatures*, `C1`, `C14`, `X2` and `A3` describe — checked over `src` plus Adapter's own file, with the edges observed by the caller. **`assertImportGraph` is declared above and has no implementation**; the graph is currently checked by `tests/content/import-graph.test.ts` against a test-local AST helper, which is the arrangement `assertImportGraph` was written to replace and has not yet. It is the checkable home for the three import rules carrying no other id: Presentation imports only `Branded`, Artifact imports only `CommitId`, `parseCommitId` and `Result`, and no repository module imports Verification | Verification |
 
 **`C16` is retired and is not reused.** It was `S11`'s testimonial-import closure and merged into
-`C14` with the 2026-08-11 JSON migration; the two invariants added on 2026-08-21 take `C17` and `C18`
-rather than filling the gap. Four test-file comments still cite `C16` meaning the old rule, and
+`C14` with the 2026-08-11 JSON migration; the three invariants added on 2026-08-21 take `C17`, `C18`
+and `C19` rather than filling the gap. Four test-file comments still cite `C16` meaning the old rule, and
 reusing the number would silently repoint them at a rule about link checking. Ids are never reused
 here for the reason `30-slices.md` gives for criterion ids: a renumbering rewrites what an existing
 citation refers to.
 
-Three things the design states that this contract deliberately does **not** encode as build-time
-checks, because encoding them would duplicate a fact another module owns or claim a check that cannot
-be performed:
+What the design states that this contract deliberately does **not** encode as build-time checks,
+because encoding them would duplicate a fact another module owns or claim a check that cannot be
+performed. It said *three* until 2026-08-21 while listing five, which is why it now states no count:
+the list carries its own length, and a numeral beside it is the copy that rots.
 
 - **`home.url` addresses the project's own site.** Checking that its host is a subdomain of the apex
   would require Content to know the apex origin, which Adapter owns (`A3`). Covered by the release
@@ -1929,6 +2053,11 @@ be performed:
   `V4` has for a project's site, applied to the two contact fields.
 - **`genre` and `stage` are true of the project.** Both are authored facts. `Genre` is closed at the
   type level; whether the assigned value is the right one is attestation work.
+- **An exempt address still answers.** `linkCheckExemptions` names addresses `V4` does not reach, and
+  the reason a member earns exemption — that it bot-blocks rather than being dead — is established by
+  hand once and never again. `C19` bounds the set to live, justified, non-`sourceUrl` entries; it
+  cannot bound the truth of the `reason` behind any of them, because the fault an exemption exists to
+  tolerate is indistinguishable over HTTP from the fault `V4` exists to catch.
 - **The deployed compose stack *keeps* serving the published image.** This entry read "the deployed
   compose stack serves the published image" until 2026-08-07, on the reasoning that the design
   guarantees a published image is correct and stops there. It no longer stops there: the brief's
