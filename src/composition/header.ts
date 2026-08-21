@@ -40,7 +40,8 @@ function target(label: string, url: AbsoluteUrl | undefined): NavTarget | null {
 }
 
 // `sourceUrl` addresses the account rather than a project, so it produces no
-// `ResolvedHome` and no gate checks it — the cost `20-contract.md` states.
+// `ResolvedHome`. It is checked by `V4` all the same since S14: `checkedLinks`
+// carries it directly rather than through `resolvedHomes`.
 //
 // The self entry is built directly rather than through `target()`, which
 // exists to drop an *optional* inventory lookup — this entry is always

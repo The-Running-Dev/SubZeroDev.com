@@ -152,7 +152,7 @@ const cvEraSchema = z
 const cvDocumentSchema = z
   .object({
     version: z.literal(1),
-    provenance: z.string(),
+    provenance: z.string().min(1),
     header: z
       .object({
         name: z.string(),
@@ -197,7 +197,7 @@ const portfolioStatSchema = z.object({ value: z.string(), label: z.string() }).s
 const portfolioDocumentSchema = z
   .object({
     version: z.literal(1),
-    provenance: z.string(),
+    provenance: z.string().min(1),
     header: z.object({ title: z.string(), subtitle: z.string() }).strict(),
     technologies: z.array(techNodeSchema),
     projects: z.array(portfolioCategorySchema),

@@ -538,9 +538,11 @@ second clause rules out; a reveal that only ever adds visibility is in scope. Ch
 2026-08-08 fold was additive at the Adapter wiring.
 ## Outstanding
 
-Five slices, `S14` through `S18`, appended on 2026-08-21 and carrying the CV and portfolio routes.
-What is left beyond them sits under [`## Blocked`](#blocked) and is waiting on a decision rather than
-on work.
+Seven slices. `S14` through `S18` were appended on 2026-08-21 and carry the CV and portfolio routes;
+`S19` and `S20` were appended the same day and close the gap the contract amendment of
+[`d3463f2`](https://github.com/The-Running-Dev/SubZeroDev.com/commit/d3463f2) opened between
+[`20-contract.md`](20-contract.md) and the tree. What is left beyond them sits under
+[`## Blocked`](#blocked) and is waiting on a decision rather than on work.
 
 **`S13` was allocated here and withdrawn on 2026-08-21.** Its heading follows, struck, with its anchor
 unchanged — three places cite it. Nothing under this section's own rule applies to it: it carries no
@@ -551,6 +553,15 @@ and validates the two content documents with nothing rendering them, `S16` and `
 and `S18` rewires the masthead once both routes exist. The order is not arbitrary: the masthead cannot
 point at a route that is not declared, and a content document that nothing renders is still a build
 that fails when the document is wrong.
+
+**`S19` and `S20` are not part of that run and both precede `S16`.** Each closes one half of the
+2026-08-21 contract amendment, and neither is stated by any slice above: `S19` gives `V4` the
+exemption set that lets the informal filter leave the live gate, and `S20` gives `CvDocument` and
+`PortfolioDocument` the non-empty shapes their own validator already enforces. They are independent of
+each other and may land in either order. **Both are cheap only until `S16`** — `S19` because the live
+gate is red in the meantime for a reason recorded nowhere a reviewer will look, and `S20` because
+`CvData` and `PortfolioData` are what `composeCv` and `composePortfolio` take, so changing them after
+those routes exist means changing the type every composer, renderer and fixture is written against.
 
 ## ~~S13 — The apex's real title and description~~
 
@@ -781,6 +792,100 @@ inventory. Reordering or renaming the three existing entries. Any redirect from
 the brief's hosting non-goal.
 
 ---
+## S19 — The link gate's exemptions become a reviewed list
+
+Delivers: The one link on the site that the release gate cannot reach stops being skipped by a line
+hidden inside the test that runs the gate. One former employer's site answers every automated request
+with a refusal while remaining perfectly reachable by a person, so the gate goes red on a link that is
+not broken — and the workaround, added in passing and written down nowhere, is invisible to anyone
+reading the site. This moves that judgement out of the test and into the same place the list of
+checked links is built, with the evidence for it recorded beside it. Nothing a visitor sees changes;
+what changes is that the gate again covers exactly what it claims to, and the one address it does not
+reach is one someone signed for.
+
+Touches: Content — the `LinkCheckExemption` type, the `linkCheckExemptions` constant, and
+`checkedLinks`, which performs the subtraction; the module's exported surface.
+`tests/content/checked-links.test.ts`, and a `C19` test beside it.
+`tests/verification/live/link-check.test.ts` — the `.filter()` and the comment naming it as an
+informal skip both go.
+
+Depends on: S14, S15.
+
+**The subtraction belongs to `checkedLinks` and to nothing else**, which is the whole mechanism rather
+than an implementation preference. [`20-contract.md`](20-contract.md) strengthens `C17` rather than
+carving an exception into it: there is still exactly one enumeration of `V4`'s targets, the exemptions
+are part of it, and the gate's caller passes the result unmodified. A subtraction performed anywhere
+else — in `cvOutboundLinks`, in the shard, in `checkLinks` — reproduces the defect this slice exists to
+remove, in a different file.
+
+Acceptance:
+  - S19.1 `linkCheckExemptions` is exported and carries exactly one member, whose `url` is `https://derivco.com` and whose `reason` records what was observed by hand and when. Asserted by value against the whole constant, so a second member added later fails this until it is justified here.
+  - S19.2 `checkedLinks(inventory, cv)` omits every URL `linkCheckExemptions` names. Asserted against a fixture CV whose `roles[].website` is the exempt address and whose other links are not: the exempt URL is absent, every other target is present, and every surviving `label` is unchanged. Demonstrated red by not subtracting.
+  - S19.3 Matching is by exact URL and never by host or prefix: a fixture CV carrying both `https://derivco.com` and `https://derivco.com/careers` yields exactly one entry, for the latter. This is what stops a per-address judgement becoming a standing licence over a host.
+  - S19.4 `cvOutboundLinks` does **not** subtract — called against `S19.2`'s fixture it still returns the exempt URL. The two halves differ deliberately: `C19`'s liveness clause reads `cvOutboundLinks`, so a subtracting half would report every live exemption as stale. Demonstrated red by subtracting there as well, which fails `S19.6` rather than this criterion.
+  - S19.5 `checkedLinks` still returns `readonly [CheckedLink, ...CheckedLink[]]` after the subtraction — asserted at the type level in the style of `tests/types/` by indexing element `0` with no narrowing check available, and at runtime by `sourceUrl` appearing in `checkedLinks` over the committed documents. Both are needed: the type is what `C19`'s `sourceUrl` clause buys, and the runtime check is what proves the clause is honoured.
+  - S19.6 `C19` liveness: every `linkCheckExemptions[].url` is carried by `resolvedHomes` or `cvOutboundLinks` over the **committed** `site/projects.json` and `site/cv.json`. Demonstrated red by an exemption for an address neither document carries — the stale carve-out that would silently re-exempt a URL the day someone adds it back.
+  - S19.7 `C19`'s remaining three clauses each fail their own fixture: a `reason` empty after trimming, a duplicate `url`, and an exemption naming `sourceUrl`. With `S19.6`'s stale entry, **negative count: 4.**
+  - S19.8 The live link-check shard passes `checkedLinks(inventory, cv)` to `checkLinks` unmodified — no `.filter`, `.slice`, `.concat` or any other adjustment between the two calls. Asserted over the shard's own source text, because a behavioural test cannot observe a list a test assembles for itself, and that is exactly what `C17` forbids.
+  - S19.9 Nothing in `src/` outside `checkedLinks` reads `linkCheckExemptions`, asserted by the existing import-graph helper and demonstrated red by importing it into the live shard. `C17`'s earlier clause (`S14.7`) — that no module, test or workflow step other than the shard calls `checkLinks` — still holds unchanged.
+  - S19.10 The live shard is green over the committed documents with no local filter, run under `vitest.link-check.config.ts` and never under `npm test`. That is the assertion this slice exists for: `V4` was reported as held while a test quietly removed a target, and it is now checkable.
+
+Out of scope: A second exemption of any kind, and exempting the CV's retired QuickSync entry in
+particular — the 2026-08-21 ruling declined that outright, and a permanently-404 link is what `V4`
+exists to catch rather than a case for its exemption mechanism. Any edit to `site/projects.json`,
+`site/cv.json` or `site/portfolio.json`. Making the exemption set injectable or configurable:
+`checkedLinks`'s signature is `(inventory, cv)` and a third parameter would be a contract change.
+Following redirects, any change to `linkCheckRetry`, and the scheduled post-deploy re-check, which
+stays under [`## Blocked`](#blocked).
+
+---
+
+## S20 — The CV and portfolio shapes stop promising less than they enforce
+
+Delivers: The CV and the portfolio get the protection the project list has had since the first week —
+the tooling itself refuses code that could render a heading with nothing beneath it, instead of
+leaving that to a check somebody has to remember to run. Today the two documents' shapes say a section
+may be empty while their own validator says it may not, and only the validator is enforced. This makes
+the two agree, and it does it now, while nothing renders either document — once pages read from them,
+the same change means touching every renderer and every fixture. Nothing a visitor sees changes.
+
+Touches: Content — every list on `CvDocument` and `PortfolioDocument`, including the nested lists on
+`CvRole`, `CvProject`, `CvOpenSource`, `CvEra` and `TechNode`; the seven `Raw` twins the contract
+declares; `validateCv`'s and `validatePortfolio`'s parameters and the internal helpers that walk them;
+the two Zod transforms' target type; the module's exported surface.
+`tests/types/cv-portfolio.type-check.ts`. `tests/helpers/site-data.ts`, whose raw fixtures are now
+`Raw`-typed.
+
+Depends on: S15. **And it precedes `S16`**, for the reason the section preamble gives and
+[`90-decisions.md`](90-decisions.md) records against the amendment: reversibility is cheap only while
+nothing composes these documents.
+
+**The brand is applied by a cast, and that is why `S20.7` is the criterion that matters.** Neither
+validator can *earn* a non-empty tuple from the typechecker — each returns `value as CvData` at the
+end of a run of runtime checks — so strengthening the declared shape without confirming the runtime
+check covers every strengthened field would produce a type that promises what nothing verifies. The
+checks already exist and already cover all seventeen positions; this slice pins that they do, one
+fixture at a time, so a later field added to one half and not the other is caught.
+
+Acceptance:
+  - S20.1 Every list on `CvDocument` and `PortfolioDocument` is `readonly [T, ...T[]]`, and `TechNode.children` is that shape when present — **thirteen positions on the CV and four on the portfolio**, counting the nested lists on `CvRole`, `CvProject`, `CvOpenSource`, `CvEra` and `TechNode`. Pinned in `tests/types/` by an empty array failing assignment at each of the seventeen, each with its own `@ts-expect-error`. A count other than seventeen is a discrepancy against the contract and is reported rather than resolved.
+  - S20.2 The seven `Raw` twins are declared and exported — `RawCvRole`, `RawCvProject`, `RawCvOpenSource`, `RawCvEra`, `RawCvDocument`, `RawTechNode` and `RawPortfolioDocument`. Each carries exactly the key set of the shape it twins, asserted at the type level by `keyof` equality in both directions. That is what catches a hand-copied declaration which dropped or renamed a field, which is the failure mode a second copy of a thirty-field record has.
+  - S20.3 Widening holds and narrowing does not: `CvDocument` is assignable to `RawCvDocument` and `PortfolioDocument` to `RawPortfolioDocument` as plain assignments, while each reverse fails under `@ts-expect-error`. This is the whole guarantee — a validated document is usable wherever a raw one is, and never the other way round.
+  - S20.4 The optional fields survive the `Omit`-based derivation: `RawCvRole.website`, `RawCvOpenSource.link` and `RawTechNode.children` are each still optional, asserted by a value omitting all three satisfying its `Raw` shape.
+  - S20.5 `validateCv` takes a `RawCvDocument` and `validatePortfolio` a `RawPortfolioDocument`, each returning the same branded `Result` as before. Asserted at the type level, and by `S15.5` through `S15.8` passing with their fixtures re-typed and every expectation unchanged.
+  - S20.6 The two Zod document validators are unchanged in behaviour, now decoding to the `Raw` shapes: both still accept the committed documents (**positive count: 2**) and both still reject an unknown key and a `version` other than `1` (**negative count: 4**). `S15.3` and `S15.4` pass with no change to their expectations.
+  - S20.7 The declared shape and the runtime check agree position for position: a fixture with each non-empty list emptied one at a time yields `CvCollectionEmpty` or `PortfolioCollectionEmpty` naming that field's dotted path — **thirteen CV fixtures and four portfolio fixtures**, one per position `S20.1` pins. Demonstrated red by removing any one `checkCvCollection` or `checkPortfolioCollection` call, which must fail this criterion and pass every other.
+  - S20.8 `S15.9`'s brand assertion holds against the new pair: a `RawCvDocument` is not a `CvData` and a `RawPortfolioDocument` is not a `PortfolioData`, in binding position and in argument position, each under `@ts-expect-error`. The brand still gates provenance; what changed is that it now also carries shape.
+  - S20.9 The build still emits exactly the routes `S6` declares, with both documents validated, and `A5` still holds — a fixture adapter whose CV source is malformed produces no route body, stylesheet or document. Nothing downstream of Content changes, which is what makes this slice reversible on its own.
+
+Out of scope: Rendering either document — S16 and S17. Any edit to `site/cv.json`,
+`site/portfolio.json` or `site/sources.public.yml`, including `provenance`. Any new
+`ContentErrorCode`: the runtime checks this slice pins already exist and it adds none. Narrowing
+`Inventory` or `Testimonials`, which already carry their non-empty tuple. The parameterised
+`CvRole<"raw" | "checked">` form, declined on 2026-08-21 for readability and not reopened here.
+
+---
+
 ## Blocked
 
 Nothing below is a slice. Each names what is missing and the condition that releases it. No slice
@@ -925,6 +1030,9 @@ pass changed what it syncs: `S13` is withdrawn and
 [#93](https://github.com/The-Running-Dev/SubZeroDev.com/issues/93) is closed against that ruling. This
 paragraph read *"cannot run here: issues are disabled"* until 2026-08-21, which the section above had
 already corrected.
+
+**`S19` and `S20` were appended on 2026-08-21 and have no tracker item yet**, which is the one thing
+this pass leaves for the sync to create.
 
 Everything under `## Landed` has shipped and everything under `## Blocked` is waiting on a decision
 rather than on work. **Which of `S14`–`S18` is still implementable is not settled here** — `/reconcile`

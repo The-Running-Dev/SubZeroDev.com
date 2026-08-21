@@ -352,10 +352,12 @@ split is deliberate — JSON makes strings and numbers available, and nothing el
 [`20-contract.md`](20-contract.md) § *The content documents*.
 
 **Content also owns the one enumeration of what the link gate checks.** `checkedLinks` collects the
-inventory's resolved homes, `sourceUrl` and every outbound URL the CV document carries, and it is the
-only such list. That is where it belongs for the reason every URL here belongs to Content — a URL is
-data — and it is what finally brings `sourceUrl` inside `V4`, which the 2026-08-07 ruling knowingly
-left outside when the exposure was one link.
+inventory's resolved homes, `sourceUrl` and every outbound URL the CV document carries, less the
+addresses `linkCheckExemptions` names, and it is the only such list. That is where it belongs for the
+reason every URL here belongs to Content — a URL is data — and it is what finally brings `sourceUrl`
+inside `V4`, which the 2026-08-07 ruling knowingly left outside when the exposure was one link. The
+exemption set belongs to the same enumeration for the same reason: an exemption applied anywhere else
+is a second answer to what the gate covers.
 
 *The binding rule of this design:* **Content imports nothing from Composition, Presentation, Adapter
 or Artifact.** That is what makes every count testable without a DOM, and what stops a number from
@@ -801,15 +803,18 @@ dying after deploy.
 **What fails:** an outbound link 404s. The page is stale, not wrong — it never claimed the site was
 up.
 
-**Detected by:** a link check over every `Home.Own` URL and every resolved `Home.Within` path. In CI
+**Detected by:** a link check over every `CheckedLink` — the inventory's resolved homes, `sourceUrl`
+and the CV document's outbound URLs, other than the addresses `linkCheckExemptions` names. In CI
 it runs after the network-free build and gates the release, not artifact construction or the Pages
 preview. It proves the
 address still answers and no more: a redirect is a pass and is not followed, and the check does not
 run on a fork pull request, where the hostnames it would reach are the pull request's to choose. The
 first limit is written in [`20-contract.md`](20-contract.md) § *Error semantics*; the second is
-workflow configuration and is recorded in [`90-decisions.md`](90-decisions.md). After deploy
-nothing notices, which is the honest limit of the chosen static release boundary. A scheduled check
-is deliberately left to *Open questions* rather than assumed.
+workflow configuration and is recorded in [`90-decisions.md`](90-decisions.md). An exempt address is
+a third: it is on the page and outside this detector entirely, which is why the set is bounded by
+`C19` rather than by judgement at the point of use. After deploy nothing notices, which is the honest
+limit of the chosen static release boundary. A scheduled check is deliberately left to *Open
+questions* rather than assumed.
 
 **User sees:** a working page with one dead link.
 

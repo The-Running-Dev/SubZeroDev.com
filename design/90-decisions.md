@@ -5,6 +5,15 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
+- **Three kit commands cite `design/10-design.md` § *Record*, which this repository's `10-design.md`
+  does not have.** `.claude/commands/reconcile.md`, `contract.md` and `design.md` each gate that
+  citation on `design/state/` existing — and it does exist here, as `/track`'s WorkRef mirror written
+  by `tools/Update-WorkMirror.ps1`. So the condition fires and points at nothing, on every run of all
+  three. Staged 2026-08-21 by `/reconcile`, which hit it while deciding where its own decision-log
+  entries go. Either this repository never adopted the record-writing sequence and the citation should
+  be conditional on the *section*, or `10-design.md` is missing a section the kit expects; the fix is
+  the kit's, not this repository's `design/`.
+
 (the four items staged 2026-08-20/2026-08-21 — the testimonials' waiting citation URLs, the
 `tools/*.Tests.ps1` failures, the stale `C16` citations, and `assertImportGraph`'s missing
 implementation — became [#99](https://github.com/The-Running-Dev/SubZeroDev.com/issues/99),
@@ -40,6 +49,176 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-21 — An exemption must still name live content, and `C19` is what says so
+
+Context: the entry below rules that Content gains an enumerated exemption set and that `V4` exempts
+exactly its members. It says nothing about what happens when the content moves on. `derivco.com`
+reaches `checkedLinks` through `roles[3].website` in [`site/cv.json`](../site/cv.json); delete that
+role, or repoint it, and the exemption survives as a standing licence over an address nothing on the
+site carries — invisible, because a set that exempts nothing looks exactly like a set doing its job.
+The next author to add that URL back would inherit an exemption nobody granted them.
+
+Chosen: **`C19`, which requires every member to be live, justified and not this repository's own
+address.** Live means the `url` is carried by `resolvedHomes` or `cvOutboundLinks` over the committed
+documents, so a member the content dropped turns the invariant red rather than lingering; justified
+means a non-empty `reason`, on the argument `provenance` already won here; and the `sourceUrl` bar is
+what keeps `checkedLinks` non-empty, since a `V4` covering nothing is a gate switched off rather than
+a gate narrowed. Both existing functions are already exported, so the check needs no new surface.
+**This is an addition beyond the ruling below**, which is why it has its own entry: that entry
+authorised the mechanism, not its maintenance rule. Signed off before the contract was written.
+
+Rejected: **the set exactly as ruled, with no liveness clause** — strictly what was approved, declined
+because a carve-out accumulating unnoticed is the failure the ruling itself named when it refused the
+informal route; a mechanism that cannot go stale is the only version of it worth having. **A review
+date on each member instead** — richer, and declined because nothing in this repository runs on a
+clock, so the field would record an intention no gate could ever act on. **Host or pattern matching**
+— declined in the contract's own words: a pattern exempts addresses nobody has looked at.
+
+Reversibility: cheap. The clause is one assertion; dropping it leaves the mechanism the ruling
+approved.
+
+---
+
+### 2026-08-21 — The raw shape carries the qualifier, not the validated one
+
+Context: the ruling below settles that `CvData` and `PortfolioData` regain their compile-time
+non-empty guarantee by splitting the decoder's output from the validated shape. It does not settle
+which of the two keeps the plain name, and the choice is a public-interface one — `validateCv`'s
+parameter type and every name a composer can reach both follow from it.
+
+Chosen: **`CvDocument`, `CvRole` and the rest keep their names and their non-empty lists; the loose
+shapes become `RawCvDocument`, `RawCvRole`, `RawCvProject`, `RawCvOpenSource`, `RawCvEra`,
+`RawTechNode` and `RawPortfolioDocument`.** Three reasons, in order of weight: the loose shape appears
+in exactly one signature and no composer ever names it, so the qualifier lands on the rarer name;
+[`20-contract.md`](20-contract.md)'s declarations were already written with the non-empty tuples, so
+this direction leaves them untouched and the amendment is an addition rather than a rewrite; and each
+`Raw` type is declared as a **difference** — `Omit<CvRole, "tech"> & { tech: readonly string[] }` —
+so a field added later appears on both without being written twice. `RawTechNode` is the one
+exception and is written out in full, because a recursive type cannot be expressed as a difference
+from itself.
+
+Rejected: **qualifying the validated shape** — `CvDocument` keeps its current meaning as the
+decoder's output and `ValidatedCvDocument` carries the tuples. Declined on cost and on emphasis: the
+contract's whole `Types` block would have to be rewritten to plain arrays and a second set of
+declarations added beside it, and the qualifier would end up on the shape composers actually consume.
+**A recursive mapped type** turning every array field non-empty in one declaration — declined because
+it must special-case optional fields and branded primitives, and a type-level construct that is wrong
+quietly is worse than seven declarations that are wrong loudly. **A generic over the list
+constructor**, `CvRole<"raw" | "checked">` — declined for readability; this document is read by people
+deciding whether an implementation matches it.
+
+Reversibility: cheap while nothing composes these documents, which is the same window the entry below
+relies on.
+
+---
+
+### 2026-08-21 — `V4` gains a named exemption set, and the derivco skip stops being informal
+
+Context: `S14` and `S15` widened `V4`'s target set from twelve owner-controlled project subdomains to
+nineteen addresses, the CV's employer and open-source links included. `https://derivco.com` answers
+`403` to every automated request — curl, with and without a browser user-agent — while remaining a
+real, human-reachable site. `S15` closed the resulting red gate with a `.filter()` in
+`tests/verification/live/link-check.test.ts`, accepted in session and recorded nowhere. That put the
+tree outside two invariants at once: `V4`, which says every `CheckedLink` responds 2xx or 3xx, and
+`C17`, which says no test assembles a list for `checkLinks`. The test's own comment named the fix it
+needed and could not make.
+
+Chosen: **the contract is amended.** Content gains a named, enumerated exemption set declared beside
+`checkedLinks` — so `C17`'s "one enumeration" property survives the addition rather than being
+carved out of — and `V4` is restated to exempt exactly its members. The filter leaves the test. **The
+edit itself is [`/contract`](../.claude/commands/contract.md)'s, at `opus`/`high`**: a new exported
+Content surface and a restated invariant are a public-interface change, which `/reconcile` records
+and does not absorb. This entry is what that session implements against.
+
+Rejected: **dropping `roles[3].website` from `site/cv.json`** — the cheapest green gate and no
+design edit at all, declined because the employer's site exists and the CV would stop saying so to
+suit a gate. **Recording the skip as an accepted risk against the URL by name** — honest and cheap,
+declined because it puts a URL literal in the contract and settles the next bot-blocked address the
+same way, one carve-out at a time. **Staging it as an `## Open` item** — defers the decision while
+`V4` reads as held and is not, which is the shape the `S13` entry below exists to warn about.
+
+Reversibility: cheap. Deleting the exemption set and restoring `V4`'s wording undoes it; what it
+would cost is the red gate coming back.
+
+---
+
+### 2026-08-21 — `CvData` and `PortfolioData` regain the compile-time non-empty guarantee
+
+Context: [`20-contract.md`](20-contract.md) declares every list on the CV and portfolio documents a
+non-empty tuple and argues it as *"a real constraint rather than a convenience — a CV rendering a
+heading over nothing is the 'silently empty section' failure"*. A `/cr` pass during `S15`
+([`e0f7c8d`](https://github.com/The-Running-Dev/SubZeroDev.com/commit/e0f7c8d)) retyped them as plain
+arrays on the reasoning that the Zod schema producing a `CvDocument` admits an empty array — correct
+about the **decoder's** output, and unrecorded. Because `CvData = Branded<CvDocument, "CvData">`, the
+*validated* type inherited the looseness, so unlike `Inventory` it promises nothing about emptiness to
+the composers `S16` and `S17` will write against it. `validateCv`'s `checkCvCollection` still refuses
+an empty list at build time; what was lost is the half a typechecker enforces.
+
+Chosen: **the code changes, by splitting the two shapes.** The decoder's output keeps plain arrays —
+the `/cr` finding stands — and the validators' output type carries the non-empty tuples the contract
+declares, so the guarantee a composer's parameter type promises is one the type actually holds.
+**The edit is [`/contract`](../.claude/commands/contract.md)'s, at `opus`/`high`**, and lands with the
+entry above: the contract today has one type where the split needs two, so restoring the guarantee
+means a declaration `20-contract.md` does not currently carry, and a new public interface is not
+`/reconcile`'s to introduce. The stale comment at `src/content/types.ts` describing "the non-empty
+tuple `validateCv`'s CvData promises" is corrected there, since it describes the finished state.
+
+Rejected: **amending the contract down to runtime-only** — the cheapest edit, declined because
+`S16` and `S17` compose against these types and a guard nothing requires is a guard the next author
+omits. **Leaving both sides and recording the gap** — declined for the reason the entry above gives:
+a contract clause the tree does not hold is the thing this pass exists to end, not to catalogue.
+
+Reversibility: cheap while nothing composes these documents, which is the whole reason it is done
+before `S16` rather than after.
+
+---
+
+### 2026-08-21 — `provenance` is constrained non-empty at the schema
+
+Context: [`20-contract.md`](20-contract.md) states `provenance` is a non-empty string, and rests the
+whole field-over-comment argument on a field being *"required, asserted"* where a comment is
+invisible to every check. The schema was `z.string()`, which admits `""`, and the envelope transform
+discards the field before any semantic validator sees it — so the only thing standing behind the
+claim was a test pinning the two committed values.
+
+Chosen: **`z.string().min(1)` on both document schemas.** One character each, no new error code, no
+semantic-validator change, and `S15.1` already reads *"a non-empty `provenance` string"*, so the
+criterion is satisfied rather than superseded. Applied in this pass.
+
+Rejected: **striking "non-empty" from the contract** — cheapest, and it weakens the one argument the
+contract gives for the field existing, since an empty provenance names no source. **Leaving the test
+as the assertion** — it goes red today, but the guarantee would live in a test over two named files
+rather than in the schema, so a fifth document would not inherit it.
+
+Reversibility: cheap.
+
+---
+
+### 2026-08-21 — The CV's QuickSync entry deliberately diverges from its transcription source
+
+Context: `site/cv.json` is a one-way transcription of `Portfolio`'s `config/cvData.yml`, and its
+`provenance` field says so. `The-Running-Dev/QuickSync` no longer exists on GitHub — confirmed
+against the account's repository list — so the link 404'd and turned `V4` red. `S15` repointed
+`projects[7].link` to the account profile
+([`083a7a8`](https://github.com/The-Running-Dev/SubZeroDev.com/commit/083a7a8)) and recorded nothing,
+which leaves a field differing from its named source with no way to tell a deliberate divergence from
+a transcription error.
+
+Chosen: **the data stands and this entry carries it.** The transcription is authoritative for what
+this site serves — `10-design.md` § *The CV or portfolio transcription drifts from its source
+repository* already says the copy here claims nothing about the other — and the entry is what makes
+this one field's divergence a decision rather than a defect waiting to be rediscovered. The card
+still names QuickSync, because the work happened; only the address it can offer has changed.
+
+Rejected: **dropping the entry** — a card naming a project a visitor cannot reach is a fair objection,
+declined because it deletes a true fact about past work to tidy a link. **Restoring the dead link and
+exempting it** through the exemption set above — declined outright: a permanently-404 link on a
+published page is what `V4` exists to prevent, not a case for its exemption mechanism.
+
+Reversibility: cheap. A replacement address, or the entry's removal, is one edit either way.
 
 ---
 
