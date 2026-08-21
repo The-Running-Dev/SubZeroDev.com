@@ -1281,9 +1281,10 @@ exists to drift, and it now covers four routes rather than two.
 
 **The CV's and the portfolio's `title` and `description` are owner-supplied copy, transcribed here.**
 They are deliberately not read from the content documents: head metadata is Adapter's, and sourcing it
-from Content would put a renderable-adjacent value on an edge `A3` closes. This is the same standing
-condition [`S13`](30-slices.md#s13--the-apexs-real-title-and-description) records for the apex — an
-implementing agent with no supplied copy stops and asks rather than writing brand voice.
+from Content would put a renderable-adjacent value on an edge `A3` closes. This is the standing
+condition [`S13`](30-slices.md#s13--the-apexs-real-title-and-description) retains past its own
+withdrawal — an implementing agent with no supplied copy stops and asks rather than writing brand
+voice.
 
 `metadata.themeColor` is Presentation's `themeColor`, and `metadata.icons` is exactly one entry whose
 `href` is Presentation's `iconDataUri`. One SVG data URI serves every size, so a second entry would be

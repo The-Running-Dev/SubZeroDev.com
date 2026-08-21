@@ -62,7 +62,7 @@ underneath it since; an em dash means the slice's criteria still describe the tr
 | **S3** | Outbound link verification | [#10](https://github.com/The-Running-Dev/SubZeroDev.com/pull/10) | `checkLinks` took `readonly ResolvedHome[]` until 2026-08-21 ([`S14`](#s14--the-link-gate-stops-caring-what-a-link-belongs-to)) and now takes `readonly CheckedLink[]`; `LinkCheckResult.target` is a `CheckedLink`. `S3.2`–`S3.6`'s fixtures are asserted against that shape, and a failing target's diagnostic is named by `label` rather than `projectId`. `S3.1`, which exercises `resolvedHomes` alone, is unaffected |
 | **S4** | The visual language and the miss page | [#27](https://github.com/The-Running-Dev/SubZeroDev.com/pull/27) | `PrimitiveName` is closed at **twelve**, not the six `S4.3` counts: `row` and `bar` (2026-08-07), `grid` and `card` (2026-08-08, `S11.3`), `view` (2026-08-10) and `link-current` (2026-08-13). `S4.9`'s single `--font-mono` user is unchanged and is still `meta` |
 | **S5** | The apex composition | [#28](https://github.com/The-Running-Dev/SubZeroDev.com/pull/28) | `composeApex` takes `(inventory, testimonials, origin)` since 2026-08-10; `S5.5`–`S5.10` name the two-parameter form. The apex carries four sections rather than the three this slice composed |
-| **S6** | The emitted document | [#30](https://github.com/The-Running-Dev/SubZeroDev.com/pull/30) | The pin `S6.1` names is **`0.4.1`**, not `0.3.0` (2026-08-11), and the default export is a `LandingPageDataConfig` built by `defineLandingPageData`, so `A5`'s refusal is the package loader's rather than Adapter's. `S6.7`'s `projects` import is now the two document validators. `S6.3`'s two-route count went to three under `S11` and is two again. **Its route copy is still placeholder text — that is [`S13`](#s13--the-apexs-real-title-and-description)** |
+| **S6** | The emitted document | [#30](https://github.com/The-Running-Dev/SubZeroDev.com/pull/30) | The pin `S6.1` names is **`0.4.1`**, not `0.3.0` (2026-08-11), and the default export is a `LandingPageDataConfig` built by `defineLandingPageData`, so `A5`'s refusal is the package loader's rather than Adapter's. `S6.7`'s `projects` import is now the two document validators. `S6.3`'s two-route count went to three under `S11` and is two again. **Its route copy is still placeholder text and now stays that way**: [`S13`](#s13--the-apexs-real-title-and-description) was withdrawn on 2026-08-21 and nothing replaces it |
 | **S7** | The publishable tree | [#31](https://github.com/The-Running-Dev/SubZeroDev.com/pull/31) | — |
 | **S8** | The browser request capture | [#32](https://github.com/The-Running-Dev/SubZeroDev.com/pull/32) | `S8.5` names issue #17; the issue it actually closed is [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16), recorded 2026-08-06. The finding it reports — no automatic `/favicon.ico` request — is unaffected |
 | **S9** | The container image and its in-CI gate | [#34](https://github.com/The-Running-Dev/SubZeroDev.com/pull/34) | — |
@@ -538,55 +538,49 @@ second clause rules out; a reveal that only ever adds visibility is in scope. Ch
 2026-08-08 fold was additive at the Adapter wiring.
 ## Outstanding
 
-Six slices. `S13` predates the rest and is a copy swap; `S14` through `S18` were appended on
-2026-08-21 and carry the CV and portfolio routes. What is left beyond them sits under
-[`## Blocked`](#blocked) and is waiting on a decision rather than on work.
+Five slices, `S14` through `S18`, appended on 2026-08-21 and carrying the CV and portfolio routes.
+What is left beyond them sits under [`## Blocked`](#blocked) and is waiting on a decision rather than
+on work.
+
+**`S13` was allocated here and withdrawn on 2026-08-21.** Its heading follows, struck, with its anchor
+unchanged — three places cite it. Nothing under this section's own rule applies to it: it carries no
+live criteria and `/track` has nothing to sync for it.
 
 **`S14` through `S18` run in order and each ends runnable.** `S14` widens the link gate, `S15` commits
 and validates the two content documents with nothing rendering them, `S16` and `S17` add a route each,
 and `S18` rewires the masthead once both routes exist. The order is not arbitrary: the masthead cannot
 point at a route that is not declared, and a content document that nothing renders is still a build
-that fails when the document is wrong. **`S13` is independent of all five** and may land at any point.
+that fails when the document is wrong.
 
-## S13 — The apex's real title and description
+## ~~S13 — The apex's real title and description~~
 
-Delivers: The front page finally introduces itself. Since the site first published, anyone arriving
-from a search result, a shared link or a browser tab has been shown a stand-in sentence that says, in
-as many words, that it is a placeholder waiting to be replaced — and the machine-readable summary a
-search engine reads carries the same stand-in. This puts the real words there, in the site's own
-voice, on the one page this whole repository exists for.
+**Withdrawn 2026-08-21, on the owner's ruling. The placeholder copy stays, and nothing carries a
+replacement.** The heading is retained struck, with its anchor unchanged, because three places cite
+it: `S6`'s row in the [`## Landed`](#landed) index, [`S16`](#s16--the-cv-route)'s `Depends on`, and
+[`20-contract.md`](20-contract.md)'s route-metadata section. Deleting the section outright would
+orphan all three, which is the reason the released `U5` entry under [`## Blocked`](#blocked) is struck
+rather than removed.
 
-Touches: Adapter — the apex route's `title` and `description`, its Open Graph title and description,
-and the `PLACEHOLDER COPY` header comment that instructs a reader to leave them alone. Composition —
-the `Organization` block's `name` and `description` (`X6`), and the same comment above them.
-Verification — the emitted-document metadata assertions `S6.12` established. CI — the existing `build`
-job's offline assertions.
+**What is knowingly retained.** Six strings stay exactly as they are, live on both published targets —
+`site/landing.config.ts`'s apex `title`, `description`, `openGraph.title` and `openGraph.description`,
+and `src/composition/apex.ts`'s organisation name and description. Each reads *replace before
+publication*, so that is what a search result, a shared link, a browser tab and the machine-readable
+`Organization` summary say and will keep saying. The two `PLACEHOLDER COPY` comments guarding them
+stay too, and now describe a settled state rather than a pending one. This is recorded rather than
+dropped **so it is not rediscovered later as a defect**;
+[`90-decisions.md`](90-decisions.md)'s entry of 2026-08-21 is the carrier and names what the
+2026-08-20 allocation weighed and why that ruling is reversed.
 
-Depends on: S6, and on **owner-supplied copy — six strings**: the apex's title and description, its
-Open Graph title and description, and the organisation's name and description. The 2026-08-06 ruling
-that let `/slice S6` start on placeholders named "the real copy to replace it in a follow-up once
-written" ([`90-decisions.md`](90-decisions.md)); **this is that follow-up**, and it has no carrier
-other than this entry, which is the shape [`agent.md`](../agent.md) § *Drift* names — an amendment made
-after its slice merged, with nothing to go red. An implementing agent that reaches this with no
-supplied copy stops and asks; it does not write brand voice.
+**One thing survived the withdrawal, and only one: the standing copy condition.** An implementing
+agent with no owner-supplied copy stops and asks rather than writing brand voice. It was written here
+because `S13` is where it first bit; it binds [`S16`](#s16--the-cv-route) and
+[`S17`](#s17--the-portfolio-route), which each need four strings before they ship, and
+[`20-contract.md`](20-contract.md) cites it for the same reason. Its home stays this entry, so there
+is one copy of it rather than three.
 
-Acceptance:
-  - S13.1 The apex route's `title`, `description`, `openGraph.title` and `openGraph.description` each equal the owner-supplied string for that field, transcribed rather than composed, asserted field by field against the declared route metadata.
-  - S13.2 The `Organization` block's `name` and `description` each equal the owner-supplied string, asserted against the JSON-LD parsed out of the **emitted** apex document rather than against the module constants.
-  - S13.3 Neither `site/landing.config.ts` nor `src/composition/apex.ts` contains the string `placeholder` in any case, asserted over both module sources and demonstrated red by reintroducing one — so the two `PLACEHOLDER COPY` comments go with the copy they guard. `src/composition/enhancement.ts`'s DOM `placeholder` property assignment is untouched and outside this check.
-  - S13.4 The emitted apex document carries the supplied title as its `<title>` and the supplied description as its meta description — asserted against the built HTML, never against the declared configuration (`S6.12`'s rule).
-  - S13.5 The emitted apex document's Open Graph title and description carry the supplied strings, while its canonical URL, `og:url` and `og:type` are unchanged from what `S6.4` asserts, and no `og:image` and no `twitter` element appears (`U6`).
-  - S13.6 `assertSelfContained`, `assertContentPresent` and `assertStyleAgreement` each still return `{ ok: true }` for the emitted apex, and it still carries exactly two script elements (`V13`) — a copy swap moves no class, no rule and no element count.
-  - S13.7 The miss route's metadata is unchanged, asserted value by value against the committed strings. Its copy is real already and this slice does not revisit it.
-  - S13.8 A fixture organisation name or description containing `<`, `>`, `&`, `"` and `'` is JSON-string-escaped inside the `Organization` block and leaves it carrying no `</script` sequence in any case (`X5`'s exception, `X6`) — asserted with a fixture, since the committed copy is unlikely to carry any of the five.
-
-Out of scope: The miss route's copy, which landed real in
-[#74](https://github.com/The-Running-Dev/SubZeroDev.com/pull/74) — `S13.7` asserts it did not move.
-**Which** metadata fields are declared: `U6` settled that no social image exists, so `socialImageUrl`,
-`openGraph.imageUrl` and the whole `twitter` block stay omitted, and declaring one is a contract
-question rather than a copy swap. The manifesto prose, the section headings, the testimonials and the
-footer quote — all already real copy, none of it touched here. Any change to how metadata reaches the
-document: this slice changes six strings and nothing structural.
+`S13.1` through `S13.8` are retired. They are never reused and never renumbered, and no file outside
+`design/` ever cited one — verified over the tree on 2026-08-21, which is why the criteria bodies go
+here where the twelve landed slices' bodies stayed.
 
 ---
 
@@ -691,9 +685,10 @@ and its metadata. `tests/types/route-path.type-check.ts` — the pinned union. V
 shard — a third emitted document to assert over.
 
 Depends on: S15, and on **owner-supplied copy — four strings**: the CV route's `title` and
-`description` and its Open Graph title and description. The same standing condition
-[`S13`](#s13--the-apexs-real-title-and-description) records for the apex applies here, and it applies
-before this route ships rather than after: an implementing agent with no supplied copy stops and asks.
+`description` and its Open Graph title and description. `S13` was withdrawn but
+[its standing condition](#s13--the-apexs-real-title-and-description) was not: it applies here, and it
+applies before this route ships rather than after — an implementing agent with no supplied copy stops
+and asks.
 
 Acceptance:
   - S16.1 `RoutePath` is exactly `"/" | "/cv/" | "/portfolio/" | "/404/"`, pinned by mutual assignability in `tests/types/route-path.type-check.ts` so adding or removing a member fails the typecheck. `cvPath` is `"/cv/"` and is written `satisfies RoutePath`.
@@ -924,10 +919,13 @@ mechanism choice should take.
 
 ## Next
 
-`/track` is the usual next step and **cannot run here**: issues are disabled on this repository, so no
-slice in this document has a tracker item and there is nothing to sync. `S13` is carried by this
-document and by [`90-decisions.md`](90-decisions.md) § *Open* until that changes.
+**`/track`.** Issues were enabled on this repository on 2026-08-21 and every slice under
+[`## Outstanding`](#outstanding) has a tracker item, so the sync is the usual next step — and this
+pass changed what it syncs: `S13` is withdrawn and
+[#93](https://github.com/The-Running-Dev/SubZeroDev.com/issues/93) is closed against that ruling. This
+paragraph read *"cannot run here: issues are disabled"* until 2026-08-21, which the section above had
+already corrected.
 
-`S13` needs six owner-supplied strings before it can start, and a slice transcribes them rather than
-inventing them. Nothing else here is implementable: everything under `## Landed` has shipped, and
-everything under `## Blocked` is waiting on a decision rather than on work.
+Everything under `## Landed` has shipped and everything under `## Blocked` is waiting on a decision
+rather than on work. **Which of `S14`–`S18` is still implementable is not settled here** — `/reconcile`
+owns the comparison between this section and the tree, and this command does not pre-empt it.

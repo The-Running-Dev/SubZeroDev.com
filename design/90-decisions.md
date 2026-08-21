@@ -43,6 +43,59 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 
 ---
 
+### 2026-08-21 — `S13` is withdrawn and the apex's placeholder copy is retained knowingly
+
+Context: `S13 — The apex's real title and description` was allocated the previous day (the entry
+further below) to replace six placeholder strings — `site/landing.config.ts`'s apex `title`,
+`description`, `openGraph.title` and `openGraph.description`, and `src/composition/apex.ts`'s
+organisation `name` and `description`, each reading *replace before publication* and each live on both
+published targets since the site first published. It never started, and could not: a slice transcribes
+owner copy and never invents it, and the six strings were never supplied. The owner asked for the
+slice removed altogether. Put the question of what should then carry the swap — since removing the
+slice without a carrier reproduces exactly the 2026-08-06 failure that created `S13` — the ruling was
+that **nothing should**.
+
+Chosen: **`S13` is withdrawn, and the placeholder copy is retained deliberately rather than left as a
+defect waiting for a carrier.** What a search result, a shared link, a browser tab and the
+machine-readable `Organization` summary say does not change. The two `PLACEHOLDER COPY` comments stay
+and now describe a settled state rather than a pending one. [`30-slices.md`](30-slices.md)'s `S13`
+section is struck rather than deleted, keeping its anchor, because three places cite it — `S6`'s
+`## Landed` row, `S16`'s `Depends on`, and [`20-contract.md`](20-contract.md)'s route-metadata
+section — and `S13.1`–`S13.8` are retired ids, never reused. **Recording it here is the whole point of
+the entry:** the reason `S13` existed at all is that a deferral with no carrier survived fourteen days
+and a publication unnoticed, and a withdrawal with no record is the same shape again. This is that
+record.
+
+**One clause survives the withdrawal: the standing copy condition** — an implementing agent with no
+owner-supplied copy stops and asks rather than writing brand voice. `S16` and `S17` each need four
+strings before they ship and both cite it, as does the contract, so its home stays the struck `S13`
+entry rather than being copied into each citer.
+
+Rejected — **reclassifying [#93](https://github.com/The-Running-Dev/SubZeroDev.com/issues/93) from a
+slice to a bug**, which was the recommendation. It keeps something that can go red at no cost and
+routes the swap to `/fix` instead of the slice pipeline. Declined by the owner: the copy is not being
+replaced, so a bug issue would assert a defect the owner does not hold there is one. Rejected —
+**supplying the six strings in the same session and landing them as a plain commit**, which would have
+closed the question outright; declined for the same reason. Rejected — **deleting the `S13` section
+outright**, the literal reading of *removed altogether*; it orphans three citations of its anchor,
+which [`agent.md`](../agent.md) § *Drift* records as the failure that is invisible, and the released
+`U5` entry under `30-slices.md` § *Blocked* already establishes strike-and-annotate as this
+repository's shape for a withdrawn entry.
+
+This reverses the 2026-08-20 allocation below, whose own rejected alternative — *"treating it as a
+copy edit needing no slice"* — was declined then on the ground that untracked small work is what
+produced the placeholder. That reasoning is not refuted; it is overridden by a ruling that there is no
+work to track, because the copy is staying. New evidence is not required to reverse it, an owner
+decision about the owner's own brand copy is.
+
+Reversibility: cheap in the document — the section is struck, not deleted, and git carries the prior
+text; a future `/slices` may allocate a fresh id for the same work, never `S13`. Cheap in the tree —
+the six strings are six string literals in two modules. **Not cheap in the world:** every day the
+placeholders stay is another day of indexing, sharing and caching them, and search engines are slow to
+re-crawl a corrected title.
+
+---
+
 ### 2026-08-21 — `/cv/` and `/portfolio/` become routes of this site, and the contract is amended for four routes
 Context: the CV and the technology portfolio live in two sibling repositories and drive a separate
 deployment at `portfolio.subzerodev.com`. A design session on 2026-08-20 settled the fold with the
