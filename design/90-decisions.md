@@ -10,8 +10,9 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
   `/reconcile` — the entries are below — and neither is stated by any slice. `/contract` writes them
   at `opus`/`high`; the `assertSelfContained` change then rides with
   [`S16`](https://github.com/The-Running-Dev/SubZeroDev.com/issues/96), whose `S16.5` is written
-  against the unamended signature and needs the counts added, and the `R2` clause needs a slice of its
-  own or a `Done when` on the amendment. Staged rather than left in the log because an amendment
+  against the unamended signature and needs the counts added, and the `R2` clause is carried by a
+  `Done when` on **this item's own issue** rather than by a slice — ruled 2026-08-21, entry below.
+  Staged rather than left in the log because an amendment
   landing outside an open slice has no carrier and nothing goes red — see [`agent.md`](../agent.md).
 
 - **Three kit commands cite `design/10-design.md` § *Record*, which this repository's `10-design.md`
@@ -58,6 +59,36 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-21 — `R2`'s directory clause is carried by a `Done when`, not by a slice of its own
+
+Context: the `## Open` item above stages two contract amendments and leaves one fork unanswered —
+whether `R2`'s `404/` directory clause gets a slice of its own or a `Done when` on the amendment.
+`/slices` reached it while finding nothing else to append, so it is settled here rather than
+rediscovered by whichever command runs after `/contract`. The fork is about this repository's
+conventions rather than about the code: a slice buys a stable criterion id that a test can cite the
+way every other assertion in `tests/` cites one, and costs a whole vertical slice for what
+`EmittedDocument` — `{ relativePath, html }`, which cannot see a directory — makes a single
+filesystem assertion inside a build shard that already reads the finished tree.
+
+Chosen: **a `Done when` on the issue `/track` opens for the `## Open` item.** The check is one
+assertion, and the citation the slice route was buying is already available another way —
+`tests/tooling/check-design-counts.test.ts` and `tests/types/route-path.type-check.ts` cite issue
+numbers exactly as their neighbours cite criterion ids, so the assertion still names why it exists
+and a reader still reaches the reasoning.
+
+Rejected: **a slice of its own, `S21`** — the more rigorous option, and it would give the assertion an
+id `/track` detects drift against. Declined on proportion: a vertical slice ending runnable, with its
+own `Out of scope` line and tracker item, for one existence check under `tests/build/`, and it would
+oblige `/slices` to run a second time after `/contract` before anything could start. **Deferring the
+choice until `/contract` has written the clause** — declined because the amendment would land with no
+carrier in the meantime, which is the state the `## Open` item itself names as the one where nothing
+goes red.
+
+Reversibility: cheap. No id is consumed by this choice; if the clause turns out to imply more than one
+assertion, `/slices` allocates `S21` then.
 
 ---
 

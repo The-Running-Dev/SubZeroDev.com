@@ -1058,7 +1058,8 @@ amendment ruled on 2026-08-21 and staged in [`90-decisions.md`](90-decisions.md)
 `assertSelfContained` gaining the emitted document's permitted script counts is a Verification
 signature change, which this document may not introduce — and it needs no slice of its own, having
 been ruled to ride with [`S16`](#s16--the-cv-route), whose `S16.5` is written against the unamended
-form. `R2` gaining the `404/` directory clause is the one that does need a carrier, and **whether that
-carrier is a slice of its own or a `Done when` on the amendment is unsettled** — the fork is the
-owner's, and until the clause is in `R2` a slice stating it would assert an invariant the contract
-does not carry, which is the [`## Blocked`](#blocked) shape rather than an outstanding slice.
+form. `R2` gaining the `404/` directory clause is the one that does need a carrier, and **that carrier is a
+`Done when` on the amendment's own issue rather than a slice** — ruled 2026-08-21, in
+[`90-decisions.md`](90-decisions.md). No slice number is allocated for it, and none should be: until
+the clause is in `R2` a slice stating it would assert an invariant the contract does not carry, and
+once it is there the work is one existence check in a shard that already reads the finished tree.
