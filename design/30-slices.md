@@ -52,7 +52,7 @@ Each slice under [`## Outstanding`](#outstanding) has a tracker item, and `/trac
 
 ## Landed
 
-Twelve slices have landed. Each row names the pull request that merged it and what has changed
+Fourteen slices have landed. Each row names the pull request that merged it and what has changed
 underneath it since; an em dash means the slice's criteria still describe the tree.
 
 | Id | Name | Merged | Superseded since |
@@ -69,9 +69,11 @@ underneath it since; an em dash means the slice's criteria still describe the tr
 | **S10** | Publication | [#35](https://github.com/The-Running-Dev/SubZeroDev.com/pull/35), [#45](https://github.com/The-Running-Dev/SubZeroDev.com/pull/45) | — |
 | **S11** | The testimonials route | [#66](https://github.com/The-Running-Dev/SubZeroDev.com/pull/66), [#73](https://github.com/The-Running-Dev/SubZeroDev.com/pull/73) | **The route is withdrawn** (2026-08-10, [#77](https://github.com/The-Running-Dev/SubZeroDev.com/pull/77)). `composeTestimonials` is now `renderTestimonials`, composing one section of the apex; `testimonialsPath` and the third route are deleted. `S11.11`'s three route entries are two, and **`S11.15` asserts the opposite of the tree** — `tests/types/route-path.type-check.ts` pins `RoutePath` to two members. `S11.3`'s ten primitives are twelve. Its `Touches` line counts three new error codes where `S11.1` names five. What survives untouched: the collection, `validateTestimonials`, `testimonialTotal`, `grid`, `card`, the escaping and the content-agnosticism suite |
 | **S12** | The inline enhancement script | [#76](https://github.com/The-Running-Dev/SubZeroDev.com/pull/76) | **The fold went with the route** (2026-08-10, [#77](https://github.com/The-Running-Dev/SubZeroDev.com/pull/77)): `foldRoutes` is deleted and `enhancementScript()` is emitted into one apex body, not two folded ones, so `S12.3`'s three emitted documents are two. The view switch `S12.6` names was removed with it and then **restored** as the `view` primitive's `:target` rules ([#79](https://github.com/The-Running-Dev/SubZeroDev.com/pull/79), adjudicated 2026-08-20), guarded by `tests/build/section-layout.test.ts` rather than by `:has()`. The search box, stage chips, detail overlay, manifesto layout and every criterion from `S12.7` to `S12.10` survive as written |
+| **S14** | The link gate stops caring what a link belongs to | [#90](https://github.com/The-Running-Dev/SubZeroDev.com/pull/90) | `checkedLinks` took `inventory` alone as this slice shipped it and takes `(inventory, cv)` since `S15` ([`S15.14`](#s15--the-cv-and-portfolio-content-documents)), so `S14.3` through `S14.6` name the one-parameter form. **`S14.6`'s shard does not pass the derivation unmodified**: `S15` added a `.filter()` removing `https://derivco.com`, accepted in session and recorded nowhere, so `C17` is breached in the tree until [`S19`](#s19--the-link-gates-exemptions-become-a-reviewed-list) lands. `S14.7`'s single-caller clause and `S14.8`'s index edit are unaffected |
+| **S15** | The CV and portfolio content documents | [#92](https://github.com/The-Running-Dev/SubZeroDev.com/pull/92) | `S15.9`'s brand holds and the shape behind it does not: a `/cr` pass inside this slice ([`e0f7c8d`](https://github.com/The-Running-Dev/SubZeroDev.com/commit/e0f7c8d)) retyped every list on `CvDocument` and `PortfolioDocument` to a plain array, so `CvData` and `PortfolioData` promise nothing about emptiness where [`20-contract.md`](20-contract.md) declares non-empty tuples — [`S20`](#s20--the-cv-and-portfolio-shapes-stop-promising-less-than-they-enforce) restores it. `S15.2` has no assertion of its own — nothing reads the committed `site/sources.public.yml` — and `S15.12` was ruled on 2026-08-21 to cover the substance. `S15.14`'s closing claim is qualified by the `.filter()` `S14`'s row names |
 
 
-The twelve bodies follow, verbatim as merged. **Read the index above first** — several criteria below
+The fourteen bodies follow, verbatim as merged. **Read the index above first** — several criteria below
 were true when they were accepted and are not true now, and none of them has been edited to hide that.
 
 ---
@@ -536,66 +538,10 @@ animation as the prototype expresses it, which sets `opacity: 0` before observin
 second clause rules out; a reveal that only ever adds visibility is in scope. Changing `composeApex`,
 `composeTestimonials` or any Content module — this slice is additive at the fold, exactly as the
 2026-08-08 fold was additive at the Adapter wiring.
-## Outstanding
-
-Seven slices. `S14` through `S18` were appended on 2026-08-21 and carry the CV and portfolio routes;
-`S19` and `S20` were appended the same day and close the gap the contract amendment of
-[`d3463f2`](https://github.com/The-Running-Dev/SubZeroDev.com/commit/d3463f2) opened between
-[`20-contract.md`](20-contract.md) and the tree. What is left beyond them sits under
-[`## Blocked`](#blocked) and is waiting on a decision rather than on work.
-
-**`S13` was allocated here and withdrawn on 2026-08-21.** Its heading follows, struck, with its anchor
-unchanged — three places cite it. Nothing under this section's own rule applies to it: it carries no
-live criteria and `/track` has nothing to sync for it.
-
-**`S14` through `S18` run in order and each ends runnable.** `S14` widens the link gate, `S15` commits
-and validates the two content documents with nothing rendering them, `S16` and `S17` add a route each,
-and `S18` rewires the masthead once both routes exist. The order is not arbitrary: the masthead cannot
-point at a route that is not declared, and a content document that nothing renders is still a build
-that fails when the document is wrong.
-
-**`S19` and `S20` are not part of that run and both precede `S16`.** Each closes one half of the
-2026-08-21 contract amendment, and neither is stated by any slice above: `S19` gives `V4` the
-exemption set that lets the informal filter leave the live gate, and `S20` gives `CvDocument` and
-`PortfolioDocument` the non-empty shapes their own validator already enforces. They are independent of
-each other and may land in either order. **Both are cheap only until `S16`** — `S19` because the live
-gate is red in the meantime for a reason recorded nowhere a reviewer will look, and `S20` because
-`CvData` and `PortfolioData` are what `composeCv` and `composePortfolio` take, so changing them after
-those routes exist means changing the type every composer, renderer and fixture is written against.
-
-## ~~S13 — The apex's real title and description~~
-
-**Withdrawn 2026-08-21, on the owner's ruling. The placeholder copy stays, and nothing carries a
-replacement.** The heading is retained struck, with its anchor unchanged, because three places cite
-it: `S6`'s row in the [`## Landed`](#landed) index, [`S16`](#s16--the-cv-route)'s `Depends on`, and
-[`20-contract.md`](20-contract.md)'s route-metadata section. Deleting the section outright would
-orphan all three, which is the reason the released `U5` entry under [`## Blocked`](#blocked) is struck
-rather than removed.
-
-**What is knowingly retained.** Six strings stay exactly as they are, live on both published targets —
-`site/landing.config.ts`'s apex `title`, `description`, `openGraph.title` and `openGraph.description`,
-and `src/composition/apex.ts`'s organisation name and description. Each reads *replace before
-publication*, so that is what a search result, a shared link, a browser tab and the machine-readable
-`Organization` summary say and will keep saying. The two `PLACEHOLDER COPY` comments guarding them
-stay too, and now describe a settled state rather than a pending one. This is recorded rather than
-dropped **so it is not rediscovered later as a defect**;
-[`90-decisions.md`](90-decisions.md)'s entry of 2026-08-21 is the carrier and names what the
-2026-08-20 allocation weighed and why that ruling is reversed.
-
-**One thing survived the withdrawal, and only one: the standing copy condition.** An implementing
-agent with no owner-supplied copy stops and asks rather than writing brand voice. It was written here
-because `S13` is where it first bit; it binds [`S16`](#s16--the-cv-route) and
-[`S17`](#s17--the-portfolio-route), which each need four strings before they ship, and
-[`20-contract.md`](20-contract.md) cites it for the same reason. Its home stays this entry, so there
-is one copy of it rather than three.
-
-`S13.1` through `S13.8` are retired. They are never reused and never renumbered, and no file outside
-`design/` ever cited one — verified over the tree on 2026-08-21, which is why the criteria bodies go
-here where the twelve landed slices' bodies stayed.
 
 ---
 
-## S14 — The link gate stops caring what a link belongs to
+### S14 — The link gate stops caring what a link belongs to
 
 Delivers: The one outbound link on the site that no gate has ever checked starts being checked. Today
 the CI step that goes red when a project's site dies only knows how to look at project links — so the
@@ -638,7 +584,7 @@ still the project. A scheduled post-deploy re-check, which stays under `## Block
 
 ---
 
-## S15 — The CV and portfolio content documents
+### S15 — The CV and portfolio content documents
 
 Delivers: The material that has lived on a separate subdomain and in two sibling repositories becomes
 this site's own content — a CV and a technology portfolio, committed here as data, checked on every
@@ -680,6 +626,72 @@ Acceptance:
 Out of scope: Rendering either document — S16 and S17. Any route declaration. The masthead. Reading
 either source repository, at build time or otherwise: the brief forbids it and this slice's whole
 premise is that the transcription is committed here.
+
+---
+
+## Outstanding
+
+Five slices. `S16` through `S18` carry the CV and portfolio routes; `S19` and `S20` close the gap the
+contract amendment of
+[`d3463f2`](https://github.com/The-Running-Dev/SubZeroDev.com/commit/d3463f2) opened between
+[`20-contract.md`](20-contract.md) and the tree. What is left beyond the five sits under
+[`## Blocked`](#blocked) and is waiting on a decision rather than on work.
+
+**`S14` and `S15` were appended here on 2026-08-21 and retired to [`## Landed`](#landed) the same
+day.** Both had already merged — [#90](https://github.com/The-Running-Dev/SubZeroDev.com/pull/90) and
+[#92](https://github.com/The-Running-Dev/SubZeroDev.com/pull/92) — while this section still described
+them in future tense, which is the drift `/reconcile` adjudicated on 2026-08-21 and
+[`90-decisions.md`](90-decisions.md) carries. Their bodies moved unedited and their supersession rows
+are in the index above.
+
+**`S13` was allocated here and withdrawn on 2026-08-21.** Its heading follows, struck, with its anchor
+unchanged — three places cite it. Nothing under this section's own rule applies to it: it carries no
+live criteria and `/track` has nothing to sync for it.
+
+**`S16`, `S17` and `S18` run in order and each ends runnable.** `S16` and `S17` add a route each, and
+`S18` rewires the masthead once both routes exist. The order is not arbitrary: the masthead cannot
+point at a route that is not declared. The two that opened this run have landed — `S14` widened the
+link gate and `S15` committed and validated the two content documents with nothing rendering them —
+which is what makes `S16` startable rather than blocked.
+
+**`S19` and `S20` are not part of that run and both precede `S16`.** Each closes one half of the
+2026-08-21 contract amendment, and neither is stated by any slice above: `S19` gives `V4` the
+exemption set that lets the informal filter leave the live gate, and `S20` gives `CvDocument` and
+`PortfolioDocument` the non-empty shapes their own validator already enforces. They are independent of
+each other and may land in either order. **Both are cheap only until `S16`** — `S19` because the live
+gate is red in the meantime for a reason recorded nowhere a reviewer will look, and `S20` because
+`CvData` and `PortfolioData` are what `composeCv` and `composePortfolio` take, so changing them after
+those routes exist means changing the type every composer, renderer and fixture is written against.
+
+## ~~S13 — The apex's real title and description~~
+
+**Withdrawn 2026-08-21, on the owner's ruling. The placeholder copy stays, and nothing carries a
+replacement.** The heading is retained struck, with its anchor unchanged, because three places cite
+it: `S6`'s row in the [`## Landed`](#landed) index, [`S16`](#s16--the-cv-route)'s `Depends on`, and
+[`20-contract.md`](20-contract.md)'s route-metadata section. Deleting the section outright would
+orphan all three, which is the reason the released `U5` entry under [`## Blocked`](#blocked) is struck
+rather than removed.
+
+**What is knowingly retained.** Six strings stay exactly as they are, live on both published targets —
+`site/landing.config.ts`'s apex `title`, `description`, `openGraph.title` and `openGraph.description`,
+and `src/composition/apex.ts`'s organisation name and description. Each reads *replace before
+publication*, so that is what a search result, a shared link, a browser tab and the machine-readable
+`Organization` summary say and will keep saying. The two `PLACEHOLDER COPY` comments guarding them
+stay too, and now describe a settled state rather than a pending one. This is recorded rather than
+dropped **so it is not rediscovered later as a defect**;
+[`90-decisions.md`](90-decisions.md)'s entry of 2026-08-21 is the carrier and names what the
+2026-08-20 allocation weighed and why that ruling is reversed.
+
+**One thing survived the withdrawal, and only one: the standing copy condition.** An implementing
+agent with no owner-supplied copy stops and asks rather than writing brand voice. It was written here
+because `S13` is where it first bit; it binds [`S16`](#s16--the-cv-route) and
+[`S17`](#s17--the-portfolio-route), which each need four strings before they ship, and
+[`20-contract.md`](20-contract.md) cites it for the same reason. Its home stays this entry, so there
+is one copy of it rather than three.
+
+`S13.1` through `S13.8` are retired. They are never reused and never renumbered, and no file outside
+`design/` ever cited one — verified over the tree on 2026-08-21, which is why the criteria bodies go
+here where the fourteen landed slices' bodies stayed.
 
 ---
 
@@ -1026,14 +1038,28 @@ mechanism choice should take.
 
 **`/track`.** Issues were enabled on this repository on 2026-08-21 and every slice under
 [`## Outstanding`](#outstanding) has a tracker item, so the sync is the usual next step — and this
-pass changed what it syncs: `S13` is withdrawn and
-[#93](https://github.com/The-Running-Dev/SubZeroDev.com/issues/93) is closed against that ruling. This
-paragraph read *"cannot run here: issues are disabled"* until 2026-08-21, which the section above had
-already corrected.
+pass changed what it syncs: `S14` and `S15` are retired to [`## Landed`](#landed), so
+[#94](https://github.com/The-Running-Dev/SubZeroDev.com/issues/94) and
+[#95](https://github.com/The-Running-Dev/SubZeroDev.com/issues/95) are now the sync's to tick and
+close. This paragraph read *"cannot run here: issues are disabled"* until 2026-08-21, which the
+section above had already corrected.
 
-**`S19` and `S20` were appended on 2026-08-21 and have no tracker item yet**, which is the one thing
-this pass leaves for the sync to create.
+**`S19` and `S20` were appended on 2026-08-21 with no tracker item, and `/track` opened
+[#107](https://github.com/The-Running-Dev/SubZeroDev.com/issues/107) and
+[#108](https://github.com/The-Running-Dev/SubZeroDev.com/issues/108) the same day.** This paragraph
+named that as outstanding until the retirement pass; nothing under `## Outstanding` is unsynced now.
 
 Everything under `## Landed` has shipped and everything under `## Blocked` is waiting on a decision
-rather than on work. **Which of `S14`–`S18` is still implementable is not settled here** — `/reconcile`
-owns the comparison between this section and the tree, and this command does not pre-empt it.
+rather than on work.
+
+**This pass appended no slice, and the two candidates are both waiting on
+[`/contract`](../.claude/commands/contract.md) rather than on judgement here.** Each is a contract
+amendment ruled on 2026-08-21 and staged in [`90-decisions.md`](90-decisions.md) § *Open*.
+`assertSelfContained` gaining the emitted document's permitted script counts is a Verification
+signature change, which this document may not introduce — and it needs no slice of its own, having
+been ruled to ride with [`S16`](#s16--the-cv-route), whose `S16.5` is written against the unamended
+form. `R2` gaining the `404/` directory clause is the one that does need a carrier, and **that carrier is a
+`Done when` on the amendment's own issue rather than a slice** — ruled 2026-08-21, in
+[`90-decisions.md`](90-decisions.md). No slice number is allocated for it, and none should be: until
+the clause is in `R2` a slice stating it would assert an invariant the contract does not carry, and
+once it is there the work is one existence check in a shard that already reads the finished tree.

@@ -807,6 +807,11 @@ export type RequestRecord = {
   readonly initiatedByTester: boolean;
 };
 
+export type PermittedScripts = {
+  readonly ldJson: 0 | 1;
+  readonly enhancement: 0 | 1;
+};
+
 export type ModuleName =
   | "Content"
   | "Presentation"
@@ -830,6 +835,18 @@ while `Adapter` imported a derivation function.
 
 `attempts >= 1`; `initialDelayMs >= 0`; `maxDelayMs >= initialDelayMs`; `attemptTimeoutMs > 0`.
 `LinkCheckResult.status` is `null` where every attempt failed before a response.
+
+**`PermittedScripts` is a pair of ceilings, not a description of what a document carries.** Each field
+is the greatest number of script elements of that kind the document under assertion may contain, which
+is the half of `V13` an emitted document can be held to — that no document carries *more* than its
+count. The other half, that the apex and the CV each carry exactly one JSON-LD block, is `X6`'s and is
+a presence assertion belonging to Composition; a checker over built output cannot distinguish a
+document that legitimately omits an optional element from one that lost it to the bundler, which is the
+failure it exists to catch. The fields are literal `0 | 1` rather than `number` because neither `X6`
+nor `X10` admits a second element of either kind on any route, so a count above one is not a value this
+type should be able to express. The four routes' values follow from `V13` and are the caller's to
+supply — apex `{ ldJson: 1, enhancement: 1 }`, CV `{ ldJson: 1, enhancement: 0 }`, portfolio and miss
+both `{ ldJson: 0, enhancement: 0 }`.
 
 **`Attestation` carries no timestamp**, and its absence is a decision rather than an omission: the
 provider exposes no approval time to read, and the two fields here are the two that can be obtained
@@ -1366,7 +1383,9 @@ last: it is the fallback route, not a peer, and the order documents that.
 `portfolio/index.html` alongside `404/index.html`, and Artifact removes only the last of the three —
 a directory index served with a **200** is correct at `/cv/` and at `/portfolio/`, and is a soft 404
 at `/404/`. `R2`'s removal is about what that one path means, not about directory indexes, and
-extending it would delete two documents the site is for.
+extending it would delete two documents the site is for. The same boundary governs the directory half
+of `R2`: `404/` goes because removing the document emptied it, and `cv/` and `portfolio/` are not
+empty and are not candidates.
 
 No repository module imports Adapter — Verification's assertions over `A4` and `A6` necessarily do,
 which is the same reading Verification's own boundary rule takes.
@@ -1501,7 +1520,10 @@ because Artifact runs after the bundler no minifier ever sees it.
 **`finalizeArtifact`'s order of operations is part of the contract, not an implementation detail.** It
 validates `input.commit`, confirms `missEmittedEntry` is present (`R5`), copies it to `missRootEntry`,
 injects the marker into every `.html` document in the tree — the copy included — **then removes
-`missEmittedEntry`**, and writes `serverConfig()` last, into `serverConfigDir`. Copying before
+`missEmittedEntry` and, where that leaves it empty, the directory that held it** (`R2`), and writes
+`serverConfig()` last, into `serverConfigDir`. The directory is removed **only when the file's removal
+emptied it**: a directory holding anything else is something this design did not put there, and
+deleting it would be Artifact taking a decision about output it does not own. Copying before
 injecting is what makes `R2` hold: both documents are marked in the same pass and are byte-identical at
 the moment the identity is asserted. Injecting first and copying after would also work today and would
 break silently the day a second post-build rewrite is added. The configuration is written last and
@@ -1512,7 +1534,18 @@ about it can arise.
 directory index, so a host serves it with a **200** — the miss composition, at a fixed and discoverable
 URL, declaring itself canonical through `A1`. That is a soft 404 by this design's own definition, and
 `V12` never sees it because `V12` requests a *unique unknown* path. Removing the emitted entry after
-the copy is what stops the path existing on either target. The route declaration is unchanged and
+the copy is what stops the path existing on either target.
+
+**Removing the file is not sufficient, and the directory removal is `R2`'s rather than tidying.** The
+configuration [`U7`](#u7--which-server-serves-the-container-tree) settles resolves a path against the
+directory as well as the file, so an emptied `404/` left in the tree still matches: with no index
+inside it and directory listing off, `/404/` answers **403** instead of falling through to the miss
+document at 404. `R2`'s stated property survives that — 403 is not 200 — which is exactly why the
+clause had to be written down rather than left to the function: an invariant satisfied by a tree the
+design does not want is an invariant that cannot go red. The clause is stated over the **finished
+tree** rather than over one server's configuration, because what each of the two publication targets
+does with a surviving empty directory is that target's own behaviour, and `R2` is not the place to
+depend on either. The route declaration is unchanged and
 `missPath` still reads `/404/`: what changes is only where the emitted document ends up, which is
 `Artifact`'s business and not the route's.
 
@@ -1569,6 +1602,7 @@ export function assertDeploymentCandidateCurrent(
 
 export function assertSelfContained(
   documentHtml: string,
+  permitted: PermittedScripts,
 ): Result<null, VerificationError>;
 
 export function assertStyleAgreement(
@@ -1654,6 +1688,26 @@ signatures that close it are the two added above and `assertAttestation`'s chang
 names, and a parameter that cannot be absent cannot express it. The `attestation` job passes what it
 read from the run's approval record to `publish-release`, and `null` where there was none. The Pages
 preview does not call this function and does not depend on that job.
+
+**`assertSelfContained` took `documentHtml` alone until 2026-08-21 and now takes the document's
+permitted counts.** `permitted` **must never acquire a default value.** A default is necessarily the
+most permissive route's pair, and applying it to the miss document restores exactly the state this
+parameter was added to end: one JSON-LD block plus one inline script admitted on every document, so
+`V13`'s per-route counts and `ScriptElementPresent`'s miss clause could not fire and a miss document
+that had acquired an inline script passed. What the parameter buys is that the rule is checked over
+the **built output**, where `10-design.md` § *The emitted document is not self-contained* says it must
+be — *"what a bundler adds to a document is its business, not this design's"* — rather than over
+`bodyHtml`, where `tests/composition/miss.test.ts` and `tests/composition/apex.test.ts` hold the
+composition-level half and cannot see what the bundler added.
+
+**The route-to-counts mapping is the caller's and has no home in this module.** Keying it on
+`RoutePath` would make Verification import Adapter, an edge `V16` does not describe, and moving the
+table inside this function would put the per-route policy where the caller can no longer state it.
+So the pairs above are enumerated at the call site, against `EmittedDocument.relativePath`, which is a
+`string` rather than a `RoutePath` and admits no compiler check either. **Stated plainly so it is a
+limit rather than an assumption:** a fifth route added to `RoutePath` acquires no entry and nothing
+goes red — the type check `tests/types/route-path.type-check.ts` performs on the union is what would
+catch the addition, and the mapping is a separate edit a reader has to remember to make.
 
 **`assertContentPresent` covers the apex and is not extended to the two new routes.** `V3` exists to
 catch content that has come to depend on script execution, and neither the CV nor the portfolio
@@ -1855,7 +1909,7 @@ starts from a clean output directory rather than repairing it.
 | `MarkerInsertionPointMissing` | A document contains no `</head>` | the document | Fail the build |
 | `MarkerAlreadyPresent` | A document already carries a build marker before injection | the document | Fail the build. Artifact ran twice, or the package emitted a marker of its own |
 | `WriteFailed` | A copy, a rewrite, or the server-configuration write failed at the filesystem | the document, or `serverConfigFilename` | Fail the build |
-| `RemoveFailed` | Removing `missEmittedEntry` after the copy failed at the filesystem (`R2`) | `missEmittedEntry` | Fail the build. The tree would otherwise publish the miss composition at a 200 path, which is the defect the removal exists to prevent |
+| `RemoveFailed` | Removing `missEmittedEntry` after the copy failed at the filesystem, **or removing the directory that held it failed once the file's removal emptied it** (`R2`) | `missEmittedEntry` | Fail the build. The tree would otherwise publish the miss composition at a 200 path, or leave `/404/` answering from an empty directory — the two halves of the defect the removal exists to prevent. One code covers both because the caller's response is identical and the `entry` names the same position |
 
 ### Verification
 
@@ -1905,13 +1959,22 @@ export type VerificationError = {
 | `MarkerMismatch` | The served marker is a valid `CommitId` other than the expected one | Yes, within `deploymentPollRetry` — a cache or an in-flight publish | Keep polling; on exhaustion report `PollExhausted`. From `assertImageIdentity`, not retryable — the image is already built |
 | `PollExhausted` | `deploymentPollRetry` was consumed without an exact marker match | No | Report the deploy failed. **Announce no live URL** |
 | `UnexpectedRequest` | The browser capture recorded a load-triggered request other than the navigation document | No | Fail the gate, deploy nothing |
-| `ScriptElementPresent` | An emitted document contains a script element that is neither the permitted `application/ld+json` block nor `X10`'s single inline enhancement script — a `src` attribute on either, a second block of either kind, a third script element, any script element at all on the miss document, or either permitted element's own content containing a `</script` sequence in any case (`V13`, `X6`, `X10`) | No | Fail the build |
+| `ScriptElementPresent` | An emitted document contains a script element beyond what its own `PermittedScripts` admits — a `src` attribute on either permitted kind, a block of either kind past that document's count for it, an element of neither kind, an opening tag with no matching close, or either permitted element's own content containing a `</script` sequence in any case (`V13`, `X6`, `X10`). Because the counts are the document's rather than a fixed pair, **any** script element on the portfolio or the miss document raises it, and a second JSON-LD block raises it on the apex and the CV | No | Fail the build |
 | `LinkedStylesheetPresent` | An emitted document links a stylesheet rather than inlining it | No | Fail the build |
 | `ExternalAssetReference` | An emitted document references an asset by URL other than a data URI. Two things are not asset references and do not raise it: an outbound link, and the document's own `<link rel="canonical">`. The second is an exemption `A1` forces rather than a relaxation — `metadata.canonicalUrl` is required of every route, and it names the address of the document already loaded, so no browser fetches it. Without the exemption `V13` and `A1` would contradict each other on every document this design emits | No | Fail the build |
 | `ClassWithoutRule` | A class in a route's body has no selector in that route's stylesheet | No | Fail the build. **Never a warning** |
 | `SelectorWithoutUser` | A **class** selector in a route's stylesheet matches nothing in that route's body. The token block's `:root` rules carry no class selector and cannot raise it (`X4`) | No | Fail the build |
 | `RootMissDocumentAbsent` | `missRootEntry` is absent from the finished tree | No | Fail the build |
 | `MissEntryStillPresent` | `missEmittedEntry` survives into the finished tree, so the miss composition is reachable at `/404/` with a 200 (`R2`) | No | Fail the build. Artifact's removal did not run |
+
+**`R2`'s directory clause has no Verification signature, and that is deliberate.** `assertMissEntryRemoved`
+takes `readonly EmittedDocument[]`, and an `EmittedDocument` is a `relativePath` and an `html` — a
+shape that cannot see a directory at all, empty or otherwise. Widening it to carry the tree's shape
+would give every caller a parameter only one assertion reads. The clause is checked instead by a
+filesystem assertion in the build shard that already reads the finished tree, which cites the ruling of
+2026-08-21 in [`90-decisions.md`](90-decisions.md) the way its neighbours cite a criterion id. **Stated
+plainly so it is a limit rather than an assumption:** the directory half is not reachable through this
+module's surface and no error code names it.
 | `UnknownPathStatusWrong` | A unique unknown path answered with a status other than 404 | No | Fail the gate or report the deploy failed. A 200 here is a soft 404 |
 | `UnknownPathBodyWrong` | A unique unknown path answered 404 with a body other than the emitted miss document | No | Fail the gate or report the deploy failed |
 | `ServedBytesMismatch` | What the running image serves for `/` differs byte for byte from the emitted document | No | Fail the image gate. **Never push** |
@@ -2006,7 +2069,7 @@ where a separate module checks it, that is said in the row.
 | **A6** | All four routes are `LandingPageBodyRoute` values: none declares `entry`, `hydrate` or `noScript`, and the configuration declares no `styles`, `publicDir` or `allow`. Each route's stylesheet travels in its own `stylesheet` field | Adapter |
 | **A7** | No colour literal and no data URI is written in Adapter. `metadata.themeColor` is Presentation's `themeColor` and every `metadata.icons[].href` is Presentation's `iconDataUri`, by reference — the same rule `A1` applies to `origin`, applied to visual identity | Adapter |
 | **R1** | Every emitted document carries exactly one build marker, and it carries the commit being built | Artifact |
-| **R2** | `missRootEntry` is a byte-identical copy of the document the package emitted at `missEmittedEntry`, asserted at the copy; and `missEmittedEntry` is **absent** from the finished tree, so the miss document has exactly one published path and no host can serve it with a 200 | Artifact |
+| **R2** | `missRootEntry` is a byte-identical copy of the document the package emitted at `missEmittedEntry`, asserted at the copy; and `missEmittedEntry` is **absent** from the finished tree, **as is the directory that held it where removing the file leaves that directory empty**, so the miss document has exactly one published path and `/404/` resolves on no host — neither as a 200 directory index nor as the 403 an empty directory answers with. The directory clause was implicit until 2026-08-21 and is stated because the property it protects is not the file's: removing the file alone satisfies "no host can serve it with a 200" while leaving `/404/` answering, which is a path that still exists at a status the design never chose. Only the miss route's directory is removed — `/cv/` and `/portfolio/` are documents the site is for | Artifact |
 | **R3** | Artifact compiles nothing, bundles nothing and resolves no module; the only change it makes to a document is the marker | Artifact |
 | **R4** | The emitted server configuration resolves every unknown path to `missRootEntry` with status 404; sets no cookie, no cache-control directive chosen by application logic, and no tracking or rewrite header; and executes nothing per request. A response header that is an unconfigured byproduct of serving a static file over HTTP — a content-type, a content-length, a last-modified time, an entity tag, the server's own identifying header — is not a violation | Artifact |
 | **R5** | `missEmittedEntry` is the package's emitted entry for Adapter's `missPath` — checked against the emitted tree **before `R2`'s removal**, never assumed. A pairing asserted after the file is gone would assert nothing | Artifact |
@@ -2023,7 +2086,7 @@ where a separate module checks it, that is said in the row.
 | **V10** | The image tag equals the full commit id, and equals the marker the running image serves | Verification |
 | **V11** | For each of `/`, `/cv/` and `/portfolio/`, what the running image serves and what Pages serves are **each** byte-identical to that route's own emitted document. Both targets are compared, which is what makes the brief's "asserted rather than assumed" true of the pair rather than of one side of it. The endpoint is deliberately not compared — `V15` covers it with the marker and unknown-path pair instead, because a byte match across a proxy this repository does not own would fail on transport differences that are not divergence. It named `/` only while that was the only content route; since 2026-08-21 it names `/`, `/cv/` and `/portfolio/`, because checking one document and arguing the others from shared construction is the reasoning this same invariant already rejected once when it covered one target and argued the other | Verification |
 | **V12** | An unknown path returns status 404 carrying the emitted miss document, on **both** targets | Verification |
-| **V13** | No emitted document contains a linked stylesheet, an external asset reference, or a script element carrying a `src` attribute. The apex document contains **at most two** script elements — its inert `application/ld+json` block (`X6`) and `X10`'s single inline enhancement script; the **CV** document contains **exactly one**, its `Person` block; the **portfolio** and **miss** documents contain none. No document may contain more than its own count. Both permitted elements are inline and fetch nothing. Any `src` attribute on any script element fails, as does any script element that is neither of the two permitted. The rule was a blanket ban until 2026-08-07, narrowed then to admit a non-executing block because it forbade one on the ground that it forbade execution; it was widened again on 2026-08-10 to admit one executing but request-free enhancement script, on the reasoning that what is worth checking is what a document **fetches** and whether its content survives with scripting off — which `V2` and `V3` check directly, against a real browser and against built HTML — rather than whether anything executes at all | Verification |
+| **V13** | No emitted document contains a linked stylesheet, an external asset reference, or a script element carrying a `src` attribute. The apex document contains **at most two** script elements — its inert `application/ld+json` block (`X6`) and `X10`'s single inline enhancement script; the **CV** document contains **exactly one**, its `Person` block; the **portfolio** and **miss** documents contain none. No document may contain more than its own count. Both permitted elements are inline and fetch nothing. Any `src` attribute on any script element fails, as does any script element that is neither of the two permitted. The rule was a blanket ban until 2026-08-07, narrowed then to admit a non-executing block because it forbade one on the ground that it forbade execution; it was widened again on 2026-08-10 to admit one executing but request-free enhancement script, on the reasoning that what is worth checking is what a document **fetches** and whether its content survives with scripting off — which `V2` and `V3` check directly, against a real browser and against built HTML — rather than whether anything executes at all. **Its per-route half is checked by `assertSelfContained`, given that document's `PermittedScripts`** — before 2026-08-21 that function admitted one block of each kind on any document, so the counts and the miss clause were stated here and produced by nothing | Verification |
 | **V14** | No image tag is stated or implied until the push for that tag has succeeded and the tag resolves in the registry | Verification |
 | **V15** | After the registry push, the redeploy is triggered and the endpoint serves the pushed commit's marker, with a unique unknown path answering 404 carrying the emitted miss document, before anything claims the site is deployed. **A successful push is not a deployment.** Both checks reuse `pollForCommit` and `assertUnknownPathResponse` against the endpoint; the trigger itself is workflow configuration and has no surface here, on the same footing as the registry push | Verification |
 | **V16** | The module import graph is exactly the one *Public signatures*, `C1`, `C14`, `X2` and `A3` describe — checked over `src` plus Adapter's own file, with the edges observed by the caller. **`assertImportGraph` is declared above and has no implementation**; the graph is currently checked by `tests/content/import-graph.test.ts` against a test-local AST helper, which is the arrangement `assertImportGraph` was written to replace and has not yet. It is the checkable home for the three import rules carrying no other id: Presentation imports only `Branded`, Artifact imports only `CommitId`, `parseCommitId` and `Result`, and no repository module imports Verification | Verification |

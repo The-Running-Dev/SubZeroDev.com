@@ -8,22 +8,22 @@
     {
       "name": "Test",
       "status": "Passed",
-      "detail": "npm test (vitest run) — Test Files 39 passed (39); Tests 461 passed (461). Duration 8.07s."
+      "detail": "npm test (vitest run) — Test Files 39 passed (39); Tests 461 passed (461). Duration 13.10s."
     },
     {
       "name": "Interrogate the build artifact",
       "status": "Passed",
-      "detail": "npm run build with GITHUB_SHA=4f2465af26c59d441be68bac3c1004096366121e, then npx vitest run --config vitest.build.config.ts — Test Files 10 passed (10); Tests 54 passed (54). Duration 9.70s."
+      "detail": "GITHUB_SHA=ff0e54ecafa57bc7915c8f75222ba45073f0f41f npm run build, then npx vitest run --config vitest.build.config.ts — Test Files 10 passed (10); Tests 54 passed (54). Duration 9.37s."
     },
     {
       "name": "Image gate",
       "status": "Passed",
-      "detail": "docker build -t subzerodev-com:4f2465af26c59d441be68bac3c1004096366121e . ; docker run -d --name subzerodev-com -p 8080:80 subzerodev-com:4f2465af26c59d441be68bac3c1004096366121e ; SERVED_BASE_URL=http://localhost:8080 GITHUB_SHA=4f2465af26c59d441be68bac3c1004096366121e npm run image-gate — Test Files 1 passed (1); Tests 2 passed (2). Container removed after the run."
+      "detail": "docker build -t subzerodev-com:ff0e54ecafa57bc7915c8f75222ba45073f0f41f . ; docker run -d --name subzerodev-com -p 8080:80 subzerodev-com:ff0e54ecafa57bc7915c8f75222ba45073f0f41f ; SERVED_BASE_URL=http://localhost:8080 GITHUB_SHA=ff0e54ecafa57bc7915c8f75222ba45073f0f41f npm run image-gate — Test Files 1 passed (1); Tests 2 passed (2). Duration 994ms. Container removed after the run."
     },
     {
       "name": "Check links",
       "status": "Passed",
-      "detail": "npm run check-links (vitest run --config vitest.link-check.config.ts) — Test Files 1 passed (1); Tests 1 passed (1). Duration 1.75s."
+      "detail": "npm run check-links (vitest run --config vitest.link-check.config.ts) — Test Files 1 passed (1); Tests 1 passed (1). Duration 2.07s."
     }
   ]
 }
