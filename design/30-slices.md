@@ -45,9 +45,8 @@ Two rules bind a new slice, and they are why the landed set is shaped as it is:
   that bet rather than arguing it. `S6` could not move earlier: the package cannot be handed a body
   until there is a body, and `A4` requires both routes declared at once.
 
-**Issues are disabled on this repository**, so no slice here has a tracker item and `/track` has
-nothing to sync. Deferred work stays in [`90-decisions.md`](90-decisions.md) § *Open* instead. That is
-a standing condition, not a gap this document can close.
+**Issues were enabled on this repository on 2026-08-21** ([`90-decisions.md`](90-decisions.md) § *Open*).
+Each slice under [`## Outstanding`](#outstanding) has a tracker item, and `/track` syncs them.
 
 ---
 
