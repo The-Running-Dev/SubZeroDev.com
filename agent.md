@@ -62,6 +62,13 @@ and preferences belong in `AGENTS.md`.
   the primitive that needed it, live on both published targets, found only by a full
   re-read.** When a criterion restates a contract constraint, quote it; a paraphrase in a
   test name is where a rule stops being the rule.
+- **A slice merges when its pull request merges; nothing else notices.** Two slices shipped
+  and stayed under `## Outstanding` with every tracker checkbox unticked. The next planning
+  pass then wrote a run order for work already in the tree — naming both in future tense —
+  and the tracker sync opened issues for criteria the suite already covered. **Cost: a
+  planning pass and a tracker sync both written against a stale picture, found only by a
+  full document-versus-tree read.** A merged slice needs its landed row and its issue closed
+  in the session that merges it, not at the next reconciliation.
 - **A stale cross-reference is invisible.** Section numbers cited across documents rot
   silently when a document is restructured. Positional numbering makes this worse: inserting
   a document between existing ones means renumbering everything after it and rewriting every

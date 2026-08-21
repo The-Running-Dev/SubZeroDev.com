@@ -36,7 +36,8 @@ export const origin = "https://subzerodev.com" as const;
 // values this Adapter declares, so a third route path fails typecheck rather
 // than relying on review (issue #52). `satisfies` checks membership without
 // widening past the exact literal each constant carries per the contract's
-// own signatures (design/20-contract.md:639-641).
+// own signatures (design/20-contract.md § Public signatures § Adapter — cited
+// by section, never by line: line numbers rot on every amendment).
 export type RoutePath = "/" | "/404/";
 export const apexPath = "/" as const satisfies RoutePath;
 export const missPath = "/404/" as const satisfies RoutePath;

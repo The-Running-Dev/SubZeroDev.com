@@ -3,27 +3,27 @@
     {
       "name": "Typecheck",
       "status": "Passed",
-      "detail": "npm run typecheck (tsc --noEmit) — exit 0, no diagnostics. Covers the type-level assertions in tests/types/, including cv-portfolio.type-check.ts and route-path.type-check.ts."
+      "detail": "npm run typecheck (tsc --noEmit) — no output, clean exit."
     },
     {
       "name": "Test",
       "status": "Passed",
-      "detail": "npm test (vitest run) — Test Files 39 passed (39), Tests 461 passed (461), duration 10.56s. The offline content gate, derivations, composition and verification unit assertions."
+      "detail": "npm test (vitest run) — Test Files 39 passed (39); Tests 461 passed (461). Duration 8.07s."
     },
     {
       "name": "Interrogate the build artifact",
       "status": "Passed",
-      "detail": "npm run build then npx vitest run --config vitest.build.config.ts, both with GITHUB_SHA set to 241d15d24f81786f609883da3bdd1556da88960e — Test Files 10 passed (10), Tests 54 passed (54), duration 17.19s. Includes the real-browser request capture (V2). First invocation without GITHUB_SHA and without the preceding build failed with 'CommitIdMalformed (entry: -): \"\" is not a forty-character lowercase hex commit id.' — that was an incomplete local translation of the CI step, not a repository failure; CI sets GITHUB_SHA itself and runs npm run build first."
+      "detail": "npm run build with GITHUB_SHA=4f2465af26c59d441be68bac3c1004096366121e, then npx vitest run --config vitest.build.config.ts — Test Files 10 passed (10); Tests 54 passed (54). Duration 9.70s."
     },
     {
       "name": "Image gate",
       "status": "Passed",
-      "detail": "docker build, docker run -d -p 8080:80, wait for :8080, then npm run image-gate with SERVED_BASE_URL=http://localhost:8080 — Test Files 1 passed (1), Tests 2 passed (2), duration 1.59s. Container removed afterwards. First invocation without the container failed with ECONNREFUSED on 127.0.0.1:8080 and ::1:8080 — again an incomplete translation, since CI starts the container in unflagged plumbing steps before the flagged gate."
+      "detail": "docker build -t subzerodev-com:4f2465af26c59d441be68bac3c1004096366121e . ; docker run -d --name subzerodev-com -p 8080:80 subzerodev-com:4f2465af26c59d441be68bac3c1004096366121e ; SERVED_BASE_URL=http://localhost:8080 GITHUB_SHA=4f2465af26c59d441be68bac3c1004096366121e npm run image-gate — Test Files 1 passed (1); Tests 2 passed (2). Container removed after the run."
     },
     {
       "name": "Check links",
       "status": "Passed",
-      "detail": "npm run check-links (vitest run --config vitest.link-check.config.ts) — Test Files 1 passed (1), Tests 1 passed (1), duration 4.30s, networked. It passes only because tests/verification/live/link-check.test.ts still carries the informal .filter() removing https://derivco.com; the gate is green but narrower than V4 as written. Closing that is S19's work and is not done on this branch."
+      "detail": "npm run check-links (vitest run --config vitest.link-check.config.ts) — Test Files 1 passed (1); Tests 1 passed (1). Duration 1.75s."
     }
   ]
 }

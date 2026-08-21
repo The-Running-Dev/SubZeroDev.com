@@ -6,17 +6,19 @@
 // the ecosystem list and force a `stage`, a `line` and a `question` onto
 // something that is none of those.
 //
-// It produces no `ResolvedHome`, so `checkLinks` does not reach it and it sits
-// outside `V4` — the one outbound link on the page that no gate checks. The
-// contract states that cost rather than hiding it; see `20-contract.md`
-// § Content and `90-decisions.md`, 2026-08-07.
+// It produces no `ResolvedHome`, and until S14 that put it outside `V4` — the
+// one outbound link on the page no gate checked. It is inside `V4` now:
+// `checkedLinks` carries it directly rather than through `resolvedHomes`, so
+// the 2026-08-07 ruling that accepted the exposure is reopened and closed. See
+// `20-contract.md` § Content and `90-decisions.md`, 2026-08-07 and 2026-08-21.
 
 import type { AbsoluteUrl } from "./types";
 
-// `sourceUrl` produces no `ResolvedHome`, so `checkLinks` never reaches it (see
-// the module comment above). This is the one check that stands in its place:
-// a malformed or non-https literal throws at import time instead of reaching
-// the rendered page unnoticed.
+// This guard is unaffected by `V4`'s widening: it checks the literal's *shape*
+// at module load, before any network exists, while `V4` checks whether the
+// address *answers* — two faults, caught at two different times. A malformed or
+// non-https literal therefore fails the build immediately rather than failing a
+// networked gate minutes later.
 function absoluteHttpsUrl(value: string): AbsoluteUrl {
   let url: URL;
   try {

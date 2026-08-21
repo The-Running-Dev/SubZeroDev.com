@@ -5,6 +5,15 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
+- **`assertSelfContained` must take the emitted document's permitted script counts, and `R2` must
+  name the `404/` directory removal.** Both are contract amendments ruled on 2026-08-21 by
+  `/reconcile` — the entries are below — and neither is stated by any slice. `/contract` writes them
+  at `opus`/`high`; the `assertSelfContained` change then rides with
+  [`S16`](https://github.com/The-Running-Dev/SubZeroDev.com/issues/96), whose `S16.5` is written
+  against the unamended signature and needs the counts added, and the `R2` clause needs a slice of its
+  own or a `Done when` on the amendment. Staged rather than left in the log because an amendment
+  landing outside an open slice has no carrier and nothing goes red — see [`agent.md`](../agent.md).
+
 - **Three kit commands cite `design/10-design.md` § *Record*, which this repository's `10-design.md`
   does not have.** `.claude/commands/reconcile.md`, `contract.md` and `design.md` each gate that
   citation on `design/state/` existing — and it does exist here, as `/track`'s WorkRef mirror written
@@ -49,6 +58,97 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-21 — `S14` and `S15` have landed; `30-slices.md` is the stale half
+
+Context: `S14` merged as [#90](https://github.com/The-Running-Dev/SubZeroDev.com/pull/90) and `S15` as
+[#92](https://github.com/The-Running-Dev/SubZeroDev.com/pull/92), and both are in the tree —
+`checkedLinks`, `cvOutboundLinks`, `CheckedLink`, `checkLinks`'s widened parameter, the two content
+documents, their schemas and validators, and the nine new `ContentErrorCode` members. Neither was ever
+marked landed. `30-slices.md`'s `## Landed` index still reads *"Twelve slices have landed"*, both sit
+under `## Outstanding`, and that section's preamble — written by `/slices` at `7c5c354`, **after both
+merged** — describes them in future tense: *"`S14` widens the link gate, `S15` commits and validates
+the two content documents"*. Their own index-editing criteria are already satisfied inside that index:
+the `S1` row names `S15`'s nine error codes (`S15.13`) and the `S3` row names `S14`'s supersession
+(`S14.8`). [#94](https://github.com/The-Running-Dev/SubZeroDev.com/issues/94) and
+[#95](https://github.com/The-Running-Dev/SubZeroDev.com/issues/95) are open with every `Done when` box
+unticked. `30-slices.md` § *Next* hands this comparison to `/reconcile` by name, which is why it is
+adjudicated here rather than deferred.
+
+Chosen: **the tree is right and the slices document is stale.** `S14` and `S15` move to `## Landed`
+with supersession rows, the `## Outstanding` preamble becomes five slices — `S16` through `S20` — and
+stops describing landed work as forthcoming. That edit is `/slices`', at `opus`/`high`; this command
+does not touch `30-slices.md`, on its own scope rule. `/track` then ticks the two issues' criteria and
+closes them.
+
+Rejected: **holding `S15` outstanding because `S15.2` has no assertion** — nothing reads the committed
+`site/sources.public.yml`; `tests/build/json-source.test.ts` writes its own fixture map carrying only
+`projects` and `testimonials`. Declined because the substance is covered by `S15.12`: the build
+validates all four documents and would fail if either source were undeclared, so what is missing is
+the field-by-field form of a check that already holds, not the check. **Opening an issue for `S15.2`
+alongside the move** — declined on the same reasoning, against a backlog of twenty-two.
+
+Reversibility: cheap. An index row, a preamble sentence and two issue states.
+
+---
+
+### 2026-08-21 — `assertSelfContained` gains the emitted document's permitted script counts
+
+Context: `V13` states script counts per route — the apex at most two, the CV exactly one, the
+portfolio and the miss none — and `ScriptElementPresent` names *"any script element at all on the miss
+document"* among its raising conditions. Its only producer takes `documentHtml` alone and permits one
+`application/ld+json` block plus one untyped inline script in **any** document, so neither the
+per-route counts nor the miss clause can fire. `tests/build/emitted-document.test.ts` runs it over the
+emitted `404.html`, which would therefore pass a miss document that had acquired an inline script.
+What is actually held is held over `bodyHtml`, by `tests/composition/miss.test.ts` and
+`tests/composition/apex.test.ts`. The miss clause predates the four-route amendment; that amendment
+extended the same unenforceable shape to two more routes. Nothing tracks it.
+
+Chosen: **the code is the defect.** `assertSelfContained` takes the document's permitted counts, so
+the rule is checked where `10-design.md` § *The emitted document is not self-contained* says it must
+be — over the built output, because *"what a bundler adds to a document is its business, not this
+design's"*, and a composition-level assertion over `bodyHtml` cannot see it. This is a Verification
+signature change, so `/contract` amends first at `opus`/`high` and a slice implements; `S16` already
+touches every call site and rewrites `S16.5` against the emitted CV document, so it can ride there.
+
+Rejected: **stating the limit in the contract instead** — naming `X6`/`X10` and the build shard as
+where `V13`'s per-route half is maintained and dropping the miss clause from `ScriptElementPresent`,
+the honest-limit shape `V16` already uses for `assertImportGraph`. Cheaper, and declined because the
+miss document is the one route with no other guard over its emitted form, so the limit would be
+permanent on exactly the document that can least afford it. **Deferring the choice to `S16`** —
+declined because the gap is live now and `S16` inherits it either way.
+
+Reversibility: cheap. One parameter and its call sites.
+
+---
+
+### 2026-08-21 — `finalizeArtifact`'s removal of the emptied `404/` directory is `R2`'s, not an implementation detail
+
+Context: `finalizeArtifact` removes the directory that held `missEmittedEntry` as well as the file,
+added in [#60](https://github.com/The-Running-Dev/SubZeroDev.com/pull/60) and reasoned only in a code
+comment. It is load-bearing: with the directory left behind, nginx's `try_files $uri $uri/` matches it
+and — with no index inside and autoindex off — answers `/404/` with **403** rather than falling
+through to the miss document at 404. `R2` as written is satisfied by the file removal alone, since its
+stated property is that *no host can serve it with a 200*, and 403 is not 200. So nothing in `design/`
+would notice if the `rmdir` were dropped. It survived three reconciliation passes unrecorded. The
+assumption it invalidates is the design's own: that removing the emitted document was sufficient to
+stop `/404/` resolving.
+
+Chosen: **`R2` gains the directory clause and this entry carries the reasoning.** The clause is what
+makes the behaviour something a check can go red on rather than a habit inside one function; the entry
+is what stops the next author reading the `rmdir` as tidying. `R2` is an invariant, so the amendment
+is `/contract`'s at `opus`/`high`.
+
+Rejected: **a decision entry alone, leaving `R2` unchanged** — cheaper and it stays inside this pass
+with no `/contract` hop, declined because a log records why something was done and not that it must
+stay done, which is the exact distinction that let this go unrecorded for two weeks. **Amending `R2`
+and adding an assertion over the finished tree in the same breath** — the more rigorous option and not
+declined on merit: it is the natural `Done when` for the amendment, and it belongs to the slice that
+implements the clause rather than to the ruling that creates it.
+
+Reversibility: cheap. One clause and one entry.
 
 ---
 
