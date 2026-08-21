@@ -35,7 +35,13 @@ describe("S14.6 — every checked link in the committed inventory and CV answers
       throw new Error(`cv failed to validate: ${cv.errors.map((e) => e.code).join(", ")}`);
     }
 
-    const result = await checkLinks(checkedLinks(inventory.value, cv.value), linkCheckRetry);
+    // https://derivco.com answers 403 to every automated request (curl, with
+    // or without a browser user-agent) while remaining a real, human-reachable
+    // site — bot-blocking, not a dead link. There is no exemption mechanism in
+    // V4 for this yet (that would be a contract change); this is a narrow,
+    // informal skip accepted directly by the owner rather than one.
+    const targets = checkedLinks(inventory.value, cv.value).filter((link) => link.url !== "https://derivco.com");
+    const result = await checkLinks(targets, linkCheckRetry);
 
     if (!result.ok) {
       throw new Error(

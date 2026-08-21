@@ -190,7 +190,7 @@
     },
     {
       "title": "QuickSync",
-      "link": "https://github.com/The-Running-Dev/QuickSync",
+      "link": "https://github.com/The-Running-Dev",
       "description": "Windows desktop utility for comparing and synchronizing folders using CRC32 checksums",
       "tech": [".NET", "C#", "WinForms", "File Management"],
       "year": 2025
