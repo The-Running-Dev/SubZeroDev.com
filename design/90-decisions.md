@@ -5,15 +5,17 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-- **`assertSelfContained` must take the emitted document's permitted script counts, and `R2` must
-  name the `404/` directory removal.** Both are contract amendments ruled on 2026-08-21 by
-  `/reconcile` — the entries are below — and neither is stated by any slice. `/contract` writes them
-  at `opus`/`high`; the `assertSelfContained` change then rides with
+- **`assertSelfContained`'s permitted script counts and `R2`'s `404/` directory clause are written
+  into the contract and are not yet in the tree.** `/contract` made both edits on 2026-08-21 —
+  `PermittedScripts` and the widened signature, and `R2`'s directory clause with its restated property;
+  the four entries below are the two `/reconcile` rulings and the two additions `/contract` made
+  beyond them. What remains is implementation. The `assertSelfContained` change rides with
   [`S16`](https://github.com/The-Running-Dev/SubZeroDev.com/issues/96), whose `S16.5` is written
-  against the unamended signature and needs the counts added, and the `R2` clause is carried by a
-  `Done when` on **this item's own issue** rather than by a slice — ruled 2026-08-21, entry below.
-  Staged rather than left in the log because an amendment
-  landing outside an open slice has no carrier and nothing goes red — see [`agent.md`](../agent.md).
+  against the unamended signature and needs the counts added; the `R2` clause is carried by a
+  `Done when` on **this item's own issue** rather than by a slice — ruled 2026-08-21, entry below —
+  and that assertion goes in the build shard that reads the finished tree, since `EmittedDocument`
+  cannot see a directory. Staged rather than left in the log because an amendment landing outside an
+  open slice has no carrier and nothing goes red — see [`agent.md`](../agent.md).
 
 - **Three kit commands cite `design/10-design.md` § *Record*, which this repository's `10-design.md`
   does not have.** `.claude/commands/reconcile.md`, `contract.md` and `design.md` each gate that
@@ -59,6 +61,64 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 2026-08-07; the two before it became
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
+
+---
+
+### 2026-08-21 — `assertSelfContained`'s new parameter is a pair of ceilings, supplied by the caller
+
+Context: the entry below rules that `assertSelfContained` takes the emitted document's permitted script
+counts, and bounds the change at *"one parameter and its call sites"*. It does not settle the
+parameter's shape, and three shapes were available. `V13` states the counts per route, so the obvious
+move is to key them on `RoutePath` — which is the one shape the tree forbids.
+
+Chosen: **`PermittedScripts`, `{ ldJson: 0 | 1; enhancement: 0 | 1 }`, enumerated at the call site.**
+The fields are ceilings, not a description: an assertion over built output can hold *no more than this
+count*, while *exactly one* is `X6`'s presence claim and belongs to Composition, which is where it is
+already held. The literal `0 | 1` is deliberate — neither `X6` nor `X10` admits a second element of
+either kind on any route, so a count above one is not a value the type should be able to express. The
+parameter is stated as one that **must never acquire a default**, because a default is necessarily the
+apex's pair and applying it to the miss document restores exactly the permissiveness the amendment
+exists to end.
+
+Rejected: **keying the counts on `RoutePath`**, either as a `Readonly<Record<RoutePath,
+PermittedScripts>>` constant or by taking the route as the parameter. Strictly better on
+exhaustiveness — a `Record` over the union fails to compile when a fifth route is added without an
+entry, which is the one thing the chosen shape gives up. Declined because `RoutePath` is Adapter's, so
+either form makes `src/verification` import Adapter: an edge `V16` does not describe, added to check a
+rule rather than because the module needs it. Declaring the type in Content to route around the edge
+was declined in turn — it moves a Verification concept into the module every other module imports, to
+avoid an import nothing else wanted. **A count of `number`** — declined as above. The exhaustiveness
+this costs is written into the contract as a stated limit rather than left to be discovered.
+
+Reversibility: cheap. The type is two fields and the mapping is one literal per call site; if a fifth
+route ever arrives, the `Record` form is a contained change to this decision.
+
+---
+
+### 2026-08-21 — `R2`'s property widens from "no 200" to "`/404/` resolves on no host"
+
+Context: the entry below rules that `R2` gains the `404/` directory clause. Adding the clause alone
+leaves the invariant's *stated property* unchanged — *"no host can serve it with a 200"* — and that
+property is what made the gap invisible in the first place, since the 403 an emptied directory answers
+with satisfies it. A clause whose own invariant does not require it is a clause the next reconciliation
+reads as redundant.
+
+Chosen: **the property is restated as `/404/` resolving on no host, neither as a 200 directory index
+nor as the 403 an empty directory answers with**, and `RemoveFailed` covers both removals under one
+code. One code because the caller's response is identical — fail the build — and the `entry` names the
+same position, so a second code would distinguish two failures nothing treats differently. The clause
+is stated over the **finished tree** rather than over the `nginx` configuration `U7` settles, since
+what each publication target does with a surviving empty directory is that target's behaviour and not
+something `R2` should depend on.
+
+Rejected: **adding the clause and leaving the property as written** — literally what the ruling below
+says, and declined because it reproduces the defect: the tree would satisfy `R2` with the `rmdir`
+deleted, which is the state that survived three reconciliation passes unrecorded. **A second error
+code for the directory removal** — declined on the reasoning above. **Naming the 403 as the forbidden
+status** rather than "resolves on no host" — declined because it writes one server's behaviour into an
+invariant about a tree, and the next server answers differently.
+
+Reversibility: cheap. One clause, one restated property, one error-row sentence.
 
 ---
 
