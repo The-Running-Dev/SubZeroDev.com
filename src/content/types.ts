@@ -104,3 +104,106 @@ export type ContaminationNode = {
 };
 
 export type ContaminationForest = readonly ContaminationNode[];
+
+export type CvLink = {
+  readonly label: string;
+  readonly href: AbsoluteUrl;
+};
+
+export type CvRole = {
+  readonly company: string;
+  readonly title: string;
+  readonly period: string;
+  readonly location: string;
+  readonly website?: AbsoluteUrl;
+  readonly summary: string;
+  readonly achievements: readonly string[];
+  readonly tech: readonly string[];
+};
+
+export type CvEducation = {
+  readonly school: string;
+  readonly degree: string;
+  readonly details: string;
+};
+
+export type CvProject = {
+  readonly title: string;
+  readonly link: AbsoluteUrl;
+  readonly description: string;
+  readonly tech: readonly string[];
+  readonly year: Year;
+};
+
+export type CvOpenSource = {
+  readonly title: string;
+  readonly link?: AbsoluteUrl;
+  readonly description: string;
+  readonly impact: string;
+  readonly tech: readonly string[];
+};
+
+export type CvEra = {
+  readonly period: string;
+  readonly focus: string;
+  readonly projects: readonly string[];
+};
+
+// The raw, pre-validation shape a `CvDocument` parses into — array fields are
+// deliberately plain here (not the non-empty tuple `validateCv`'s CvData
+// promises) since the schema that produces this type allows empty arrays;
+// `validateCv`'s `checkCvCollection` is what actually enforces non-emptiness.
+export type CvDocument = {
+  readonly header: {
+    readonly name: string;
+    readonly title: string;
+    readonly email: string;
+    readonly phone: string;
+    readonly links: readonly CvLink[];
+  };
+  readonly about: { readonly title: string; readonly body: string };
+  readonly badges: readonly string[];
+  readonly chips: readonly string[];
+  readonly timelineTitle: string;
+  readonly roles: readonly CvRole[];
+  readonly educationTitle: string;
+  readonly education: readonly CvEducation[];
+  readonly projectsTitle: string;
+  readonly projects: readonly CvProject[];
+  readonly openSourceTitle: string;
+  readonly openSource: readonly CvOpenSource[];
+  readonly timelineProjectsTitle: string;
+  readonly timelineProjects: readonly CvEra[];
+  readonly quote: string;
+};
+
+// The one value only `validateCv` can produce.
+export type CvData = Branded<CvDocument, "CvData">;
+
+export type TechNode = {
+  readonly name: string;
+  readonly children?: readonly TechNode[];
+};
+
+export type PortfolioCategory = {
+  readonly category: string;
+  readonly icon: string;
+  readonly description: string;
+};
+
+export type PortfolioStat = {
+  readonly value: string;
+  readonly label: string;
+};
+
+// The raw, pre-validation shape — see the CvDocument comment above; the same
+// reasoning applies here.
+export type PortfolioDocument = {
+  readonly header: { readonly title: string; readonly subtitle: string };
+  readonly technologies: readonly TechNode[];
+  readonly projects: readonly PortfolioCategory[];
+  readonly stats: readonly PortfolioStat[];
+};
+
+// The one value only `validatePortfolio` can produce.
+export type PortfolioData = Branded<PortfolioDocument, "PortfolioData">;

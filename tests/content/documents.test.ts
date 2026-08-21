@@ -1,8 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { projectsDocumentValidator, testimonialsDocumentValidator } from "../../src/content";
+import {
+  cvDocumentValidator,
+  portfolioDocumentValidator,
+  projectsDocumentValidator,
+  testimonialsDocumentValidator,
+} from "../../src/content";
 import type { BuildContext, CommitId, Year } from "../../src/content";
-import { rawProjectsDocument, rawTestimonialsDocument } from "../helpers/site-data";
+import {
+  rawCvDocument,
+  rawPortfolioDocument,
+  rawProjectsDocument,
+  rawTestimonialsDocument,
+} from "../helpers/site-data";
 
 const context: BuildContext = {
   commit: "a".repeat(40) as CommitId,
@@ -13,6 +23,53 @@ describe("the committed JSON documents", () => {
   it("decode successfully through their site-owned validators", () => {
     expect(projectsDocumentValidator(context)(rawProjectsDocument).ok).toBe(true);
     expect(testimonialsDocumentValidator(rawTestimonialsDocument).ok).toBe(true);
+  });
+});
+
+describe("S15.1/S15.3 — the CV and portfolio documents", () => {
+  it("carry version 1 and a non-empty provenance string naming their source", () => {
+    expect(rawCvDocument.version).toBe(1);
+    expect(rawCvDocument.provenance).toBe("Portfolio/config/cvData.yml");
+    expect(rawPortfolioDocument.version).toBe(1);
+    expect(rawPortfolioDocument.provenance).toBe("Docusaurus-Template/data/portfolioData.json");
+  });
+
+  it("projects.json and testimonials.json carry no provenance field", () => {
+    expect(rawProjectsDocument.provenance).toBeUndefined();
+    expect(rawTestimonialsDocument.provenance).toBeUndefined();
+  });
+
+  it("decode successfully through their site-owned validators (positive count: 2)", () => {
+    expect(cvDocumentValidator(context)(rawCvDocument).ok).toBe(true);
+    expect(portfolioDocumentValidator(rawPortfolioDocument).ok).toBe(true);
+  });
+});
+
+describe("S15.1 — a fixture with provenance absent fails the schema", () => {
+  it("rejects a CV document with no provenance field", () => {
+    const { provenance: _provenance, ...withoutProvenance } = rawCvDocument as Record<string, unknown>;
+    expect(cvDocumentValidator(context)(withoutProvenance).ok).toBe(false);
+  });
+
+  it("rejects a portfolio document with no provenance field", () => {
+    const { provenance: _provenance, ...withoutProvenance } = rawPortfolioDocument as Record<string, unknown>;
+    expect(portfolioDocumentValidator(withoutProvenance).ok).toBe(false);
+  });
+});
+
+describe("S15.4 — CV and portfolio document structure (negative count: 4)", () => {
+  it.each([
+    ["an unsupported version", { ...rawCvDocument, version: 2 }],
+    ["an unknown envelope field", { ...rawCvDocument, extra: true }],
+  ])("rejects the CV document with %s", (_label, document) => {
+    expect(cvDocumentValidator(context)(document).ok).toBe(false);
+  });
+
+  it.each([
+    ["an unsupported version", { ...rawPortfolioDocument, version: 2 }],
+    ["an unknown envelope field", { ...rawPortfolioDocument, extra: true }],
+  ])("rejects the portfolio document with %s", (_label, document) => {
+    expect(portfolioDocumentValidator(document).ok).toBe(false);
   });
 });
 
@@ -60,6 +117,22 @@ describe("testimonials document structure", () => {
     ["a malformed optional field", { version: 1, testimonials: [{ quote: "Fine.", author: "Someone", role: 1 }] }],
   ])("rejects %s", (_label, document) => {
     expect(testimonialsDocumentValidator(document).ok).toBe(false);
+  });
+});
+
+describe("S15.10 — neither committed document carries an image URL, icon-font token or src", () => {
+  const cvText = JSON.stringify(rawCvDocument);
+  const portfolioText = JSON.stringify(rawPortfolioDocument);
+
+  it.each([
+    ["cv.json", () => cvText],
+    ["portfolio.json", () => portfolioText],
+  ])("%s carries no \"src\" key, no shields.io badge and no icon-font token", (_label, text) => {
+    const raw = text();
+    expect(raw).not.toContain('"src"');
+    expect(raw).not.toContain("shields.io");
+    expect(raw).not.toMatch(/\bfa[A-Z]\w*/); // e.g. faRocket
+    expect(raw).not.toMatch(/\bfa-[a-z0-9-]+/); // e.g. fa-rocket, fas fa-rocket
   });
 });
 

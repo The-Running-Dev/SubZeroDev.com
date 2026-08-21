@@ -9,10 +9,15 @@
 import type { ContentError, ContentErrorCode } from "./errors";
 import type {
   BuildContext,
+  CvData,
+  CvDocument,
   Inventory,
+  PortfolioData,
+  PortfolioDocument,
   Project,
   ProjectId,
   Result,
+  TechNode,
   Testimonial,
   Testimonials,
 } from "./types";
@@ -57,6 +62,45 @@ function resolvesWithinOrigin(path: string, origin: string): boolean {
     return new URL(path, origin).origin === origin;
   } catch {
     return false;
+  }
+}
+
+function checkYear(
+  year: number,
+  path: string,
+  context: BuildContext,
+  projectId: ProjectId | null,
+  codes: { readonly invalid: ContentErrorCode; readonly afterBuild: ContentErrorCode },
+  errors: ContentError[],
+): void {
+  if (!Number.isInteger(year) || year < 1000 || year > 9999) {
+    errors.push(error(codes.invalid, projectId, path, `${path} ${year} is not a four-digit integer.`));
+  } else if (year > context.utcYear) {
+    errors.push(
+      error(codes.afterBuild, projectId, path, `${path} ${year} is after the build's UTC year ${context.utcYear}.`),
+    );
+  }
+}
+
+function checkRequiredString(
+  value: string,
+  path: string,
+  code: ContentErrorCode,
+  errors: ContentError[],
+): void {
+  if (value.trim() === "") {
+    errors.push(error(code, null, path, `${path} is empty after trimming.`));
+  }
+}
+
+function checkNonEmptyCollection(
+  list: readonly unknown[],
+  path: string,
+  code: ContentErrorCode,
+  errors: ContentError[],
+): void {
+  if (list.length === 0) {
+    errors.push(error(code, null, path, `${path} has no entries.`));
   }
 }
 
@@ -201,25 +245,14 @@ export function validateInventory(
       );
     }
 
-    if (!Number.isInteger(project.year) || project.year < 1000 || project.year > 9999) {
-      errors.push(
-        error(
-          "InvalidYear",
-          project.id,
-          "year",
-          `year ${project.year} is not a four-digit integer.`,
-        ),
-      );
-    } else if (project.year > context.utcYear) {
-      errors.push(
-        error(
-          "YearAfterBuild",
-          project.id,
-          "year",
-          `year ${project.year} is after the build's UTC year ${context.utcYear}.`,
-        ),
-      );
-    }
+    checkYear(
+      project.year,
+      "year",
+      context,
+      project.id,
+      { invalid: "InvalidYear", afterBuild: "YearAfterBuild" },
+      errors,
+    );
 
     if (project.name.trim() === "") {
       errors.push(error("EmptyField", project.id, "name", "name is empty after trimming."));
@@ -339,4 +372,205 @@ export function validateTestimonials(
   }
 
   return { ok: true, value: testimonials as Testimonials };
+}
+
+function requiredStringChecker(
+  code: ContentErrorCode,
+): (value: string, path: string, errors: ContentError[]) => void {
+  return (value, path, errors) => checkRequiredString(value, path, code, errors);
+}
+
+function nonEmptyCollectionChecker(
+  code: ContentErrorCode,
+): (list: readonly unknown[], path: string, errors: ContentError[]) => void {
+  return (list, path, errors) => checkNonEmptyCollection(list, path, code, errors);
+}
+
+const checkCvRequiredString = requiredStringChecker("CvFieldEmpty");
+const checkCvCollection = nonEmptyCollectionChecker("CvCollectionEmpty");
+
+function checkCvUrl(value: string, path: string, errors: ContentError[]): void {
+  if (value !== value.trim() || !isAbsoluteHttpsUrl(value)) {
+    errors.push(error("CvUrlInvalid", null, path, `${path} "${value}" is not an https absolute URL.`));
+  }
+}
+
+function checkCvYear(year: number, path: string, context: BuildContext, errors: ContentError[]): void {
+  checkYear(year, path, context, null, { invalid: "CvYearInvalid", afterBuild: "CvYearAfterBuild" }, errors);
+}
+
+export function validateCv(cv: CvDocument, context: BuildContext): Result<CvData, ContentError> {
+  const errors: ContentError[] = [];
+
+  checkCvRequiredString(cv.header.name, "header.name", errors);
+  checkCvRequiredString(cv.header.title, "header.title", errors);
+  checkCvRequiredString(cv.header.email, "header.email", errors);
+  checkCvRequiredString(cv.header.phone, "header.phone", errors);
+  checkCvCollection(cv.header.links, "header.links", errors);
+  cv.header.links.forEach((link, i) => {
+    checkCvRequiredString(link.label, `header.links[${i}].label`, errors);
+    checkCvUrl(link.href, `header.links[${i}].href`, errors);
+  });
+
+  checkCvRequiredString(cv.about.title, "about.title", errors);
+  checkCvRequiredString(cv.about.body, "about.body", errors);
+
+  checkCvCollection(cv.badges, "badges", errors);
+  cv.badges.forEach((badge, i) => checkCvRequiredString(badge, `badges[${i}]`, errors));
+
+  checkCvCollection(cv.chips, "chips", errors);
+  cv.chips.forEach((chip, i) => checkCvRequiredString(chip, `chips[${i}]`, errors));
+
+  checkCvRequiredString(cv.timelineTitle, "timelineTitle", errors);
+
+  checkCvCollection(cv.roles, "roles", errors);
+  cv.roles.forEach((role, i) => {
+    const p = `roles[${i}]`;
+    checkCvRequiredString(role.company, `${p}.company`, errors);
+    checkCvRequiredString(role.title, `${p}.title`, errors);
+    checkCvRequiredString(role.period, `${p}.period`, errors);
+    checkCvRequiredString(role.location, `${p}.location`, errors);
+    if (role.website !== undefined) checkCvUrl(role.website, `${p}.website`, errors);
+    checkCvRequiredString(role.summary, `${p}.summary`, errors);
+    checkCvCollection(role.achievements, `${p}.achievements`, errors);
+    role.achievements.forEach((a, j) => checkCvRequiredString(a, `${p}.achievements[${j}]`, errors));
+    checkCvCollection(role.tech, `${p}.tech`, errors);
+    role.tech.forEach((t, j) => checkCvRequiredString(t, `${p}.tech[${j}]`, errors));
+  });
+
+  checkCvRequiredString(cv.educationTitle, "educationTitle", errors);
+  checkCvCollection(cv.education, "education", errors);
+  cv.education.forEach((edu, i) => {
+    const p = `education[${i}]`;
+    checkCvRequiredString(edu.school, `${p}.school`, errors);
+    checkCvRequiredString(edu.degree, `${p}.degree`, errors);
+    checkCvRequiredString(edu.details, `${p}.details`, errors);
+  });
+
+  checkCvRequiredString(cv.projectsTitle, "projectsTitle", errors);
+  checkCvCollection(cv.projects, "projects", errors);
+  cv.projects.forEach((proj, i) => {
+    const p = `projects[${i}]`;
+    checkCvRequiredString(proj.title, `${p}.title`, errors);
+    checkCvUrl(proj.link, `${p}.link`, errors);
+    checkCvRequiredString(proj.description, `${p}.description`, errors);
+    checkCvCollection(proj.tech, `${p}.tech`, errors);
+    proj.tech.forEach((t, j) => checkCvRequiredString(t, `${p}.tech[${j}]`, errors));
+    checkCvYear(proj.year, `${p}.year`, context, errors);
+  });
+
+  checkCvRequiredString(cv.openSourceTitle, "openSourceTitle", errors);
+  checkCvCollection(cv.openSource, "openSource", errors);
+  cv.openSource.forEach((os, i) => {
+    const p = `openSource[${i}]`;
+    checkCvRequiredString(os.title, `${p}.title`, errors);
+    if (os.link !== undefined) checkCvUrl(os.link, `${p}.link`, errors);
+    checkCvRequiredString(os.description, `${p}.description`, errors);
+    checkCvRequiredString(os.impact, `${p}.impact`, errors);
+    checkCvCollection(os.tech, `${p}.tech`, errors);
+    os.tech.forEach((t, j) => checkCvRequiredString(t, `${p}.tech[${j}]`, errors));
+  });
+
+  checkCvRequiredString(cv.timelineProjectsTitle, "timelineProjectsTitle", errors);
+  checkCvCollection(cv.timelineProjects, "timelineProjects", errors);
+  cv.timelineProjects.forEach((era, i) => {
+    const p = `timelineProjects[${i}]`;
+    checkCvRequiredString(era.period, `${p}.period`, errors);
+    checkCvRequiredString(era.focus, `${p}.focus`, errors);
+    checkCvCollection(era.projects, `${p}.projects`, errors);
+    era.projects.forEach((proj, j) => checkCvRequiredString(proj, `${p}.projects[${j}]`, errors));
+  });
+
+  checkCvRequiredString(cv.quote, "quote", errors);
+
+  if (errors.length > 0) {
+    return { ok: false, errors: errors as [ContentError, ...ContentError[]] };
+  }
+  return { ok: true, value: cv as CvData };
+}
+
+const checkPortfolioString = requiredStringChecker("PortfolioFieldEmpty");
+const checkPortfolioCollection = nonEmptyCollectionChecker("PortfolioCollectionEmpty");
+
+// Depth is 1-indexed at the top-level `technologies` entries — the bound C18
+// enforces is three levels, so a node introduced at depth 4 or deeper fails.
+function checkTechNode(node: TechNode, path: string, depth: number, errors: ContentError[]): void {
+  checkPortfolioString(node.name, `${path}.name`, errors);
+  if (depth > 3) {
+    errors.push(
+      error(
+        "PortfolioTechDepthExceeded",
+        null,
+        path,
+        `${path} is nested ${depth} levels deep, exceeding the bound of 3.`,
+      ),
+    );
+  }
+  if (node.children !== undefined) {
+    checkPortfolioCollection(node.children, `${path}.children`, errors);
+    node.children.forEach((child, i) => checkTechNode(child, `${path}.children[${i}]`, depth + 1, errors));
+  }
+}
+
+function countBy<T>(items: readonly T[], key: (item: T) => string): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const item of items) {
+    const k = key(item);
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  return counts;
+}
+
+export function validatePortfolio(portfolio: PortfolioDocument): Result<PortfolioData, ContentError> {
+  const errors: ContentError[] = [];
+
+  checkPortfolioString(portfolio.header.title, "header.title", errors);
+  checkPortfolioString(portfolio.header.subtitle, "header.subtitle", errors);
+
+  checkPortfolioCollection(portfolio.technologies, "technologies", errors);
+  portfolio.technologies.forEach((node, i) => checkTechNode(node, `technologies[${i}]`, 1, errors));
+  for (const [name, count] of countBy(portfolio.technologies, (node) => node.name.trim().toLowerCase())) {
+    if (count > 1) {
+      errors.push(
+        error(
+          "PortfolioDuplicateCategory",
+          null,
+          "technologies",
+          `technologies entries share the name "${name}" (${count} times).`,
+        ),
+      );
+    }
+  }
+
+  checkPortfolioCollection(portfolio.projects, "projects", errors);
+  portfolio.projects.forEach((proj, i) => {
+    const p = `projects[${i}]`;
+    checkPortfolioString(proj.category, `${p}.category`, errors);
+    checkPortfolioString(proj.icon, `${p}.icon`, errors);
+    checkPortfolioString(proj.description, `${p}.description`, errors);
+  });
+  for (const [category, count] of countBy(portfolio.projects, (proj) => proj.category.trim().toLowerCase())) {
+    if (count > 1) {
+      errors.push(
+        error(
+          "PortfolioDuplicateCategory",
+          null,
+          "projects",
+          `projects entries share the category "${category}" (${count} times).`,
+        ),
+      );
+    }
+  }
+
+  checkPortfolioCollection(portfolio.stats, "stats", errors);
+  portfolio.stats.forEach((stat, i) => {
+    const p = `stats[${i}]`;
+    checkPortfolioString(stat.value, `${p}.value`, errors);
+    checkPortfolioString(stat.label, `${p}.label`, errors);
+  });
+
+  if (errors.length > 0) {
+    return { ok: false, errors: errors as [ContentError, ...ContentError[]] };
+  }
+  return { ok: true, value: portfolio as PortfolioData };
 }

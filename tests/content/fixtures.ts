@@ -6,6 +6,8 @@ import type {
   AbsoluteUrl,
   BuildContext,
   CommitId,
+  CvDocument,
+  PortfolioDocument,
   Project,
   ProjectId,
   RootRelativePath,
@@ -44,4 +46,73 @@ export function makeTestimonial(overrides: Partial<Testimonial> = {}): Testimoni
     author: "Base Author",
   };
   return { ...base, ...overrides };
+}
+
+// A CV document valid in every field, for tests that mutate one path to
+// provoke a single ContentError. `year` sits at 2020 so it never fails
+// CvYearAfterBuild against `context.utcYear` (2026) by coincidence.
+export function makeCv(): CvDocument {
+  return {
+    header: {
+      name: "Base Person",
+      title: "Base Title",
+      email: "base@example.com",
+      phone: "+1 555 0100",
+      links: [{ label: "GitHub", href: url("https://github.com/example") }],
+    },
+    about: { title: "About", body: "A base bio." },
+    badges: ["TypeScript"],
+    chips: ["Builder"],
+    timelineTitle: "Experience",
+    roles: [
+      {
+        company: "Base Co",
+        title: "Engineer",
+        period: "2020 – Present",
+        location: "Remote",
+        website: url("https://base.example.com"),
+        summary: "Did base things.",
+        achievements: ["Shipped a base feature"],
+        tech: ["TypeScript"],
+      },
+    ],
+    educationTitle: "Education",
+    education: [{ school: "Base University", degree: "B.S.", details: "Base details." }],
+    projectsTitle: "Projects",
+    projects: [
+      {
+        title: "Base Project",
+        link: url("https://github.com/example/base"),
+        description: "A base project.",
+        tech: ["TypeScript"],
+        year: yr(2020),
+      },
+    ],
+    openSourceTitle: "Open Source",
+    openSource: [
+      {
+        title: "Base Contribution",
+        link: url("https://github.com/example/contrib"),
+        description: "A base contribution.",
+        impact: "Base impact.",
+        tech: ["TypeScript"],
+      },
+    ],
+    timelineProjectsTitle: "Timeline",
+    timelineProjects: [{ period: "2020", focus: "Base focus", projects: ["Base Project"] }],
+    quote: "A base quote.",
+  };
+}
+
+// A portfolio document valid in every field.
+export function makePortfolio(): PortfolioDocument {
+  return {
+    header: { title: "Portfolio", subtitle: "Base subtitle" },
+    technologies: [
+      { name: "Backend", children: [{ name: "TypeScript" }] },
+      { name: "Frontend", children: [{ name: "React" }] },
+    ],
+    projects: [{ category: "Web", icon: "🌐", description: "Base web projects." }],
+    stats: [{ value: "1+", label: "Base Stat" }],
+  };
 }
