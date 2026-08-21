@@ -801,7 +801,8 @@ dying after deploy.
 **What fails:** an outbound link 404s. The page is stale, not wrong — it never claimed the site was
 up.
 
-**Detected by:** a link check over every `Home.Own` URL and every resolved `Home.Within` path. In CI
+**Detected by:** a link check over every `CheckedLink` — the inventory's resolved homes, `sourceUrl`
+and the CV document's outbound URLs. In CI
 it runs after the network-free build and gates the release, not artifact construction or the Pages
 preview. It proves the
 address still answers and no more: a redirect is a pass and is not followed, and the check does not

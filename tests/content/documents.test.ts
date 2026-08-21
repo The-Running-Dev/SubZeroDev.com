@@ -45,6 +45,20 @@ describe("S15.1/S15.3 — the CV and portfolio documents", () => {
   });
 });
 
+// `provenance` is a non-empty string (20-contract.md § *The content documents*).
+// Absence is S15.1's own fixture below; an empty string is the other half of
+// that claim, and `z.string()` alone admitted it until 2026-08-21 — see
+// `90-decisions.md` of that date.
+describe("provenance is rejected when present and empty", () => {
+  it("rejects a CV document whose provenance is an empty string", () => {
+    expect(cvDocumentValidator(context)({ ...rawCvDocument, provenance: "" }).ok).toBe(false);
+  });
+
+  it("rejects a portfolio document whose provenance is an empty string", () => {
+    expect(portfolioDocumentValidator({ ...rawPortfolioDocument, provenance: "" }).ok).toBe(false);
+  });
+});
+
 describe("S15.1 — a fixture with provenance absent fails the schema", () => {
   it("rejects a CV document with no provenance field", () => {
     const { provenance: _provenance, ...withoutProvenance } = rawCvDocument as Record<string, unknown>;
