@@ -5,48 +5,15 @@ Append-only. Newest at the top. The rejected alternatives are the point — with
 ## Open
 <A staging area, not a home. Things noticed mid-slice that were deliberately not acted on. `/track` turns each into a GitHub issue and removes it from here. An item that is a *decision* rather than a *todo* belongs below as an entry, not in an issue.>
 
-- **Five testimonials are ruled real and are waiting on their citation URLs.** The owner ruled on
-  2026-08-20 that the five `"What Would Lucifer Do?"` entries in `site/testimonials.json` are real
-  lines and take citations under `00-brief.md` § *Source material* item 4. The five URLs are
-  **owner-supplied and were not available in that pass**; a slice transcribes them and does not invent
-  one, and a guessed citation is worse than none because it is the one testimonial property nothing in
-  the tree can check. Until they arrive the tree holds a rule the brief states and the content does
-  not. `validateTestimonials` already enforces the shape (`TestimonialUrlInvalid`) and `X8` already
-  renders the `Source` line, so nothing but the JSON changes. Issues are disabled, so this is its
-  carrier — the shape [`agent.md`](../agent.md) § *Drift* names, given one deliberately.
+(the four items staged 2026-08-20/2026-08-21 — the testimonials' waiting citation URLs, the
+`tools/*.Tests.ps1` failures, the stale `C16` citations, and `assertImportGraph`'s missing
+implementation — became [#99](https://github.com/The-Running-Dev/SubZeroDev.com/issues/99),
+[#100](https://github.com/The-Running-Dev/SubZeroDev.com/issues/100),
+[#101](https://github.com/The-Running-Dev/SubZeroDev.com/issues/101) and
+[#102](https://github.com/The-Running-Dev/SubZeroDev.com/issues/102) on 2026-08-21, once issues were
+enabled on this repository;
 
-- **`tools/*.Tests.ps1` fails 12 of 253 tests, all pre-existing and unrelated to any change on
-  [PR #88](https://github.com/The-Running-Dev/SubZeroDev.com/pull/88).** Found while running
-  `/pr`'s gate phase against that PR on 2026-08-20; confirmed present on `main` as well, so nothing
-  on the PR's branch caused it. Two independent root causes: (1) `design/state/` and
-  `design/state-index.md` do not exist in this repository, so every test exercising
-  `Test-DesignState.ps1` / `Read-DesignState.ps1` / `Update-DesignProjection.ps1` "against this
-  repository's own tree" has nothing to read — `Test-DesignState.ps1` itself exits 2
-  (`ContractListUnreadable`, `StateSetAbsent`) rather than 0 or 1; (2)
-  `tools/Test-CIWorkflow.Tests.ps1` expects `.github/workflows/verify.yml`, which does not exist —
-  only `.github/workflows/ci.yml` does. Deciding what `design/state/`'s record set should actually
-  contain (or whether this repository carries that tooling at all) is an owner call, not a
-  mechanical backfill; the `verify.yml` mismatch is either adding that file or repointing the test
-  at `ci.yml`. Issues are disabled, so this is its carrier. Full per-test detail is in
-  [PR #88](https://github.com/The-Running-Dev/SubZeroDev.com/pull/88)'s `Verified` section.
-
-- **Four test files cite `C16`, an invariant that no longer exists.** `src/composition/testimonials.ts`
-  and `tests/composition/{apex,enhancement,testimonials}.test.ts` name `C16` for the
-  testimonial-import closure; that invariant merged into `C14` with the 2026-08-11 JSON migration, and
-  the citations were not updated. Found on 2026-08-21 while adding two invariants, which nearly took
-  `C16` as the next free id and would have silently repointed all four at a rule about link checking.
-  The contract now records the retirement so the number is not reused; the four comments are still
-  wrong and are a `src`/`tests` edit this command may not make. Issues are disabled, so this is its
-  carrier.
-
-- **`V16`'s `assertImportGraph` is declared in the contract and has no implementation.** The import
-  graph is checked instead by `tests/content/import-graph.test.ts` against a test-local AST helper,
-  which is the arrangement `assertImportGraph` was written to replace. `20-contract.md` now says so
-  rather than implying the function exists. Pre-existing and unrelated to either 2026-08-11 item;
-  noticed while re-aiming `C14`. Either implement it or withdraw the declaration — both are decisions,
-  neither is `/reconcile`'s.
-
-(the S11/S12 item staged here on 2026-08-20 was adjudicated by `/slices` the same day — both slices
+the S11/S12 item staged here on 2026-08-20 was adjudicated by `/slices` the same day — both slices
 were ruled landed and retired to `30-slices.md`'s new `## Landed` index, and the entry of that date
 below is its carrier, since issues are disabled on this repository;
 
