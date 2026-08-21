@@ -13,13 +13,13 @@
 // `design/20-contract.md` describe that arrangement as it now stands;
 // `/reconcile` brought them to it on 2026-08-20.
 //
-// PLACEHOLDER COPY: the apex route's `title`, `description` and Open Graph
-// fields below are deliberate placeholders. Leave them unchanged.
+// PLACEHOLDER COPY: the apex and CV routes' `title`, `description` and Open
+// Graph fields below are deliberate placeholders. Leave them unchanged.
 
 import { defineLandingPage, defineLandingPageData } from "subzerodev-platform-ui-landing-page";
 import type { LandingPageConfig } from "subzerodev-platform-ui-landing-page";
 
-import { composeApex, composeMiss } from "../src/composition";
+import { composeApex, composeCv, composeMiss } from "../src/composition";
 import {
   cvDocumentValidator,
   parseCommitId,
@@ -32,14 +32,15 @@ import { iconDataUri, themeColor } from "../src/presentation";
 
 export const origin = "https://subzerodev.com" as const;
 
-// RoutePath (contract § Route, A4) — narrows config.routes' path to the two
-// values this Adapter declares, so a third route path fails typecheck rather
-// than relying on review (issue #52). `satisfies` checks membership without
+// RoutePath (contract § Route, A4) — narrows config.routes' path to the
+// values this Adapter declares, so an undeclared route path fails typecheck
+// rather than relying on review (issue #52). `satisfies` checks membership without
 // widening past the exact literal each constant carries per the contract's
 // own signatures (design/20-contract.md § Public signatures § Adapter — cited
 // by section, never by line: line numbers rot on every amendment).
-export type RoutePath = "/" | "/404/";
+export type RoutePath = "/" | "/cv/" | "/portfolio/" | "/404/";
 export const apexPath = "/" as const satisfies RoutePath;
+export const cvPath = "/cv/" as const satisfies RoutePath;
 export const missPath = "/404/" as const satisfies RoutePath;
 
 function buildContext(): BuildContext {
@@ -55,13 +56,13 @@ function buildContext(): BuildContext {
 }
 
 const context = buildContext();
-// `cv` and `portfolio` are validated here and not yet rendered — S15 commits
-// and checks the two documents with nothing consuming them; S16 and S17 are
-// where composeCv and composePortfolio start reading them.
+// `portfolio` is validated here and not yet rendered — S15 commits and
+// checks the document with nothing consuming it; S17 is where
+// composePortfolio starts reading it.
 function compose({
   projects,
   testimonials,
-  cv: _cv,
+  cv,
   portfolio: _portfolio,
 }: {
   projects: Inventory;
@@ -70,6 +71,7 @@ function compose({
   portfolio: PortfolioData;
 }): LandingPageConfig {
   const apex = composeApex(projects, testimonials, origin);
+  const cvRoute = composeCv(projects, cv, origin);
   const miss = composeMiss();
   return defineLandingPage({
   routes: [
@@ -88,6 +90,25 @@ function compose({
             "Placeholder Open Graph description for the SubZeroDev apex — replace before publication.",
           type: "website",
           url: `${origin}${apexPath}`,
+        },
+        themeColor,
+        icons: [{ rel: "icon", href: iconDataUri }],
+      },
+    },
+    {
+      path: cvPath,
+      body: cvRoute.bodyHtml,
+      stylesheet: cvRoute.stylesheet,
+      metadata: {
+        title: "CV (placeholder title — replace before publication)",
+        description: "Placeholder description for the SubZeroDev CV — replace before publication.",
+        canonicalUrl: `${origin}${cvPath}`,
+        openGraph: {
+          title: "CV (placeholder Open Graph title — replace before publication)",
+          description:
+            "Placeholder Open Graph description for the SubZeroDev CV — replace before publication.",
+          type: "website",
+          url: `${origin}${cvPath}`,
         },
         themeColor,
         icons: [{ rel: "icon", href: iconDataUri }],

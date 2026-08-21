@@ -38,6 +38,14 @@ describe("S8.2 — the emitted apex document triggers no request beyond its own 
   });
 });
 
+describe("S16.12 — the emitted CV document triggers no request beyond its own navigation", () => {
+  it("produces exactly one RequestRecord, the navigation, initiatedByTester true", async () => {
+    const records = await captureRequests(server.url + "/cv/");
+    expect(records).toHaveLength(1);
+    expect(records[0]!.initiatedByTester).toBe(true);
+  });
+});
+
 describe("S8.3 — the emitted miss document triggers no request beyond its own navigation", () => {
   it("produces exactly one RequestRecord, the navigation, initiatedByTester true", async () => {
     const records = await captureRequests(server.url + "/404");
