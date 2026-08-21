@@ -65,6 +65,45 @@ function resolvesWithinOrigin(path: string, origin: string): boolean {
   }
 }
 
+function checkYear(
+  year: number,
+  path: string,
+  context: BuildContext,
+  projectId: ProjectId | null,
+  codes: { readonly invalid: ContentErrorCode; readonly afterBuild: ContentErrorCode },
+  errors: ContentError[],
+): void {
+  if (!Number.isInteger(year) || year < 1000 || year > 9999) {
+    errors.push(error(codes.invalid, projectId, path, `${path} ${year} is not a four-digit integer.`));
+  } else if (year > context.utcYear) {
+    errors.push(
+      error(codes.afterBuild, projectId, path, `${path} ${year} is after the build's UTC year ${context.utcYear}.`),
+    );
+  }
+}
+
+function checkRequiredString(
+  value: string,
+  path: string,
+  code: ContentErrorCode,
+  errors: ContentError[],
+): void {
+  if (value.trim() === "") {
+    errors.push(error(code, null, path, `${path} is empty after trimming.`));
+  }
+}
+
+function checkNonEmptyCollection(
+  list: readonly unknown[],
+  path: string,
+  code: ContentErrorCode,
+  errors: ContentError[],
+): void {
+  if (list.length === 0) {
+    errors.push(error(code, null, path, `${path} has no entries.`));
+  }
+}
+
 function validateHome(
   project: Project,
   byId: ReadonlyMap<string, Project>,
@@ -206,25 +245,14 @@ export function validateInventory(
       );
     }
 
-    if (!Number.isInteger(project.year) || project.year < 1000 || project.year > 9999) {
-      errors.push(
-        error(
-          "InvalidYear",
-          project.id,
-          "year",
-          `year ${project.year} is not a four-digit integer.`,
-        ),
-      );
-    } else if (project.year > context.utcYear) {
-      errors.push(
-        error(
-          "YearAfterBuild",
-          project.id,
-          "year",
-          `year ${project.year} is after the build's UTC year ${context.utcYear}.`,
-        ),
-      );
-    }
+    checkYear(
+      project.year,
+      "year",
+      context,
+      project.id,
+      { invalid: "InvalidYear", afterBuild: "YearAfterBuild" },
+      errors,
+    );
 
     if (project.name.trim() === "") {
       errors.push(error("EmptyField", project.id, "name", "name is empty after trimming."));
@@ -347,31 +375,21 @@ export function validateTestimonials(
 }
 
 function checkCvRequiredString(value: string, path: string, errors: ContentError[]): void {
-  if (value.trim() === "") {
-    errors.push(error("CvFieldEmpty", null, path, `${path} is empty after trimming.`));
-  }
+  checkRequiredString(value, path, "CvFieldEmpty", errors);
 }
 
 function checkCvCollection(list: readonly unknown[], path: string, errors: ContentError[]): void {
-  if (list.length === 0) {
-    errors.push(error("CvCollectionEmpty", null, path, `${path} has no entries.`));
-  }
+  checkNonEmptyCollection(list, path, "CvCollectionEmpty", errors);
 }
 
 function checkCvUrl(value: string, path: string, errors: ContentError[]): void {
-  if (!isAbsoluteHttpsUrl(value)) {
+  if (value !== value.trim() || !isAbsoluteHttpsUrl(value)) {
     errors.push(error("CvUrlInvalid", null, path, `${path} "${value}" is not an https absolute URL.`));
   }
 }
 
 function checkCvYear(year: number, path: string, context: BuildContext, errors: ContentError[]): void {
-  if (!Number.isInteger(year) || year < 1000 || year > 9999) {
-    errors.push(error("CvYearInvalid", null, path, `${path} ${year} is not a four-digit integer.`));
-  } else if (year > context.utcYear) {
-    errors.push(
-      error("CvYearAfterBuild", null, path, `${path} ${year} is after the build's UTC year ${context.utcYear}.`),
-    );
-  }
+  checkYear(year, path, context, null, { invalid: "CvYearInvalid", afterBuild: "CvYearAfterBuild" }, errors);
 }
 
 export function validateCv(cv: CvDocument, context: BuildContext): Result<CvData, ContentError> {
@@ -465,15 +483,11 @@ export function validateCv(cv: CvDocument, context: BuildContext): Result<CvData
 }
 
 function checkPortfolioString(value: string, path: string, errors: ContentError[]): void {
-  if (value.trim() === "") {
-    errors.push(error("PortfolioFieldEmpty", null, path, `${path} is empty after trimming.`));
-  }
+  checkRequiredString(value, path, "PortfolioFieldEmpty", errors);
 }
 
 function checkPortfolioCollection(list: readonly unknown[], path: string, errors: ContentError[]): void {
-  if (list.length === 0) {
-    errors.push(error("PortfolioCollectionEmpty", null, path, `${path} has no entries.`));
-  }
+  checkNonEmptyCollection(list, path, "PortfolioCollectionEmpty", errors);
 }
 
 // Depth is 1-indexed at the top-level `technologies` entries — the bound C18
@@ -513,7 +527,7 @@ export function validatePortfolio(portfolio: PortfolioDocument): Result<Portfoli
 
   checkPortfolioCollection(portfolio.technologies, "technologies", errors);
   portfolio.technologies.forEach((node, i) => checkTechNode(node, `technologies[${i}]`, 1, errors));
-  for (const [name, count] of countBy(portfolio.technologies, (node) => node.name)) {
+  for (const [name, count] of countBy(portfolio.technologies, (node) => node.name.trim().toLowerCase())) {
     if (count > 1) {
       errors.push(
         error(
@@ -533,7 +547,7 @@ export function validatePortfolio(portfolio: PortfolioDocument): Result<Portfoli
     checkPortfolioString(proj.icon, `${p}.icon`, errors);
     checkPortfolioString(proj.description, `${p}.description`, errors);
   });
-  for (const [category, count] of countBy(portfolio.projects, (proj) => proj.category)) {
+  for (const [category, count] of countBy(portfolio.projects, (proj) => proj.category.trim().toLowerCase())) {
     if (count > 1) {
       errors.push(
         error(

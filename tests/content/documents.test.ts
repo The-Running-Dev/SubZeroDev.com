@@ -136,6 +136,7 @@ describe("S15.10 — neither committed document carries an image URL, icon-font 
     expect(raw).not.toContain('"src"');
     expect(raw).not.toContain("shields.io");
     expect(raw).not.toMatch(/\bfa[A-Z]\w*/); // e.g. faRocket
+    expect(raw).not.toMatch(/\bfa-[a-z0-9-]+/); // e.g. fa-rocket, fas fa-rocket
   });
 });
 
