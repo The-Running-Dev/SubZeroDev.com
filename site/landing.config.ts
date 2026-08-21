@@ -13,13 +13,14 @@
 // `design/20-contract.md` describe that arrangement as it now stands;
 // `/reconcile` brought them to it on 2026-08-20.
 //
-// PLACEHOLDER COPY: the apex and CV routes' `title`, `description` and Open
-// Graph fields below are deliberate placeholders. Leave them unchanged.
+// PLACEHOLDER COPY: the apex, CV and portfolio routes' `title`, `description`
+// and Open Graph fields below are deliberate placeholders. Leave them
+// unchanged.
 
 import { defineLandingPage, defineLandingPageData } from "subzerodev-platform-ui-landing-page";
 import type { LandingPageConfig } from "subzerodev-platform-ui-landing-page";
 
-import { composeApex, composeCv, composeMiss } from "../src/composition";
+import { composeApex, composeCv, composeMiss, composePortfolio } from "../src/composition";
 import {
   cvDocumentValidator,
   parseCommitId,
@@ -41,6 +42,7 @@ export const origin = "https://subzerodev.com" as const;
 export type RoutePath = "/" | "/cv/" | "/portfolio/" | "/404/";
 export const apexPath = "/" as const satisfies RoutePath;
 export const cvPath = "/cv/" as const satisfies RoutePath;
+export const portfolioPath = "/portfolio/" as const satisfies RoutePath;
 export const missPath = "/404/" as const satisfies RoutePath;
 
 function buildContext(): BuildContext {
@@ -56,14 +58,11 @@ function buildContext(): BuildContext {
 }
 
 const context = buildContext();
-// `portfolio` is validated here and not yet rendered — S15 commits and
-// checks the document with nothing consuming it; S17 is where
-// composePortfolio starts reading it.
 function compose({
   projects,
   testimonials,
   cv,
-  portfolio: _portfolio,
+  portfolio,
 }: {
   projects: Inventory;
   testimonials: Testimonials;
@@ -72,6 +71,7 @@ function compose({
 }): LandingPageConfig {
   const apex = composeApex(projects, testimonials, origin);
   const cvRoute = composeCv(projects, cv, origin);
+  const portfolioRoute = composePortfolio(projects, portfolio, origin);
   const miss = composeMiss();
   return defineLandingPage({
   routes: [
@@ -109,6 +109,26 @@ function compose({
             "Placeholder Open Graph description for the SubZeroDev CV — replace before publication.",
           type: "website",
           url: `${origin}${cvPath}`,
+        },
+        themeColor,
+        icons: [{ rel: "icon", href: iconDataUri }],
+      },
+    },
+    {
+      path: portfolioPath,
+      body: portfolioRoute.bodyHtml,
+      stylesheet: portfolioRoute.stylesheet,
+      metadata: {
+        title: "Portfolio (placeholder title — replace before publication)",
+        description:
+          "Placeholder description for the SubZeroDev portfolio — replace before publication.",
+        canonicalUrl: `${origin}${portfolioPath}`,
+        openGraph: {
+          title: "Portfolio (placeholder Open Graph title — replace before publication)",
+          description:
+            "Placeholder Open Graph description for the SubZeroDev portfolio — replace before publication.",
+          type: "website",
+          url: `${origin}${portfolioPath}`,
         },
         themeColor,
         icons: [{ rel: "icon", href: iconDataUri }],

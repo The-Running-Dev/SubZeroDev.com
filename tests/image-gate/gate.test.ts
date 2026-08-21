@@ -33,10 +33,16 @@ const commit = process.env.GITHUB_SHA as CommitId;
 const imageTag = process.env.GITHUB_SHA as string;
 const baseUrl = process.env.SERVED_BASE_URL ?? "http://localhost:8080";
 
-describe("S9.3/S9.4 — the running image serves the emitted apex byte for byte, tagged with its commit", () => {
+// S17.12 — V11 covers three content routes: the apex, the CV and the
+// portfolio, each compared against its own emitted document.
+describe.each([
+  ["the apex", "/", "index.html"],
+  ["the CV", "/cv/", "cv/index.html"],
+  ["the portfolio", "/portfolio/", "portfolio/index.html"],
+] as const)("S9.3/S9.4/S17.12 — the running image serves %s byte for byte, tagged with its commit", (_name, path, emittedPath) => {
   it("assertServedBytesMatchEmitted and assertImageIdentity both return ok: true", async () => {
-    const emitted = readFileSync(resolve(distDir, "index.html"));
-    const response = await fetch(`${baseUrl}/`);
+    const emitted = readFileSync(resolve(distDir, emittedPath));
+    const response = await fetch(`${baseUrl}${path}`);
     const servedBytes = new Uint8Array(await response.arrayBuffer());
     const servedHtml = new TextDecoder().decode(servedBytes);
 

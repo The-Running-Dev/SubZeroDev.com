@@ -51,3 +51,22 @@ describe("S10.8 — the deployed Pages apex serves the exact commit byte for byt
     );
   }, 320_000);
 });
+
+// S17.12 — V11's Pages-read-back half covers the CV and portfolio routes
+// too, each compared against its own emitted document. No further poll is
+// needed: S10.8's poll above already confirmed this exact commit is live.
+describe.each([
+  ["the CV", "cv/", "cv/index.html"],
+  ["the portfolio", "portfolio/", "portfolio/index.html"],
+] as const)("S17.12 — the deployed Pages %s route serves the exact commit byte for byte", (_name, routePath, emittedPath) => {
+  it("assertServedBytesMatchEmitted returns ok: true", async () => {
+    const emitted = readFileSync(resolve(distDir, emittedPath));
+    const response = await fetch(unknownPathUrl(pagesUrl, routePath));
+    const servedBytes = new Uint8Array(await response.arrayBuffer());
+
+    expect(assertServedBytesMatchEmitted(servedBytes, new Uint8Array(emitted))).toEqual({
+      ok: true,
+      value: null,
+    });
+  }, 320_000);
+});

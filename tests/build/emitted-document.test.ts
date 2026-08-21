@@ -16,17 +16,19 @@ import { validateInventory, validateTestimonials } from "../../src/content";
 import { iconDataUri } from "../../src/presentation";
 import { assertContentPresent, assertSelfContained } from "../../src/verification";
 import { context, makeProject, pid, TEST_ORIGIN } from "../content/fixtures";
-import { projects, testimonials } from "../helpers/site-data";
+import { portfolio, projects, testimonials } from "../helpers/site-data";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const distDir = resolve(here, "../../site/dist");
 
 const apexHtml = readFileSync(resolve(distDir, "index.html"), "utf8");
-// cv/index.html survives finalizeArtifact untouched — R2's removal is scoped
-// to the miss entry alone (contract's Adapter § "only the miss route's
-// emitted document is relocated"), so this is read straight off the build
-// output with no copy/finalize step involved (S16.2).
+// cv/index.html and portfolio/index.html both survive finalizeArtifact
+// untouched — R2's removal is scoped to the miss entry alone (contract's
+// Adapter § "only the miss route's emitted document is relocated"), so both
+// are read straight off the build output with no copy/finalize step involved
+// (S16.2, S17.2).
 const cvHtml = readFileSync(resolve(distDir, "cv/index.html"), "utf8");
+const portfolioHtml = readFileSync(resolve(distDir, "portfolio/index.html"), "utf8");
 // The emitted miss entry (404/index.html) does not survive finalizeArtifact's
 // removal (R2), and this config's global-setup has already run it by the
 // time this suite executes — same convention as tests/build/artifact.test.ts.
@@ -74,6 +76,40 @@ describe("S16.6 — the Person block parses as JSON, carries name/jobTitle/url/s
     expect(Array.isArray(person.sameAs)).toBe(true);
     expect(person.email).toBeUndefined();
     expect(person.telephone).toBeUndefined();
+  });
+});
+
+describe("S17.2/S17.5 — the build emits a document at portfolio/index.html, self-contained with zero script elements", () => {
+  it("the document exists and is non-empty", () => {
+    expect(portfolioHtml.length).toBeGreaterThan(0);
+  });
+
+  it("assertSelfContained returns ok: true for the portfolio document", () => {
+    expect(assertSelfContained(portfolioHtml)).toEqual({ ok: true, value: null });
+  });
+
+  it("carries zero <script> elements", () => {
+    expect(portfolioHtml.match(/<script\b/gi) ?? []).toHaveLength(0);
+  });
+});
+
+// escapedForCompare is declared below the manifesto section; every emoji is
+// its own literal grapheme, so it is compared byte for byte with no escaping
+// pass rather than through that helper (S17.6).
+describe("S17.6 — every emoji in the committed portfolio document appears in the emitted document unchanged", () => {
+  it("byte for byte", () => {
+    for (const category of portfolio.projects) {
+      expect(portfolioHtml).toContain(category.icon);
+    }
+  });
+});
+
+describe("S17.7 — no stat value is a literal in src/composition/", () => {
+  it("every rendered figure appears in site/portfolio.json", () => {
+    for (const stat of portfolio.stats) {
+      expect(portfolioHtml).toContain(escapedForCompare(stat.value));
+      expect(portfolioHtml).toContain(escapedForCompare(stat.label));
+    }
   });
 });
 
@@ -229,5 +265,38 @@ describe("S16.11 — the emitted CV document contains its title, description, ca
 
   it("the icon href", () => {
     expect(cvHtml).toContain(`href="${iconDataUri}"`);
+  });
+});
+
+describe("S17.10 — the emitted portfolio document contains its title, description, canonical URL, Open Graph fields and the icon href", () => {
+  it("title", () => {
+    expect(portfolioHtml).toContain(
+      "<title>Portfolio (placeholder title — replace before publication)</title>",
+    );
+  });
+
+  it("description", () => {
+    expect(portfolioHtml).toContain(
+      'name="description" content="Placeholder description for the SubZeroDev portfolio — replace before publication."',
+    );
+  });
+
+  it("canonical URL", () => {
+    expect(portfolioHtml).toContain('<link rel="canonical" href="https://subzerodev.com/portfolio/">');
+  });
+
+  it("Open Graph fields", () => {
+    expect(portfolioHtml).toContain(
+      'property="og:title" content="Portfolio (placeholder Open Graph title — replace before publication)"',
+    );
+    expect(portfolioHtml).toContain(
+      'property="og:description" content="Placeholder Open Graph description for the SubZeroDev portfolio — replace before publication."',
+    );
+    expect(portfolioHtml).toContain('property="og:type" content="website"');
+    expect(portfolioHtml).toContain('property="og:url" content="https://subzerodev.com/portfolio/"');
+  });
+
+  it("the icon href", () => {
+    expect(portfolioHtml).toContain(`href="${iconDataUri}"`);
   });
 });
