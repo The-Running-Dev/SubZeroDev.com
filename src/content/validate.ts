@@ -374,13 +374,20 @@ export function validateTestimonials(
   return { ok: true, value: testimonials as Testimonials };
 }
 
-function checkCvRequiredString(value: string, path: string, errors: ContentError[]): void {
-  checkRequiredString(value, path, "CvFieldEmpty", errors);
+function requiredStringChecker(
+  code: ContentErrorCode,
+): (value: string, path: string, errors: ContentError[]) => void {
+  return (value, path, errors) => checkRequiredString(value, path, code, errors);
 }
 
-function checkCvCollection(list: readonly unknown[], path: string, errors: ContentError[]): void {
-  checkNonEmptyCollection(list, path, "CvCollectionEmpty", errors);
+function nonEmptyCollectionChecker(
+  code: ContentErrorCode,
+): (list: readonly unknown[], path: string, errors: ContentError[]) => void {
+  return (list, path, errors) => checkNonEmptyCollection(list, path, code, errors);
 }
+
+const checkCvRequiredString = requiredStringChecker("CvFieldEmpty");
+const checkCvCollection = nonEmptyCollectionChecker("CvCollectionEmpty");
 
 function checkCvUrl(value: string, path: string, errors: ContentError[]): void {
   if (value !== value.trim() || !isAbsoluteHttpsUrl(value)) {
@@ -482,13 +489,8 @@ export function validateCv(cv: CvDocument, context: BuildContext): Result<CvData
   return { ok: true, value: cv as CvData };
 }
 
-function checkPortfolioString(value: string, path: string, errors: ContentError[]): void {
-  checkRequiredString(value, path, "PortfolioFieldEmpty", errors);
-}
-
-function checkPortfolioCollection(list: readonly unknown[], path: string, errors: ContentError[]): void {
-  checkNonEmptyCollection(list, path, "PortfolioCollectionEmpty", errors);
-}
+const checkPortfolioString = requiredStringChecker("PortfolioFieldEmpty");
+const checkPortfolioCollection = nonEmptyCollectionChecker("PortfolioCollectionEmpty");
 
 // Depth is 1-indexed at the top-level `technologies` entries — the bound C18
 // enforces is three levels, so a node introduced at depth 4 or deeper fails.
