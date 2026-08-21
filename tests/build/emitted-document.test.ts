@@ -22,6 +22,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 const distDir = resolve(here, "../../site/dist");
 
 const apexHtml = readFileSync(resolve(distDir, "index.html"), "utf8");
+// cv/index.html survives finalizeArtifact untouched — R2's removal is scoped
+// to the miss entry alone (contract's Adapter § "only the miss route's
+// emitted document is relocated"), so this is read straight off the build
+// output with no copy/finalize step involved (S16.2).
+const cvHtml = readFileSync(resolve(distDir, "cv/index.html"), "utf8");
 // The emitted miss entry (404/index.html) does not survive finalizeArtifact's
 // removal (R2), and this config's global-setup has already run it by the
 // time this suite executes — same convention as tests/build/artifact.test.ts.
@@ -40,6 +45,35 @@ describe("S6.9 — the build emits a document for the apex and one at 404/index.
 
   it("assertSelfContained returns ok: true for the miss document", () => {
     expect(assertSelfContained(missHtml)).toEqual({ ok: true, value: null });
+  });
+});
+
+describe("S16.2/S16.5 — the build emits a document at cv/index.html, self-contained with exactly one script", () => {
+  it("the document exists and is non-empty", () => {
+    expect(cvHtml.length).toBeGreaterThan(0);
+  });
+
+  it("assertSelfContained returns ok: true for the CV document", () => {
+    expect(assertSelfContained(cvHtml)).toEqual({ ok: true, value: null });
+  });
+
+  it("carries exactly one <script> element", () => {
+    expect(cvHtml.match(/<script\b/gi) ?? []).toHaveLength(1);
+  });
+});
+
+describe("S16.6 — the Person block parses as JSON, carries name/jobTitle/url/sameAs, and carries no email/telephone", () => {
+  it("parses and shapes correctly", () => {
+    const match = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(cvHtml);
+    expect(match).not.toBeNull();
+    const person = JSON.parse(match![1]!) as Record<string, unknown>;
+    expect(person["@type"]).toBe("Person");
+    expect(typeof person.name).toBe("string");
+    expect(typeof person.jobTitle).toBe("string");
+    expect(typeof person.url).toBe("string");
+    expect(Array.isArray(person.sameAs)).toBe(true);
+    expect(person.email).toBeUndefined();
+    expect(person.telephone).toBeUndefined();
   });
 });
 
@@ -162,5 +196,38 @@ describe("S6.12 — the emitted apex document contains its title, description, c
 
   it("the icon href", () => {
     expect(apexHtml).toContain(`href="${iconDataUri}"`);
+  });
+});
+
+describe("S16.11 — the emitted CV document contains its title, description, canonical URL, Open Graph fields and the icon href", () => {
+  it("title", () => {
+    expect(cvHtml).toContain("<title>CV (placeholder title — replace before publication)</title>");
+  });
+
+  it("description", () => {
+    expect(cvHtml).toContain(
+      'name="description" content="Placeholder description for the SubZeroDev CV — replace before publication."',
+    );
+  });
+
+  it("canonical URL", () => {
+    expect(cvHtml).toContain('<link rel="canonical" href="https://subzerodev.com/cv/">');
+  });
+
+  it("Open Graph fields, no og:image and no twitter element", () => {
+    expect(cvHtml).toContain(
+      'property="og:title" content="CV (placeholder Open Graph title — replace before publication)"',
+    );
+    expect(cvHtml).toContain(
+      'property="og:description" content="Placeholder Open Graph description for the SubZeroDev CV — replace before publication."',
+    );
+    expect(cvHtml).toContain('property="og:type" content="website"');
+    expect(cvHtml).toContain('property="og:url" content="https://subzerodev.com/cv/"');
+    expect(cvHtml).not.toContain("og:image");
+    expect(cvHtml).not.toContain('name="twitter:');
+  });
+
+  it("the icon href", () => {
+    expect(cvHtml).toContain(`href="${iconDataUri}"`);
   });
 });

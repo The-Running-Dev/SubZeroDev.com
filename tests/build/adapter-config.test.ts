@@ -20,7 +20,7 @@ const { validateCv, validateInventory, validatePortfolio, validateTestimonials }
 );
 const { cv, portfolio, projects, testimonials } = await import("../helpers/site-data");
 
-const { default: declaration, origin, apexPath, missPath } = adapter;
+const { default: declaration, origin, apexPath, cvPath, missPath } = adapter;
 const buildContext = {
   commit: "a".repeat(40) as import("../../src/content").CommitId,
   utcYear: new Date().getUTCFullYear() as import("../../src/content").Year,
@@ -42,21 +42,23 @@ const config = declaration.config({
 const here = dirname(fileURLToPath(import.meta.url));
 const adapterSource = readFileSync(resolve(here, "../../site/landing.config.ts"), "utf8");
 
-describe("S6.3 — config.routes has exactly two entries, apex then miss", () => {
-  it("has exactly two routes", () => {
-    expect(config.routes).toHaveLength(2);
+describe("S6.3/S16 — config.routes has exactly three entries, apex, CV, then miss", () => {
+  it("has exactly three routes", () => {
+    expect(config.routes).toHaveLength(3);
   });
 
-  it("the order is apex, miss", () => {
+  it("the order is apex, CV, miss", () => {
     expect(config.routes[0]!.path).toBe(apexPath);
-    expect(config.routes[1]!.path).toBe(missPath);
+    expect(config.routes[1]!.path).toBe(cvPath);
+    expect(config.routes[2]!.path).toBe(missPath);
   });
 });
 
 describe("S6.4 — canonicalUrl and openGraph.url are origin concatenated with the route's path", () => {
   it.each([
     [0, apexPath],
-    [1, missPath],
+    [1, cvPath],
+    [2, missPath],
   ] as const)("route %i", (index, path) => {
     const route = config.routes[index]!;
     expect(route.metadata.canonicalUrl).toBe(`${origin}${path}`);
@@ -73,7 +75,7 @@ describe("S6.4 — canonicalUrl and openGraph.url are origin concatenated with t
 });
 
 describe("S6.5 — themeColor and the icon are Presentation's, by reference", () => {
-  it.each([0, 1] as const)("route %i", (index) => {
+  it.each([0, 1, 2] as const)("route %i", (index) => {
     const route = config.routes[index]!;
     expect(route.metadata.themeColor).toBe(themeColor);
     expect(route.metadata.icons).toHaveLength(1);
@@ -87,7 +89,7 @@ describe("S6.5 — themeColor and the icon are Presentation's, by reference", ()
 });
 
 describe("S6.6 — no route declares entry, hydrate or noScript; config declares no styles, publicDir or allow", () => {
-  it.each([0, 1] as const)("route %i", (index) => {
+  it.each([0, 1, 2] as const)("route %i", (index) => {
     const route = config.routes[index]!;
     expect("entry" in route).toBe(false);
     expect("hydrate" in route).toBe(false);
@@ -102,7 +104,7 @@ describe("S6.6 — no route declares entry, hydrate or noScript; config declares
 });
 
 describe("U6 — no social image asset is declared", () => {
-  it.each([0, 1] as const)("route %i", (index) => {
+  it.each([0, 1, 2] as const)("route %i", (index) => {
     const route = config.routes[index]!;
     expect(route.metadata.socialImageUrl).toBeUndefined();
     expect(route.metadata.openGraph?.imageUrl).toBeUndefined();
