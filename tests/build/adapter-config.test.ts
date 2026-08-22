@@ -19,6 +19,7 @@ const { validateCv, validateInventory, validatePortfolio, validateTestimonials }
   "../../src/content"
 );
 const { cv, portfolio, projects, testimonials } = await import("../helpers/site-data");
+const { ownRoutePaths } = await import("../../src/composition/header");
 
 const { default: declaration, origin, apexPath, cvPath, portfolioPath, missPath } = adapter;
 const buildContext = {
@@ -73,6 +74,35 @@ describe("S6.4 — canonicalUrl and openGraph.url are origin concatenated with t
     // this file reads the imported `origin` back rather than retyping it.
     const occurrences = adapterSource.match(/https:\/\/subzerodev\.com/g) ?? [];
     expect(occurrences).toHaveLength(1);
+  });
+});
+
+// X2 forbids Composition importing `RoutePath`, so `ownRoutePaths` in
+// `src/composition/header.ts` restates the three own-site paths Adapter also
+// declares. That restatement is forced, but it is still two copies of one
+// fact, and *Single ownership* asks that a restated fact name its canonical
+// copy and be checked against it. Adapter's constants are canonical — they
+// are what the build actually emits — and this file is the only place both
+// sides are visible, since no repository module may import Adapter.
+//
+// Without this, changing `cvPath` and widening `RoutePath` in the one file
+// `satisfies` checks leaves every gate green while the emitted masthead links
+// CV at a path the build no longer emits, and the CV route marks no entry
+// current at all.
+describe("S18.2 — Composition's own-route paths are Adapter's, not a second opinion", () => {
+  it("ownRoutePaths matches apexPath, cvPath and portfolioPath exactly", () => {
+    expect(ownRoutePaths.apex).toBe(apexPath);
+    expect(ownRoutePaths.cv).toBe(cvPath);
+    expect(ownRoutePaths.portfolio).toBe(portfolioPath);
+  });
+
+  it("the three are the whole of it — a fourth own route would need a masthead entry too", () => {
+    expect(Object.keys(ownRoutePaths).sort()).toEqual(["apex", "cv", "portfolio"]);
+  });
+
+  it("every route Composition claims as its own is a route Adapter declares", () => {
+    const declared = new Set(config.routes.map((r) => r.path));
+    for (const path of Object.values(ownRoutePaths)) expect(declared).toContain(path);
   });
 });
 
