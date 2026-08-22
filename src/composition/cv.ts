@@ -26,7 +26,7 @@ import type {
 import { primitives, stylesheetFor } from "../presentation";
 import type { BodyHtml } from "../presentation";
 import { escapeHtml } from "./escape-html";
-import { renderHeader, renderOutbound } from "./header";
+import { ownRoutePaths, renderHeader, renderOutbound } from "./header";
 import { personJsonLd } from "./json-ld";
 import type { ComposedRoute } from "./types";
 
@@ -126,7 +126,7 @@ export function composeCv(inventory: Inventory, cv: CvData, origin: string): Com
   const bodyHtml = [
     `<div class="${primitives.page.className}">`,
     `<div class="${primitives.stack.className}">`,
-    renderHeader([], hrefById, origin, sinceYear(inventory)),
+    renderHeader([], hrefById, origin, sinceYear(inventory), ownRoutePaths.cv),
     `<hr class="${primitives.rule.className}" />`,
     `<div class="${primitives.stack.className}">`,
     `<h1>${escapeHtml(cv.header.name)}</h1>`,
@@ -166,7 +166,7 @@ export function composeCv(inventory: Inventory, cv: CvData, origin: string): Com
     `<footer class="${primitives.stack.className}">`,
     `<div class="${primitives.bar.className}">`,
     `<p><em>${escapeHtml(cv.quote)}</em></p>`,
-    `<p class="${primitives.meta.className}">${renderOutbound(hrefById, origin)}</p>`,
+    `<p class="${primitives.meta.className}">${renderOutbound(hrefById, origin, ownRoutePaths.cv)}</p>`,
     `</div>`,
     `</footer>`,
     `</div>`,

@@ -31,7 +31,7 @@ import { primitives, stylesheetFor } from "../presentation";
 import type { BodyHtml } from "../presentation";
 import { enhancementScript } from "./enhancement";
 import { escapeHtml } from "./escape-html";
-import { renderHeader, renderOutbound } from "./header";
+import { ownRoutePaths, renderHeader, renderOutbound } from "./header";
 import { organizationJsonLd } from "./json-ld";
 import { renderTestimonials, testimonialsHeading } from "./testimonials";
 import type { ComposedRoute } from "./types";
@@ -239,7 +239,7 @@ export function composeApex(
   const bodyHtml = [
     `<div class="${primitives.page.className}">`,
     `<div class="${primitives.stack.className}">`,
-    renderHeader(inPageLinks, hrefById, origin, sinceYear(inventory)),
+    renderHeader(inPageLinks, hrefById, origin, sinceYear(inventory), ownRoutePaths.apex),
     `<hr class="${primitives.rule.className}" />`,
     // The four sections are siblings of the outer stack, in their own
     // numbered order — 01 through 04 — rather than sharing a `row`. Which one
@@ -257,7 +257,7 @@ export function composeApex(
     `<footer class="${primitives.stack.className}">`,
     `<div class="${primitives.bar.className}">`,
     `<p>${apexFooterQuote}</p>`,
-    `<p class="${primitives.meta.className}">${renderOutbound(hrefById, origin)}</p>`,
+    `<p class="${primitives.meta.className}">${renderOutbound(hrefById, origin, ownRoutePaths.apex)}</p>`,
     `</div>`,
     `</footer>`,
     `</div>`,

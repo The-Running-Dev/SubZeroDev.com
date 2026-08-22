@@ -8,22 +8,22 @@
     {
       "name": "Test",
       "status": "Passed",
-      "detail": "npm test (vitest run) — Test Files 41 passed (41); Tests 474 passed (474). Duration 8.40s."
+      "detail": "npm test (vitest run) — Test Files 41 passed (41); Tests 490 passed (490). Duration 7.62s."
     },
     {
       "name": "Interrogate the build artifact",
       "status": "Passed",
-      "detail": "GITHUB_SHA=97194b39f6904ae002ce36027eb0f9ab3300effd npm run build, then GITHUB_SHA=97194b39f6904ae002ce36027eb0f9ab3300effd npx vitest run --config vitest.build.config.ts — Test Files 10 passed (10); Tests 83 passed (83). Duration 18.91s on this, the second of two runs. The first run (same commit, freshly rebuilt) reported Test Files 2 failed | 8 passed (10); Tests 83 passed (83) — every individual test passed, but tests/build/section-layout.test.ts and tests/build/enhancement.test.ts each hit \"Hook timed out in 10000ms\" inside their afterAll (browser.close()/server.close()), which vitest counts as a file failure despite zero failing assertions. A clean rebuild-and-rerun did not reproduce it. Reported as a flake, not silently discarded: two runs, one flaky failure in the same two Playwright afterAll hooks, one clean pass, no code change between them."
+      "detail": "GITHUB_SHA=5dfd82537147330bdd129755f8212ca4db0b820a npm run build, then GITHUB_SHA=5dfd82537147330bdd129755f8212ca4db0b820a npx vitest run --config vitest.build.config.ts — Test Files 10 passed (10); Tests 83 passed (83). Duration 8.77s."
     },
     {
       "name": "Image gate",
       "status": "Passed",
-      "detail": "docker build -t subzerodev-com:97194b39f6904ae002ce36027eb0f9ab3300effd . ; docker run -d --name subzerodev-com -p 8080:80 subzerodev-com:97194b39f6904ae002ce36027eb0f9ab3300effd ; GITHUB_SHA=97194b39f6904ae002ce36027eb0f9ab3300effd SERVED_BASE_URL=http://localhost:8080 npm run image-gate — Test Files 1 passed (1); Tests 4 passed (4). Duration 1.64s. Container and image removed after the run."
+      "detail": "docker build -t subzerodev-com:5dfd82537147330bdd129755f8212ca4db0b820a . ; docker run -d --name subzerodev-com-verify -p 8081:80 subzerodev-com:5dfd82537147330bdd129755f8212ca4db0b820a ; GITHUB_SHA=5dfd82537147330bdd129755f8212ca4db0b820a SERVED_BASE_URL=http://localhost:8081 npm run image-gate — Test Files 1 passed (1); Tests 4 passed (4). Duration 715ms. Container and image removed after the run."
     },
     {
       "name": "Check links",
       "status": "Passed",
-      "detail": "npm run check-links (vitest run --config vitest.link-check.config.ts) — Test Files 1 passed (1); Tests 1 passed (1). Duration 3.48s."
+      "detail": "npm run check-links (vitest run --config vitest.link-check.config.ts) — Test Files 1 passed (1); Tests 1 passed (1). Duration 2.22s."
     }
   ]
 }

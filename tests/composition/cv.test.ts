@@ -63,6 +63,8 @@ describe("S16.8 — every CvData outbound URL the body renders appears in checke
     const links = checkedLinks(sample, cv).map((l) => l.url);
     const mastheadUrls = new Set<string>([
       `${TEST_ORIGIN}/`,
+      `${TEST_ORIGIN}/cv/`,
+      `${TEST_ORIGIN}/portfolio/`,
       ...resolvedHomes(sample).map((h) => h.url),
       sourceUrl,
     ]);

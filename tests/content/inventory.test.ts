@@ -208,24 +208,43 @@ describe("S5.5 — composeApex(inventory)'s bodyHtml over the committed inventor
   });
 });
 
-// The apex nav derives its Blog and Portfolio links by looking up the id
-// strings `publishing` and `portfolio` (apex.ts). Composition is total and
-// cannot fail, so a renamed or removed record drops the link silently. These
-// are the assertions that go red instead — see 90-decisions.md, 2026-08-07.
-describe("the apex nav's two derived links still resolve against the committed inventory", () => {
+// The masthead derives its Blog link by looking up the id string
+// `publishing` (header.ts, not apex.ts). Composition is total and cannot
+// fail, so a renamed or removed record drops that link silently, and the
+// first assertion below goes red instead — see 90-decisions.md, 2026-08-07.
+//
+// Since S18 the `portfolio` id is no longer one of those lookups: the
+// masthead's Portfolio entry is this site's own `/portfolio/` route. What the
+// id still guards is the **ecosystem list's** link to the subdomain, which is
+// the one outbound link S18 could have lost by accident (S18.7,
+// 90-decisions.md 2026-08-21) — so it is asserted by that record's own href
+// rather than by the label, which the masthead now renders unconditionally.
+describe("the committed inventory still resolves the ids Composition looks up", () => {
   it.each(["publishing", "portfolio"])("a project with id %s exists and has a resolvable home", (id) => {
     const project = projects.find((p) => p.id === id);
-    expect(project, `no project carries the id "${id}" that apex.ts looks up`).toBeDefined();
-    expect(project?.home.kind, `project "${id}" must have a home the nav can link to`).not.toBe(
+    expect(project, `no project carries the id "${id}" that Composition looks up`).toBeDefined();
+    expect(project?.home.kind, `project "${id}" must have a home a link can point at`).not.toBe(
       "none",
     );
   });
 
-  it("composeApex over the committed inventory renders all three outbound links", () => {
+  it("composeApex over the committed inventory renders the masthead's five entries", () => {
     const { bodyHtml } = composeApex(committed, testimonials, TEST_ORIGIN);
-    for (const label of ["Blog", "Projects", "Portfolio"]) {
-      expect(bodyHtml, `the nav lost its ${label} link`).toContain(`>${label}</a>`);
+    for (const label of ["SubZeroDev.com", "Blog", "Projects", "Portfolio", "CV"]) {
+      expect(bodyHtml, `the masthead lost its ${label} link`).toContain(`>${label}</a>`);
     }
+  });
+
+  it("S18.7 — the ecosystem list still carries the portfolio record's own home", () => {
+    const record = committed.find((p) => p.id === "portfolio");
+    expect(record, "the committed inventory carries no portfolio record").toBeDefined();
+    const home = record!.home;
+    expect(home.kind, "the portfolio record's home is no longer its own URL").toBe("own");
+    const href = home.kind === "own" ? home.url : "";
+    const { bodyHtml } = composeApex(committed, testimonials, TEST_ORIGIN);
+    expect(bodyHtml, "the ecosystem list lost the portfolio record's link").toContain(
+      `href="${href}">${record!.name}</a>`,
+    );
   });
 });
 

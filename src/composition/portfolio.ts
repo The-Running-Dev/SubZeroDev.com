@@ -16,7 +16,7 @@ import type { Inventory, PortfolioCategory, PortfolioData, PortfolioStat, TechNo
 import { primitives, stylesheetFor } from "../presentation";
 import type { BodyHtml } from "../presentation";
 import { escapeHtml } from "./escape-html";
-import { renderHeader, renderOutbound } from "./header";
+import { ownRoutePaths, renderHeader, renderOutbound } from "./header";
 import type { ComposedRoute } from "./types";
 
 // One recursive function for every level of the tree (S17.3) — the source
@@ -76,7 +76,7 @@ export function composePortfolio(
   const bodyHtml = [
     `<div class="${primitives.page.className}">`,
     `<div class="${primitives.stack.className}">`,
-    renderHeader([], hrefById, origin, sinceYear(inventory)),
+    renderHeader([], hrefById, origin, sinceYear(inventory), ownRoutePaths.portfolio),
     `<hr class="${primitives.rule.className}" />`,
     `<div class="${primitives.stack.className}">`,
     `<h1>${escapeHtml(portfolio.header.title)}</h1>`,
@@ -94,7 +94,7 @@ export function composePortfolio(
     `<hr class="${primitives.rule.className}" />`,
     `<footer class="${primitives.stack.className}">`,
     `<div class="${primitives.bar.className}">`,
-    `<p class="${primitives.meta.className}">${renderOutbound(hrefById, origin)}</p>`,
+    `<p class="${primitives.meta.className}">${renderOutbound(hrefById, origin, ownRoutePaths.portfolio)}</p>`,
     `</div>`,
     `</footer>`,
     `</div>`,

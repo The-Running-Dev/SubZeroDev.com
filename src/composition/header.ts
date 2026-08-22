@@ -16,15 +16,15 @@ export type InPageLink = {
 type NavTarget = {
   readonly label: string;
   readonly url: AbsoluteUrl;
-  readonly current?: boolean;
+  readonly current: boolean;
 };
 
-// Blog and Portfolio are the inventory's own homes, found by id rather than
-// restated — those URLs have one home, in the projects JSON document. Renaming either
-// record drops its link silently, because Composition is total and cannot
-// fail. Two tests go red instead: `tests/composition/apex-navigation.test.ts`
-// pins the drop-not-fake behaviour, and `tests/content/inventory.test.ts`
-// asserts the committed inventory still carries both ids (C14's call site).
+// Blog is the inventory's own home, found by id rather than restated — that
+// URL has one home, in the projects JSON document. Renaming that record
+// drops its link silently, because Composition is total and cannot fail.
+// Two tests go red instead: `tests/composition/apex-navigation.test.ts` pins
+// the drop-not-fake behaviour, and `tests/content/inventory.test.ts` asserts
+// the committed inventory still carries the id (C14's call site).
 function homeOf(
   hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>,
   projectId: string,
@@ -36,25 +36,39 @@ function homeOf(
 }
 
 function target(label: string, url: AbsoluteUrl | undefined): NavTarget | null {
-  return url === undefined ? null : { label, url };
+  return url === undefined ? null : { label, url, current: false };
 }
+
+// SubZeroDev.com, Portfolio and CV are this site's own three routes rather
+// than inventory lookups — each carries its own path here rather than
+// importing `RoutePath` from Adapter, which Composition may not do (X2). The
+// current route travels in as a plain string and a target is current when
+// its own path equals it (S18.3): exactly one of the three, on whichever of
+// the three documents composes this header.
+function ownTarget(label: string, path: string, origin: string, currentPath: string): NavTarget {
+  return { label, url: `${origin}${path}` as AbsoluteUrl, current: path === currentPath };
+}
+
+export const ownRoutePaths = {
+  apex: "/",
+  cv: "/cv/",
+  portfolio: "/portfolio/",
+} as const;
 
 // `sourceUrl` addresses the account rather than a project, so it produces no
 // `ResolvedHome`. It is checked by `V4` all the same since S14: `checkedLinks`
 // carries it directly rather than through `resolvedHomes`.
-//
-// The self entry is built directly rather than through `target()`, which
-// exists to drop an *optional* inventory lookup — this entry is always
-// present, so there is nothing for it to drop.
 function outboundTargets(
   hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>,
   origin: string,
+  currentPath: string,
 ): readonly NavTarget[] {
   return [
-    { label: "SubZeroDev.com", url: `${origin}/` as AbsoluteUrl, current: true },
+    ownTarget("SubZeroDev.com", ownRoutePaths.apex, origin, currentPath),
     target("Blog", homeOf(hrefById, "publishing")),
     target("Projects", sourceUrl),
-    target("Portfolio", homeOf(hrefById, "portfolio")),
+    ownTarget("Portfolio", ownRoutePaths.portfolio, origin, currentPath),
+    ownTarget("CV", ownRoutePaths.cv, origin, currentPath),
   ].filter((t): t is NavTarget => t !== null);
 }
 
@@ -66,11 +80,15 @@ function renderLink(href: string, text: string, current?: boolean): string {
   return `<a class="${classAttr}" href="${href}"${currentAttr}>${text}</a>`;
 }
 
-// Exported on its own — `apex.ts`'s footer repeats the outbound group
-// without the in-page links, so the two call sites share this rather than
+// Exported on its own — each route's footer repeats the outbound group
+// without the in-page links, so every call site shares this rather than
 // each restating the outbound derivation.
-export function renderOutbound(hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>, origin: string): string {
-  return outboundTargets(hrefById, origin)
+export function renderOutbound(
+  hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>,
+  origin: string,
+  currentPath: string,
+): string {
+  return outboundTargets(hrefById, origin, currentPath)
     .map((t) => renderLink(escapeHtml(t.url), t.label, t.current))
     .join("");
 }
@@ -79,13 +97,14 @@ function renderNav(
   inPageLinks: readonly InPageLink[],
   hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>,
   origin: string,
+  currentPath: string,
 ): string {
   const inPage = inPageLinks.map((l) => renderLink(`#${l.anchor}`, l.label)).join("");
 
   return [
     `<nav class="${primitives.bar.className}">`,
     `<p class="${primitives.meta.className}">${inPage}</p>`,
-    `<p class="${primitives.meta.className}">${renderOutbound(hrefById, origin)}</p>`,
+    `<p class="${primitives.meta.className}">${renderOutbound(hrefById, origin, currentPath)}</p>`,
     `</nav>`,
   ].join("");
 }
@@ -100,6 +119,7 @@ export function renderHeader(
   hrefById: ReadonlyMap<ProjectId, AbsoluteUrl>,
   origin: string,
   sinceYear: Year,
+  currentPath: string,
 ): string {
   return [
     `<header class="${primitives.stack.className}">`,
@@ -107,6 +127,6 @@ export function renderHeader(
     `<p class="${primitives.meta.className}">Professional uncertainty since ${sinceYear}.</p>`,
     `<p>${primarySlogan}</p>`,
     `</header>`,
-    renderNav(inPageLinks, hrefById, origin),
+    renderNav(inPageLinks, hrefById, origin, currentPath),
   ].join("");
 }
