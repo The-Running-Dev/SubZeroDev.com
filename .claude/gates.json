@@ -1,26 +1,26 @@
 {
   "manifestHash": "c421f9202714d144b709b2331c3e45acff73e5b083d14f52993a744e34b8ff43",
-  "generated": "2026-08-21",
+  "generated": "2026-08-23",
   "gates": [
     {
-      "command": "npm run typecheck",
-      "name": "Typecheck"
+      "name": "Typecheck",
+      "command": "npm run typecheck"
     },
     {
-      "command": "npm test",
-      "name": "Test"
+      "name": "Test",
+      "command": "npm test"
     },
     {
-      "command": "npx vitest run --config vitest.build.config.ts",
-      "name": "Interrogate the build artifact"
+      "name": "Interrogate the build artifact",
+      "command": "npx vitest run --config vitest.build.config.ts"
     },
     {
-      "command": "npm run image-gate",
-      "name": "Image gate"
+      "name": "Image gate",
+      "command": "npm run image-gate"
     },
     {
-      "command": "npm run check-links",
-      "name": "Check links"
+      "name": "Check links",
+      "command": "npm run check-links"
     }
   ]
 }

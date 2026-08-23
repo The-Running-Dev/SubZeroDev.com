@@ -3,27 +3,27 @@
     {
       "name": "Typecheck",
       "status": "Passed",
-      "detail": "npm run typecheck (tsc --noEmit) — no output, clean exit."
+      "detail": "npm run typecheck — tsc --noEmit exited 0 with no output."
     },
     {
       "name": "Test",
       "status": "Passed",
-      "detail": "npm test (vitest run) — Test Files 41 passed (41); Tests 490 passed (490). Duration 7.62s."
+      "detail": "npm test — vitest run: Test Files 41 passed (41), Tests 511 passed (511)."
     },
     {
       "name": "Interrogate the build artifact",
       "status": "Passed",
-      "detail": "GITHUB_SHA=5dfd82537147330bdd129755f8212ca4db0b820a npm run build, then GITHUB_SHA=5dfd82537147330bdd129755f8212ca4db0b820a npx vitest run --config vitest.build.config.ts — Test Files 10 passed (10); Tests 83 passed (83). Duration 8.77s."
+      "detail": "GITHUB_SHA=16e500aeebecac6b392e43aa45babe4ed4c0488c npm run build, then npx vitest run --config vitest.build.config.ts — Test Files 10 passed (10), Tests 86 passed (86)."
     },
     {
       "name": "Image gate",
       "status": "Passed",
-      "detail": "docker build -t subzerodev-com:5dfd82537147330bdd129755f8212ca4db0b820a . ; docker run -d --name subzerodev-com-verify -p 8081:80 subzerodev-com:5dfd82537147330bdd129755f8212ca4db0b820a ; GITHUB_SHA=5dfd82537147330bdd129755f8212ca4db0b820a SERVED_BASE_URL=http://localhost:8081 npm run image-gate — Test Files 1 passed (1); Tests 4 passed (4). Duration 715ms. Container and image removed after the run."
+      "detail": "docker build -t subzerodev-com:16e500aeebecac6b392e43aa45babe4ed4c0488c ., docker run -d -p 8080:80, waited for :8080 to answer, then SERVED_BASE_URL=http://localhost:8080 npm run image-gate — Test Files 1 passed (1), Tests 4 passed (4). Container and image removed after."
     },
     {
       "name": "Check links",
       "status": "Passed",
-      "detail": "npm run check-links (vitest run --config vitest.link-check.config.ts) — Test Files 1 passed (1); Tests 1 passed (1). Duration 2.22s."
+      "detail": "npm run check-links — vitest run --config vitest.link-check.config.ts: Test Files 1 passed (1), Tests 1 passed (1). This is S19's own gate: checkedLinks(inventory, cv) passed to checkLinks unmodified, over the committed site/projects.json and site/cv.json, with the linkCheckExemptions subtraction now inside checkedLinks."
     }
   ]
 }
