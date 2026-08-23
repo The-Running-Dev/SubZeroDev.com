@@ -86,6 +86,11 @@ export type CheckedLink = {
   readonly url: AbsoluteUrl;
 };
 
+export type LinkCheckExemption = {
+  readonly url: AbsoluteUrl;
+  readonly reason: string;
+};
+
 export type StageCount = {
   readonly stage: Stage;
   readonly count: number;

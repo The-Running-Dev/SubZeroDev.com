@@ -1,9 +1,16 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, it } from "vitest";
 
-import { checkedLinks, cvOutboundLinks, sourceUrl, validateInventory } from "../../src/content";
-import type { CvData, Inventory, Project } from "../../src/content";
+import { checkedLinks, cvOutboundLinks, linkCheckExemptions, resolvedHomes, sourceUrl, validateInventory } from "../../src/content";
+import type { AbsoluteUrl, CvData, Inventory, LinkCheckExemption, Project } from "../../src/content";
 import { context, makeCv, makeProject, pid, url } from "./fixtures";
 import { cv as committedCv, projects } from "../helpers/site-data";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(here, "../..");
 
 function inventoryOf(...overrides: readonly Partial<Project>[]): Inventory {
   const result = validateInventory(
@@ -122,5 +129,177 @@ describe("S15.16 — checkedLinks still does not deduplicate across the two halv
     const links = checkedLinks(inventory.value, cv).filter((l) => l.url === "https://portfolio.subzerodev.com");
 
     expect(links.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("S19.1 — linkCheckExemptions (invariant C19)", () => {
+  it("carries exactly one member, exempting https://derivco.com with a recorded reason", () => {
+    expect(linkCheckExemptions).toHaveLength(1);
+    expect(linkCheckExemptions[0]?.url).toBe("https://derivco.com");
+    expect(linkCheckExemptions[0]?.reason.trim().length).toBeGreaterThan(0);
+  });
+});
+
+describe("S19.2 — checkedLinks omits every URL linkCheckExemptions names", () => {
+  it("the exempt address is absent, every other target is present, and surviving labels are unchanged", () => {
+    const inventory = inventoryOf({ id: pid("only"), home: { kind: "none" } });
+    const cv = {
+      ...baseCv,
+      header: { ...baseCv.header, links: [] },
+      roles: [{ ...baseCv.roles[0]!, website: url("https://derivco.com") }],
+      projects: [],
+      openSource: [],
+    } as unknown as CvData;
+
+    const links = checkedLinks(inventory, cv);
+
+    expect(links.some((l) => l.url === "https://derivco.com")).toBe(false);
+    expect(links.map((l) => l.label).sort()).toEqual(["sourceUrl"]);
+  });
+});
+
+describe("S19.3 — matching is by exact URL, never by host or prefix", () => {
+  it("a CV carrying both the exempt address and a distinct path on the same host keeps only the latter", () => {
+    const inventory = inventoryOf({ id: pid("only"), home: { kind: "none" } });
+    const cv = {
+      ...baseCv,
+      header: { ...baseCv.header, links: [] },
+      roles: [{ ...baseCv.roles[0]!, website: url("https://derivco.com") }],
+      projects: [{ ...baseCv.projects[0]!, link: url("https://derivco.com/careers") }],
+      openSource: [],
+    } as unknown as CvData;
+
+    const links = checkedLinks(inventory, cv).filter((l) => l.url.includes("derivco.com"));
+
+    expect(links).toHaveLength(1);
+    expect(links[0]?.url).toBe("https://derivco.com/careers");
+  });
+});
+
+describe("S19.4 — cvOutboundLinks does not subtract", () => {
+  it("called against the S19.2 fixture, still returns the exempt URL", () => {
+    const cv = {
+      ...baseCv,
+      header: { ...baseCv.header, links: [] },
+      roles: [{ ...baseCv.roles[0]!, website: url("https://derivco.com") }],
+      projects: [],
+      openSource: [],
+    } as unknown as CvData;
+
+    const links = cvOutboundLinks(cv);
+
+    expect(links.some((l) => l.url === "https://derivco.com")).toBe(true);
+  });
+});
+
+describe("S19.5 — checkedLinks still returns a non-empty tuple after the subtraction", () => {
+  it("element 0 is indexable with no narrowing check, and sourceUrl appears over the committed documents", () => {
+    const inventory = validateInventory(projects, context);
+    if (!inventory.ok) {
+      throw new Error(`inventory failed to validate: ${inventory.errors.map((e) => e.code).join(", ")}`);
+    }
+    const cv = committedCv as unknown as CvData;
+
+    const links = checkedLinks(inventory.value, cv);
+    const first: (typeof links)[0] = links[0];
+
+    expect(first).toBeDefined();
+    expect(links.some((l) => l.url === sourceUrl)).toBe(true);
+  });
+});
+
+describe("S19.8 — the live shard passes checkedLinks(inventory, cv) to checkLinks unmodified (C17)", () => {
+  it("the shard's own source carries no .filter, .slice or .concat between the two calls", () => {
+    const source = readFileSync(
+      resolve(repoRoot, "tests/verification/live/link-check.test.ts"),
+      "utf8",
+    );
+    const call = source.match(/await checkLinks\(([\s\S]*?),\s*linkCheckRetry\)/)?.[1];
+    expect(call).toBeDefined();
+    expect(call).toBe("checkedLinks(inventory.value, cv.value)");
+    expect(call).not.toMatch(/\.filter\(|\.slice\(|\.concat\(/);
+  });
+});
+
+describe("C19 — every linkCheckExemption is live, justified and not this repository's own address", () => {
+  function liveUrls(): ReadonlySet<AbsoluteUrl> {
+    const inventory = validateInventory(projects, context);
+    if (!inventory.ok) {
+      throw new Error(`inventory failed to validate: ${inventory.errors.map((e) => e.code).join(", ")}`);
+    }
+    const cv = committedCv as unknown as CvData;
+    return new Set([
+      ...resolvedHomes(inventory.value).map((h) => h.url),
+      ...cvOutboundLinks(cv).map((l) => l.url),
+    ]);
+  }
+
+  // Each clause checked independently, so a fixture can be crafted to
+  // violate exactly one and satisfy the rest (S19.7's "negative count: 4").
+  function isLive(exemptions: readonly LinkCheckExemption[]): boolean {
+    const urls = liveUrls();
+    return exemptions.every((e) => urls.has(e.url));
+  }
+  function isJustified(exemptions: readonly LinkCheckExemption[]): boolean {
+    return exemptions.every((e) => e.reason.trim().length > 0);
+  }
+  function hasNoDuplicateUrl(exemptions: readonly LinkCheckExemption[]): boolean {
+    const seen = new Set<string>();
+    for (const e of exemptions) {
+      if (seen.has(e.url)) return false;
+      seen.add(e.url);
+    }
+    return true;
+  }
+  function namesNoSourceUrl(exemptions: readonly LinkCheckExemption[]): boolean {
+    return exemptions.every((e) => e.url !== sourceUrl);
+  }
+  function satisfiesC19(exemptions: readonly LinkCheckExemption[]): boolean {
+    return (
+      isLive(exemptions) &&
+      isJustified(exemptions) &&
+      hasNoDuplicateUrl(exemptions) &&
+      namesNoSourceUrl(exemptions)
+    );
+  }
+
+  it("the real constant satisfies all four clauses", () => {
+    expect(satisfiesC19(linkCheckExemptions)).toBe(true);
+  });
+
+  it("S19.6 — a stale entry, for an address neither committed document carries, fails liveness alone", () => {
+    const stale: LinkCheckExemption = {
+      url: url("https://not-in-any-committed-document.example.com"),
+      reason: "was live once",
+    };
+    expect(isLive([stale])).toBe(false);
+    expect(isJustified([stale])).toBe(true);
+    expect(hasNoDuplicateUrl([stale])).toBe(true);
+    expect(namesNoSourceUrl([stale])).toBe(true);
+  });
+
+  it("an entry whose reason is empty after trimming fails justification alone", () => {
+    const [live] = [...liveUrls()];
+    const blank: LinkCheckExemption = { url: live!, reason: "   " };
+    expect(isLive([blank])).toBe(true);
+    expect(isJustified([blank])).toBe(false);
+    expect(hasNoDuplicateUrl([blank])).toBe(true);
+    expect(namesNoSourceUrl([blank])).toBe(true);
+  });
+
+  it("a duplicate url fails that clause alone", () => {
+    const [live] = [...liveUrls()];
+    const duplicate: LinkCheckExemption = { url: live!, reason: "observed by hand" };
+    expect(isLive([duplicate, duplicate])).toBe(true);
+    expect(isJustified([duplicate, duplicate])).toBe(true);
+    expect(hasNoDuplicateUrl([duplicate, duplicate])).toBe(false);
+    expect(namesNoSourceUrl([duplicate, duplicate])).toBe(true);
+  });
+
+  it("an exemption naming sourceUrl fails that clause alone", () => {
+    const named: LinkCheckExemption = { url: sourceUrl, reason: "observed by hand" };
+    expect(isJustified([named])).toBe(true);
+    expect(hasNoDuplicateUrl([named])).toBe(true);
+    expect(namesNoSourceUrl([named])).toBe(false);
   });
 });
