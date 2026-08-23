@@ -1,9 +1,16 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, it } from "vitest";
 
 import { checkedLinks, cvOutboundLinks, linkCheckExemptions, resolvedHomes, sourceUrl, validateInventory } from "../../src/content";
 import type { AbsoluteUrl, CvData, Inventory, LinkCheckExemption, Project } from "../../src/content";
 import { context, makeCv, makeProject, pid, url } from "./fixtures";
 import { cv as committedCv, projects } from "../helpers/site-data";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(here, "../..");
 
 function inventoryOf(...overrides: readonly Partial<Project>[]): Inventory {
   const result = validateInventory(
@@ -198,6 +205,19 @@ describe("S19.5 — checkedLinks still returns a non-empty tuple after the subtr
 
     expect(first).toBeDefined();
     expect(links.some((l) => l.url === sourceUrl)).toBe(true);
+  });
+});
+
+describe("S19.8 — the live shard passes checkedLinks(inventory, cv) to checkLinks unmodified (C17)", () => {
+  it("the shard's own source carries no .filter, .slice or .concat between the two calls", () => {
+    const source = readFileSync(
+      resolve(repoRoot, "tests/verification/live/link-check.test.ts"),
+      "utf8",
+    );
+    const call = source.match(/await checkLinks\(([\s\S]*?),\s*linkCheckRetry\)/)?.[1];
+    expect(call).toBeDefined();
+    expect(call).toBe("checkedLinks(inventory.value, cv.value)");
+    expect(call).not.toMatch(/\.filter\(|\.slice\(|\.concat\(/);
   });
 });
 
