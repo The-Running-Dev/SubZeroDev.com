@@ -494,6 +494,27 @@ describe("S14.7 — checkLinks is called only by the live link-check shard and i
   });
 });
 
+describe("S19.9 — nothing in src/ outside checkedLinks reads linkCheckExemptions (C17)", () => {
+  const targetFiles = [resolve(contentDir, "index.ts")];
+
+  it("no production module other than checked-links.ts itself reaches it through the index", () => {
+    const files = listTsFiles(resolve(repoRoot, "src"));
+    expect(files.length).toBeGreaterThan(0);
+    const users = namedImportUsers(readEntries(files), targetFiles, "linkCheckExemptions");
+    expect(users).toEqual([]);
+  });
+
+  it("the check has teeth: the live link-check shard importing it is flagged", () => {
+    const liveShard = resolve(repoRoot, "tests/verification/live/link-check.test.ts");
+    const users = namedImportUsers(
+      [{ file: liveShard, source: 'import { linkCheckExemptions } from "../../../src/content";' }],
+      targetFiles,
+      "linkCheckExemptions",
+    );
+    expect(users).toEqual([liveShard]);
+  });
+});
+
 describe("S3.7 — nothing imports Verification", () => {
   // Scoped to `src`, which is the boundary the contract states: no repository
   // module imports Verification, and its own tests necessarily do.

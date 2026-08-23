@@ -21,6 +21,7 @@ export type {
   Genre,
   Home,
   Inventory,
+  LinkCheckExemption,
   PortfolioCategory,
   PortfolioData,
   PortfolioDocument,
@@ -48,7 +49,7 @@ export {
   testimonialsDocumentValidator,
 } from "./documents";
 export { resolvedHomes } from "./resolved-homes";
-export { checkedLinks, cvOutboundLinks } from "./checked-links";
+export { checkedLinks, cvOutboundLinks, linkCheckExemptions } from "./checked-links";
 export { primarySlogan, apexFooterQuote } from "./copy";
 export { sourceUrl } from "./links";
 export {
