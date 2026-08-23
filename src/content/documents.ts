@@ -10,11 +10,11 @@ import { z } from "zod";
 import type {
   BuildContext,
   CvData,
-  CvDocument,
   Inventory,
   PortfolioData,
-  PortfolioDocument,
   Project,
+  RawCvDocument,
+  RawPortfolioDocument,
   Testimonials,
   Testimonial,
 } from "./types";
@@ -178,7 +178,7 @@ const cvDocumentSchema = z
     quote: z.string(),
   })
   .strict()
-  .transform(({ version: _version, provenance: _provenance, ...cv }) => cv as unknown as CvDocument);
+  .transform(({ version: _version, provenance: _provenance, ...cv }) => cv as unknown as RawCvDocument);
 
 // Recursive to match the source's own nesting; C18's depth bound is enforced
 // by validatePortfolio's semantic pass, not by the structural schema.
@@ -205,7 +205,7 @@ const portfolioDocumentSchema = z
   })
   .strict()
   .transform(
-    ({ version: _version, provenance: _provenance, ...portfolio }) => portfolio as unknown as PortfolioDocument,
+    ({ version: _version, provenance: _provenance, ...portfolio }) => portfolio as unknown as RawPortfolioDocument,
   );
 
 export function cvDocumentValidator(context: BuildContext): Validator<CvData> {

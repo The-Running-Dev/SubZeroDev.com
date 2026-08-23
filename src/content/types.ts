@@ -122,8 +122,8 @@ export type CvRole = {
   readonly location: string;
   readonly website?: AbsoluteUrl;
   readonly summary: string;
-  readonly achievements: readonly string[];
-  readonly tech: readonly string[];
+  readonly achievements: readonly [string, ...string[]];
+  readonly tech: readonly [string, ...string[]];
 };
 
 export type CvEducation = {
@@ -136,7 +136,7 @@ export type CvProject = {
   readonly title: string;
   readonly link: AbsoluteUrl;
   readonly description: string;
-  readonly tech: readonly string[];
+  readonly tech: readonly [string, ...string[]];
   readonly year: Year;
 };
 
@@ -145,49 +145,81 @@ export type CvOpenSource = {
   readonly link?: AbsoluteUrl;
   readonly description: string;
   readonly impact: string;
-  readonly tech: readonly string[];
+  readonly tech: readonly [string, ...string[]];
 };
 
 export type CvEra = {
   readonly period: string;
   readonly focus: string;
-  readonly projects: readonly string[];
+  readonly projects: readonly [string, ...string[]];
 };
 
-// The raw, pre-validation shape a `CvDocument` parses into — array fields are
-// deliberately plain here (not the non-empty tuple `validateCv`'s CvData
-// promises) since the schema that produces this type allows empty arrays;
-// `validateCv`'s `checkCvCollection` is what actually enforces non-emptiness.
 export type CvDocument = {
   readonly header: {
     readonly name: string;
     readonly title: string;
     readonly email: string;
     readonly phone: string;
-    readonly links: readonly CvLink[];
+    readonly links: readonly [CvLink, ...CvLink[]];
   };
   readonly about: { readonly title: string; readonly body: string };
-  readonly badges: readonly string[];
-  readonly chips: readonly string[];
+  readonly badges: readonly [string, ...string[]];
+  readonly chips: readonly [string, ...string[]];
   readonly timelineTitle: string;
-  readonly roles: readonly CvRole[];
+  readonly roles: readonly [CvRole, ...CvRole[]];
   readonly educationTitle: string;
-  readonly education: readonly CvEducation[];
+  readonly education: readonly [CvEducation, ...CvEducation[]];
   readonly projectsTitle: string;
-  readonly projects: readonly CvProject[];
+  readonly projects: readonly [CvProject, ...CvProject[]];
   readonly openSourceTitle: string;
-  readonly openSource: readonly CvOpenSource[];
+  readonly openSource: readonly [CvOpenSource, ...CvOpenSource[]];
   readonly timelineProjectsTitle: string;
-  readonly timelineProjects: readonly CvEra[];
+  readonly timelineProjects: readonly [CvEra, ...CvEra[]];
   readonly quote: string;
 };
 
 // The one value only `validateCv` can produce.
 export type CvData = Branded<CvDocument, "CvData">;
 
+export type RawCvRole = Omit<CvRole, "achievements" | "tech"> & {
+  readonly achievements: readonly string[];
+  readonly tech: readonly string[];
+};
+
+export type RawCvProject = Omit<CvProject, "tech"> & { readonly tech: readonly string[] };
+
+export type RawCvOpenSource = Omit<CvOpenSource, "tech"> & { readonly tech: readonly string[] };
+
+export type RawCvEra = Omit<CvEra, "projects"> & { readonly projects: readonly string[] };
+
+// The raw, pre-validation shape a `CvDocument` parses into — array fields are
+// deliberately plain here (not the non-empty tuple `CvDocument` and `CvData`
+// promise) since the schema that produces this type allows empty arrays;
+// `validateCv`'s `checkCvCollection` is what actually enforces non-emptiness.
+export type RawCvDocument = Omit<
+  CvDocument,
+  | "header"
+  | "badges"
+  | "chips"
+  | "roles"
+  | "education"
+  | "projects"
+  | "openSource"
+  | "timelineProjects"
+> & {
+  readonly header: Omit<CvDocument["header"], "links"> & { readonly links: readonly CvLink[] };
+  readonly badges: readonly string[];
+  readonly chips: readonly string[];
+  readonly roles: readonly RawCvRole[];
+  readonly education: readonly CvEducation[];
+  readonly projects: readonly RawCvProject[];
+  readonly openSource: readonly RawCvOpenSource[];
+  readonly timelineProjects: readonly RawCvEra[];
+};
+
 export type TechNode = {
   readonly name: string;
-  readonly children?: readonly TechNode[];
+  readonly children?: readonly [TechNode, ...TechNode[]];
 };
 
 export type PortfolioCategory = {
@@ -201,14 +233,28 @@ export type PortfolioStat = {
   readonly label: string;
 };
 
-// The raw, pre-validation shape — see the CvDocument comment above; the same
-// reasoning applies here.
 export type PortfolioDocument = {
   readonly header: { readonly title: string; readonly subtitle: string };
-  readonly technologies: readonly TechNode[];
-  readonly projects: readonly PortfolioCategory[];
-  readonly stats: readonly PortfolioStat[];
+  readonly technologies: readonly [TechNode, ...TechNode[]];
+  readonly projects: readonly [PortfolioCategory, ...PortfolioCategory[]];
+  readonly stats: readonly [PortfolioStat, ...PortfolioStat[]];
 };
 
 // The one value only `validatePortfolio` can produce.
 export type PortfolioData = Branded<PortfolioDocument, "PortfolioData">;
+
+// `RawTechNode` is written out rather than derived: a recursive type cannot
+// be expressed as a difference from itself, since `Omit<TechNode, "children">`
+// would still reach `TechNode` through the field being replaced.
+export type RawTechNode = {
+  readonly name: string;
+  readonly children?: readonly RawTechNode[];
+};
+
+// The raw, pre-validation shape — see the RawCvDocument comment above; the
+// same reasoning applies here.
+export type RawPortfolioDocument = Omit<PortfolioDocument, "technologies" | "projects" | "stats"> & {
+  readonly technologies: readonly RawTechNode[];
+  readonly projects: readonly PortfolioCategory[];
+  readonly stats: readonly PortfolioStat[];
+};

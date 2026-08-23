@@ -7,7 +7,7 @@
 import { describe, expect, it } from "vitest";
 
 import { validatePortfolio } from "../../src/content";
-import type { PortfolioDocument } from "../../src/content";
+import type { RawPortfolioDocument } from "../../src/content";
 import { makePortfolio } from "./fixtures";
 
 function clone(): any {
@@ -15,7 +15,7 @@ function clone(): any {
 }
 
 function codesOf(portfolio: any): string[] {
-  const result = validatePortfolio(portfolio as PortfolioDocument);
+  const result = validatePortfolio(portfolio as RawPortfolioDocument);
   if (result.ok) return [];
   return result.errors.map((e) => e.code);
 }
@@ -30,7 +30,7 @@ describe("S15.6 — validatePortfolio raises its four codes", () => {
   it("PortfolioFieldEmpty on an empty required string, naming its dotted path", () => {
     const portfolio = clone();
     portfolio.header.subtitle = "  ";
-    const result = validatePortfolio(portfolio as PortfolioDocument);
+    const result = validatePortfolio(portfolio as RawPortfolioDocument);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toHaveLength(1);
@@ -51,7 +51,7 @@ describe("S15.6 — validatePortfolio raises its four codes", () => {
   it("PortfolioCollectionEmpty on an empty top-level collection", () => {
     const portfolio = clone();
     portfolio.projects = [];
-    const result = validatePortfolio(portfolio as PortfolioDocument);
+    const result = validatePortfolio(portfolio as RawPortfolioDocument);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toHaveLength(1);
@@ -68,7 +68,7 @@ describe("S15.6 — validatePortfolio raises its four codes", () => {
   it("an absent TechNode.children is valid — that is how a leaf is spelled", () => {
     const portfolio = clone();
     delete portfolio.technologies[0].children;
-    expect(validatePortfolio(portfolio as PortfolioDocument).ok).toBe(true);
+    expect(validatePortfolio(portfolio as RawPortfolioDocument).ok).toBe(true);
   });
 
   it("PortfolioTechDepthExceeded on a fourth level", () => {
@@ -87,7 +87,7 @@ describe("S15.6 — validatePortfolio raises its four codes", () => {
     portfolio.technologies = [
       { name: "Level 1", children: [{ name: "Level 2", children: [{ name: "Level 3" }] }] },
     ];
-    expect(validatePortfolio(portfolio as PortfolioDocument).ok).toBe(true);
+    expect(validatePortfolio(portfolio as RawPortfolioDocument).ok).toBe(true);
   });
 
   it("PortfolioDuplicateCategory on two top-level technologies entries sharing a name", () => {
@@ -126,5 +126,35 @@ describe("S15.7 — every fault is reported in one Result, not the first", () =>
         "PortfolioDuplicateCategory",
       ].sort(),
     );
+  });
+});
+
+// S20.7 — the declared shape (tests/types/cv-portfolio.type-check.ts, S20.1)
+// and the runtime check agree position for position: emptying each of the
+// four portfolio list positions, one at a time, yields
+// PortfolioCollectionEmpty naming that field's dotted path. Demonstrated red
+// by removing any one checkPortfolioCollection call in validatePortfolio,
+// which fails exactly this criterion.
+describe("S20.7 — every non-empty portfolio list position raises PortfolioCollectionEmpty when emptied", () => {
+  const positions: ReadonlyArray<readonly [string, (portfolio: any) => void]> = [
+    ["technologies", (portfolio) => (portfolio.technologies = [])],
+    ["technologies[0].children", (portfolio) => (portfolio.technologies[0].children = [])],
+    ["projects", (portfolio) => (portfolio.projects = [])],
+    ["stats", (portfolio) => (portfolio.stats = [])],
+  ];
+
+  it("covers exactly the four positions S20.1 pins", () => {
+    expect(positions).toHaveLength(4);
+  });
+
+  it.each(positions)("%s", (field, empty) => {
+    const portfolio = clone();
+    empty(portfolio);
+    const result = validatePortfolio(portfolio as RawPortfolioDocument);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]).toMatchObject({ code: "PortfolioCollectionEmpty", field });
+    }
   });
 });

@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import { validateCv } from "../../src/content";
-import type { CvDocument } from "../../src/content";
+import type { RawCvDocument } from "../../src/content";
 import { context, makeCv } from "./fixtures";
 
 function clone(): any {
@@ -14,7 +14,7 @@ function clone(): any {
 }
 
 function codesOf(cv: any): string[] {
-  const result = validateCv(cv as CvDocument, context);
+  const result = validateCv(cv as RawCvDocument, context);
   if (result.ok) return [];
   return result.errors.map((e) => e.code);
 }
@@ -29,7 +29,7 @@ describe("S15.5 — validateCv raises CvFieldEmpty, CvCollectionEmpty, CvUrlInva
   it("CvFieldEmpty on an empty required string, naming its dotted path", () => {
     const cv = clone();
     cv.about.title = "  ";
-    const result = validateCv(cv as CvDocument, context);
+    const result = validateCv(cv as RawCvDocument, context);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toHaveLength(1);
@@ -40,7 +40,7 @@ describe("S15.5 — validateCv raises CvFieldEmpty, CvCollectionEmpty, CvUrlInva
   it("CvCollectionEmpty on an empty non-empty-typed list", () => {
     const cv = clone();
     cv.badges = [];
-    const result = validateCv(cv as CvDocument, context);
+    const result = validateCv(cv as RawCvDocument, context);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toHaveLength(1);
@@ -51,7 +51,7 @@ describe("S15.5 — validateCv raises CvFieldEmpty, CvCollectionEmpty, CvUrlInva
   it("CvUrlInvalid on a malformed required URL", () => {
     const cv = clone();
     cv.projects[0].link = "not a url";
-    const result = validateCv(cv as CvDocument, context);
+    const result = validateCv(cv as RawCvDocument, context);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toHaveLength(1);
@@ -62,7 +62,7 @@ describe("S15.5 — validateCv raises CvFieldEmpty, CvCollectionEmpty, CvUrlInva
   it("CvUrlInvalid on a malformed optional URL that is present", () => {
     const cv = clone();
     cv.roles[0].website = "not a url";
-    const result = validateCv(cv as CvDocument, context);
+    const result = validateCv(cv as RawCvDocument, context);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toHaveLength(1);
@@ -73,7 +73,7 @@ describe("S15.5 — validateCv raises CvFieldEmpty, CvCollectionEmpty, CvUrlInva
   it("an absent optional URL raises nothing", () => {
     const cv = clone();
     delete cv.roles[0].website;
-    expect(validateCv(cv as CvDocument, context).ok).toBe(true);
+    expect(validateCv(cv as RawCvDocument, context).ok).toBe(true);
   });
 
   it("CvYearInvalid on a non-four-digit year", () => {
@@ -113,3 +113,41 @@ describe("S15.8 — CvYearInvalid takes precedence over CvYearAfterBuild", () =>
 // S15.9 — CvData is constructible only by validateCv: the brand is
 // compile-time only, so the assertion is a type-level one and lives in
 // tests/types/cv-portfolio.type-check.ts.
+
+// S20.7 — the declared shape (tests/types/cv-portfolio.type-check.ts, S20.1)
+// and the runtime check agree position for position: emptying each of the
+// thirteen CV list positions, one at a time, yields CvCollectionEmpty naming
+// that field's dotted path. Demonstrated red by removing any one
+// checkCvCollection call in validateCv, which fails exactly this criterion.
+describe("S20.7 — every non-empty CV list position raises CvCollectionEmpty when emptied", () => {
+  const positions: ReadonlyArray<readonly [string, (cv: any) => void]> = [
+    ["header.links", (cv) => (cv.header.links = [])],
+    ["badges", (cv) => (cv.badges = [])],
+    ["chips", (cv) => (cv.chips = [])],
+    ["roles", (cv) => (cv.roles = [])],
+    ["roles[0].achievements", (cv) => (cv.roles[0].achievements = [])],
+    ["roles[0].tech", (cv) => (cv.roles[0].tech = [])],
+    ["education", (cv) => (cv.education = [])],
+    ["projects", (cv) => (cv.projects = [])],
+    ["projects[0].tech", (cv) => (cv.projects[0].tech = [])],
+    ["openSource", (cv) => (cv.openSource = [])],
+    ["openSource[0].tech", (cv) => (cv.openSource[0].tech = [])],
+    ["timelineProjects", (cv) => (cv.timelineProjects = [])],
+    ["timelineProjects[0].projects", (cv) => (cv.timelineProjects[0].projects = [])],
+  ];
+
+  it("covers exactly the thirteen positions S20.1 pins", () => {
+    expect(positions).toHaveLength(13);
+  });
+
+  it.each(positions)("%s", (field, empty) => {
+    const cv = clone();
+    empty(cv);
+    const result = validateCv(cv as RawCvDocument, context);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]).toMatchObject({ code: "CvCollectionEmpty", field });
+    }
+  });
+});

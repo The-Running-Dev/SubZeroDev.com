@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import type { CvDocument, PortfolioDocument, Project, Testimonial } from "../../src/content";
+import type { Project, RawCvDocument, RawPortfolioDocument, Testimonial } from "../../src/content";
 
 const repoRoot = resolve(import.meta.dirname, "../..");
 
@@ -27,6 +27,6 @@ export const rawPortfolioDocument = portfolioDocument;
 // Envelope fields (`version`, `provenance`) stripped, matching the structural
 // schema's own transform — for tests that exercise validateCv/validatePortfolio
 // directly, below the document validator.
-export const cv = (({ version: _v, provenance: _p, ...rest }) => rest as unknown as CvDocument)(cvDocument);
+export const cv = (({ version: _v, provenance: _p, ...rest }) => rest as unknown as RawCvDocument)(cvDocument);
 export const portfolio = (({ version: _v, provenance: _p, ...rest }) =>
-  rest as unknown as PortfolioDocument)(portfolioDocument);
+  rest as unknown as RawPortfolioDocument)(portfolioDocument);
