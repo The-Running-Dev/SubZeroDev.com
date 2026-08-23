@@ -10,14 +10,14 @@ import type { ContentError, ContentErrorCode } from "./errors";
 import type {
   BuildContext,
   CvData,
-  CvDocument,
   Inventory,
   PortfolioData,
-  PortfolioDocument,
   Project,
   ProjectId,
+  RawCvDocument,
+  RawPortfolioDocument,
+  RawTechNode,
   Result,
-  TechNode,
   Testimonial,
   Testimonials,
 } from "./types";
@@ -399,7 +399,7 @@ function checkCvYear(year: number, path: string, context: BuildContext, errors: 
   checkYear(year, path, context, null, { invalid: "CvYearInvalid", afterBuild: "CvYearAfterBuild" }, errors);
 }
 
-export function validateCv(cv: CvDocument, context: BuildContext): Result<CvData, ContentError> {
+export function validateCv(cv: RawCvDocument, context: BuildContext): Result<CvData, ContentError> {
   const errors: ContentError[] = [];
 
   checkCvRequiredString(cv.header.name, "header.name", errors);
@@ -494,7 +494,7 @@ const checkPortfolioCollection = nonEmptyCollectionChecker("PortfolioCollectionE
 
 // Depth is 1-indexed at the top-level `technologies` entries — the bound C18
 // enforces is three levels, so a node introduced at depth 4 or deeper fails.
-function checkTechNode(node: TechNode, path: string, depth: number, errors: ContentError[]): void {
+function checkTechNode(node: RawTechNode, path: string, depth: number, errors: ContentError[]): void {
   checkPortfolioString(node.name, `${path}.name`, errors);
   if (depth > 3) {
     errors.push(
@@ -521,7 +521,7 @@ function countBy<T>(items: readonly T[], key: (item: T) => string): Map<string, 
   return counts;
 }
 
-export function validatePortfolio(portfolio: PortfolioDocument): Result<PortfolioData, ContentError> {
+export function validatePortfolio(portfolio: RawPortfolioDocument): Result<PortfolioData, ContentError> {
   const errors: ContentError[] = [];
 
   checkPortfolioString(portfolio.header.title, "header.title", errors);
