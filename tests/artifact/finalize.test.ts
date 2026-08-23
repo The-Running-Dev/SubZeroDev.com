@@ -171,6 +171,8 @@ describe("S7.5/S7.6/S7.14 — a successful run over a well-formed tree", () => {
 
 describe("R2 — finalizeArtifact removes missEmittedEntry after copying it", () => {
   it("removes the now-empty directory that held missEmittedEntry, not just the file", async () => {
+    // issue #111 — R2's restated property ("/404/ resolves on no host") holds
+    // only if the emptied directory itself is gone, not just the file it held.
     writeTree({ "index.html": APEX_HTML, "404/index.html": MISS_HTML });
 
     const result = await finalizeArtifact({ outputDir, serverConfigDir, commit: COMMIT });
