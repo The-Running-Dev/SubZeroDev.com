@@ -192,6 +192,13 @@ may be funnier than it is true outranks the joke's polish, and a checkable quote
 repository is evidence about this site's own subject. The alternatives and their costs are in
 [`90-decisions.md`](90-decisions.md), 2026-08-20.
 
+**The link gate does not reach it, on the owner's ruling of 2026-08-23.** `checkedLinks` enumerates
+the inventory's homes, `sourceUrl` and the CV's outbound addresses, and no testimonial half was ever
+added. That is now the settled answer rather than an omission: a testimonial may or may not be real by
+design, and a gate reporting green on its citation would be this repository asserting which — the one
+thing the section is built not to say. The cost is the same one an exemption carries, arrived at from
+the opposite direction: a published outbound link nothing observes.
+
 **Order is the data's, not the renderer's.** The renderer preserves the order it is given and sorts
 nothing — the same discipline `ecosystemTree` and `contaminationForest` observe over `Project`, so a
 consumer supplying real customer quotes gets a plain list rather than an editorial one, and so the
@@ -358,6 +365,13 @@ reason every URL here belongs to Content — a URL is data — and it is what fi
 inside `V4`, which the 2026-08-07 ruling knowingly left outside when the exposure was one link. The
 exemption set belongs to the same enumeration for the same reason: an exemption applied anywhere else
 is a second answer to what the gate covers.
+
+**The testimonial collection is not in that enumeration, and that is the one deliberate hole in it.**
+A `Testimonial` may carry a citation `url`, and the apex renders it. It is left unchecked because a
+testimonial's standing is unsettled on purpose — a gate that fetched the citation would make this
+site assert the quote is real, which is precisely what the collection is built not to settle. See
+[`20-contract.md`](20-contract.md) § `C17` and *Testimonial*, and [`90-decisions.md`](90-decisions.md),
+2026-08-23.
 
 *The binding rule of this design:* **Content imports nothing from Composition, Presentation, Adapter
 or Artifact.** That is what makes every count testable without a DOM, and what stops a number from
@@ -812,8 +826,10 @@ run on a fork pull request, where the hostnames it would reach are the pull requ
 first limit is written in [`20-contract.md`](20-contract.md) § *Error semantics*; the second is
 workflow configuration and is recorded in [`90-decisions.md`](90-decisions.md). An exempt address is
 a third: it is on the page and outside this detector entirely, which is why the set is bounded by
-`C19` rather than by judgement at the point of use. After deploy nothing notices, which is the honest
-limit of the chosen static release boundary. A scheduled check is deliberately left to *Open
+`C19` rather than by judgement at the point of use. **A testimonial's citation `url` is a fourth**, and
+unlike an exemption it is not bounded by anything — it is excluded because checking it would settle
+what the collection deliberately leaves unsettled, not because it cannot be reached. After deploy
+nothing notices, which is the honest limit of the chosen static release boundary. A scheduled check is deliberately left to *Open
 questions* rather than assumed.
 
 **User sees:** a working page with one dead link.
@@ -1267,10 +1283,12 @@ and renumbering would rot those citations silently. An answered question keeps i
    deployment being real needs the endpoint to answer. Q7 is untouched by that: an endpoint read-back
    asserts what is served, and decides nothing about what terminates TLS in front of it.
 8. ~~**Does the compose file live in this repository?**~~ **Answered 2026-08-07: yes, and it is the
-   deployment, not documentation of one.** Mirrors `SubZeroDev.Blog`'s split — a local-build Compose
-   file plus a separate deployment Compose file pulling the published GHCR image, imported as the
-   Portainer stack. See `design/90-decisions.md`, 2026-08-07 — "The deployment Compose file and
-   Portainer GitOps redeploy are in scope for this repository".
+   deployment, not documentation of one.** Follows `SubZeroDev.Blog`'s split, of which only the
+   deployment half is written here: the repository-root Compose file pulls the published GHCR image and
+   is imported as the Portainer stack, and a separate local-build Compose file — the other half of that
+   split there — does not exist in this repository and is not required by anything. See
+   `design/90-decisions.md`, 2026-08-07 — "The deployment Compose file and Portainer GitOps redeploy
+   are in scope for this repository", which records the local-build form as not yet written.
 
    **Its footing changed the same day, and that is the part worth reading.** As first written this
    answer stood against a non-goal that put *hosting configuration* out of scope and said no agent

@@ -50,6 +50,87 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 
 ---
 
+### 2026-08-23 — `assertSelfContained`'s per-document counts are withdrawn from the contract, unimplemented
+
+Context: `/reconcile` found `20-contract.md` declaring `assertSelfContained(documentHtml, permitted:
+PermittedScripts)` while `src/verification/self-contained.ts` takes `documentHtml` alone. The
+amendment was ruled on 2026-08-21 in the two entries below and was ruled to **ride with `S16`**, whose
+`S16.5` `30-slices.md` § *Next* itself notes "is written against the unamended form". `S16` merged at
+`4d388c9`; `S17`, `S18`, `S19` and `S20` merged after it. No criterion changed, so no test could go
+red, and `V13` went on stating the per-route half as checked. The function admits one
+`application/ld+json` block plus one inline script on every document — the apex's ceiling applied to
+all four routes.
+
+Chosen: **the contract retreats to the tree.** `PermittedScripts` is deleted from § *Types*,
+`assertSelfContained`'s signature reverts to one parameter, and `V13`, `ScriptElementPresent` and the
+`assertSelfContained` prose each state plainly that the per-document counts are a rule this contract
+carries and no callable surface checks — the same standing `assertImportGraph` has under `V16`. The
+two 2026-08-21 entries below are superseded by this one and are retained, per this log's append-only
+rule, as the record of what was weighed.
+
+Rejected: **implementing the parameter** — the recommended resolution, and declined on the owner's
+ruling. It is a small change (one type, one parameter, four call sites in
+`tests/build/emitted-document.test.ts`) and it closes a real hole: a CV, portfolio or miss document
+that acquired an inline script passes today. What it costs is a slice-sized change landing outside any
+slice, needing its own tracked carrier — which is the same shape of commitment that produced this
+drift in the first place. **Deferring behind a tracked issue** — declined because it leaves `V13`
+reading as enforced, and a rule believed enforced is worse than one known not to be; the withdrawal
+makes the gap legible in the document a reader actually opens.
+
+**The accepted cost, stated plainly:** `V13`'s per-document script counts are unenforced. `V2`'s
+browser capture still proves no document fetches anything, `V3` still proves the apex's content
+survives with scripting off, and `assertSelfContained`'s other two faults — a linked stylesheet, an
+external asset reference — are unaffected. What is no longer claimed is that the portfolio and miss
+documents carry zero script elements and the CV exactly one; that is now authored discipline held by
+`tests/composition/*`, over `bodyHtml`, where the bundler cannot be seen.
+
+Reversibility: cheap in both directions. Restoring the parameter is the same one-type, one-parameter,
+four-call-site change this entry declines; the shape it would take is fully specified in the entry
+below and is not lost by the withdrawal.
+
+---
+
+### 2026-08-23 — A testimonial's citation is outside `V4` by ruling, and `C17` narrows to say so
+
+Context: `/reconcile` found `C17` claiming *"Every outbound URL any route renders is either in
+`checkedLinks`, or named by `linkCheckExemptions`, or is not an HTTP address at all"* while `X8` (added
+2026-08-20, one day earlier) renders `Testimonial.url` as a `Source` link and `checkedLinks` enumerates
+only the inventory's homes, `sourceUrl` and the CV's outbound addresses. `site/testimonials.json`
+carries one such URL, live on both published targets and checked by nothing; issue #99 queues five
+more. The invariant has been false since the day it was written. `S16.8` gives the CV route exactly the
+subset assertion that would have caught this; the apex, which is older, never had one.
+
+Chosen: **the citation stays outside `V4`, and `C17` narrows to the inventory and the CV document.**
+A testimonial's standing is *unsettled by design* — the collection mixes real lines with invented ones
+and the page labels neither, which is the carve-out `00-brief.md` § *Source material* item 4 protects.
+A gate over the citation would make this repository assert what the section exists not to assert: a
+green `V4` is evidence the source is real, and a red one puts a fabricated attribution's absent source
+on the same footing as a dead project site. `checkedLinks` therefore does not take `Testimonials` and
+gains no third parameter. `C17`, the `CheckedLink` prose in § *Content*, the `Testimonial.url`
+declaration note, the *deliberately not encoded* list, `10-design.md` § *Module boundaries*, its
+*Testimonial* section and its link-check failure mode all state the exclusion and its reason.
+
+Rejected: **widening `checkedLinks` with a `testimonialOutboundLinks` half** — the recommended
+resolution, and declined on the owner's ruling. It would have brought the one live citation and #99's
+five inside `V4` at the cost of one parameter and two call sites. Declined because the cost is not the
+signature: it is that the gate's verdict becomes a claim about whether a quote is real, which is the
+one property this collection is built to leave open. **Dropping `Testimonial.url` outright** — not
+raised as an option and worth naming as rejected here anyway: the 2026-08-20 ruling that admitted the
+field weighed the *tell* it creates and accepted it, and nothing in this drift is new evidence against
+that. **Deferring behind an issue** — declined because `C17` would stay false while #99's five
+citations landed against it.
+
+**The accepted cost, stated plainly:** a testimonial citation is an outbound link on a published page
+that no gate observes, and nothing bounds how many there are — unlike `linkCheckExemptions`, which
+`C19` bounds to live, justified, non-`sourceUrl` entries. The two exclusions are arrived at from
+opposite directions: an exemption admits an address cannot be *verified*, this admits an address must
+not be *asserted about*.
+
+Reversibility: cheap. One parameter on `checkedLinks`, one enumeration half, and the six document
+passages this entry names.
+
+---
+
 ### 2026-08-21 — `assertSelfContained`'s new parameter is a pair of ceilings, supplied by the caller
 
 Context: the entry below rules that `assertSelfContained` takes the emitted document's permitted script
