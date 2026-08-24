@@ -957,10 +957,14 @@ back in the other.
 The ordering invariant forks after the shared build: content validation → render → package build →
 Artifact → offline verification. From there, the **preview branch** performs branch-head check → Pages
 deploy → Pages read-back (exact marker, bytes, unknown path), without waiting on a release gate. In
-parallel, the **release-preparation branch** performs image build → in-CI image gate → networked link
-check, and continues on its own — the branches do not converge: truth attestation → branch-head
+parallel, the **release-preparation branch** runs two independent gates rather than a chain — image
+build → in-CI image gate, and the networked link check **alongside it, not behind it** — and joins
+them at the attestation, continuing on its own from there: truth attestation → branch-head
 re-check → registry push → redeploy trigger → endpoint read-back (exact marker, unknown path) → live
-claim. The preview branch ends at its own read-back. One concurrency group orders the two publishing
+claim. **Only one ordering on this branch is load-bearing, and it is the next paragraph's**: the
+image gate precedes the attestation. Nothing requires the link check to sit on either side of the
+image gate, so nothing serialises them; this read as a chain until 2026-08-24, which described a
+workflow that has always run them as a fan-in. The preview branch ends at its own read-back. One concurrency group orders the two publishing
 steps against each other; it does not order either against the other's gates. The workflow enforces
 that graph; the prose report merely reflects it.
 

@@ -50,6 +50,72 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 
 ---
 
+### 2026-08-24 — `V2`'s miss-route exclusion is withdrawn; the capture always covered four documents
+Context: `V2` read *"the miss route is excluded because it is reached only through the unknown-path
+mechanism `V12` covers, not through direct navigation"* from the 2026-08-21 four-route amendment.
+`tests/build/request-capture.test.ts` has captured the miss document since `S8` — as `S8.3`, at
+`/404`, which `tests/build/static-server.ts` resolves through that very fallback to root `404.html` at
+a 404 status. The clause was false from the day it was written, and its cost is that it licensed
+deleting a real check as out of scope.
+Chosen: widen `V2` to name all four emitted documents, and say how the miss one is reached rather than
+that it is skipped. Record in the clause that the exclusion stood 2026-08-21 to 2026-08-24 and was
+false throughout, on the same footing as `C17`'s own false-clause note of 2026-08-23.
+Rejected: **deleting `S8.3` to match the contract** — takes the document at its word and loses the one
+capture over the document with no masthead, no navigation and no script element, for no saving; the
+assertion is nearly free precisely because that document carries nothing. **Striking only the
+rationale clause and keeping "excluded"** — the smallest edit, and it leaves `V2` still reading as
+though nothing checks the miss document, which is the reading that created the risk.
+Reversibility: cheap.
+
+### 2026-08-24 — `ServedBytesMismatch`'s row is widened to the two targets and three routes `V11` names
+Context: the `Error semantics` row read *"What the running image serves for `/`"* with a caller
+response of *"Fail the image gate. **Never push**"*. `V11` widened on 2026-08-21 to `/`, `/cv/` and
+`/portfolio/` on **both** targets, and `tests/publish/preview-read-back.test.ts` raises this code from
+the Pages read-back, where the caller response is not "never push" but "announce no preview URL". Both
+columns were wrong for one of the two callers; the row was simply not carried along with the
+invariant.
+Chosen: rewrite both columns to name the three routes, both targets, and the two distinct caller
+responses.
+Rejected: **splitting into two codes, one per target** — more precise per row, and it costs a new
+union member plus every call site and test naming the old one, which is a code change to repair a
+documentation lag. **Leaving the row and pointing at `V11`** — cheapest, and *Error semantics* is
+where a reader looks for what a code means; a pointer there is the two-copies problem *Single
+ownership* names.
+Reversibility: cheap.
+
+### 2026-08-24 — Three `VerificationErrorCode` members are kept as specification, with the gap stated
+Context: the contract's union declares `ForbiddenModuleImport`, `UnauthorizedValidatorImport` and
+`UnpermittedImportName`; `src/verification/errors.ts` declares neither, carrying 23 members to the
+contract's 26. All three are `assertImportGraph`'s, and `V16` already records that function as
+declared with no implementation — tracked as issue #102 — but the union block and the three rows read
+as facts about the tree rather than as a specification.
+Chosen: keep all three, and add the same *"stated plainly so it is a limit rather than an
+assumption"* note `V13` and `V16` carry — naming that the tree's union does not hold them, that the
+three import rules are checked today by `tests/content/import-graph.test.ts` against a test-local AST
+helper which raises none of them, and that their presence is therefore not evidence any can fire.
+Rejected: **adding the three members to the tree's union now** — closes the divergence and creates
+three declared codes nothing can produce, which is the inert declaration this design refuses
+elsewhere (`metadata.repositoryUrl`, and the JSON-LD "permit the element and emit nothing" rejection).
+**Striking them from the contract until #102 lands** — honest about today, and it deletes the
+specification of what #102 must produce along with the three rows describing it, so the next session
+re-derives it.
+Reversibility: cheap.
+
+### 2026-08-24 — The release branch's two gates are a fan-in, not a chain
+Context: `V7` and `10-design.md` § *Concurrency and ordering* both wrote the release-preparation
+branch as *"image build → in-CI image gate → networked link check"*. `.github/workflows/ci.yml` has
+always run them as independent siblings — `link-check` needs `typecheck-and-test`, `image-gate` needs
+`build`, and `attestation` needs both. The only ordering the design gives a reason for is that the
+image gate precedes the *attestation*, which a fan-in preserves.
+Chosen: correct both documents to state two independent gates joining at the attestation, and say in
+`10-design.md` which single ordering on that branch is load-bearing so the arrows stop reading as a
+sequence.
+Rejected: **adding `needs: image-gate` to `link-check`** — makes CI match the written chain, and pays
+wall-clock on every push to put the link gate behind a docker build for no stated benefit. **Leaving
+both and reading the arrows as constraints rather than sequence** — no edit, and an ordering
+invariant that does not mean order is exactly the ambiguity `/reconcile` exists to close.
+Reversibility: cheap.
+
 ### 2026-08-24 — `/kit-sync` reconciliation: kit cores updated, `AGENTS.md` gains two upstream additions
 Context: `/kit-sync` fast-forwarded `~/.agent-kit` to `9911712` (no commits ahead of `origin/main`; last
 recorded sync was `80a19bd`, 2026-08-20) and ran the reconciliation `/install` uses. `tools/Sync-Kit.ps1`
