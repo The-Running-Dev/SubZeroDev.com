@@ -9,6 +9,15 @@ Language: TypeScript. Established by the consumer pattern `SubZeroDev.Platform` 
 Module names below — Content, Presentation, Composition, Adapter, Artifact, Verification — are the
 design's module boundaries, not paths.
 
+**This document declares nothing the tree declares.** Every type, signature and error union it once
+scaffolded is now materialised, so each is a pointer to the file that declares it plus the facts a
+declaration cannot carry — which is the whole of what is left, and the whole of what this document is
+for. Three declarations remain written out, and each is written out because nothing in this tree
+declares it: the package's `LandingPageBodyRoute`, whose canonical copy is named where it appears;
+and `ModuleName`, `ModuleImport` and `assertImportGraph`, which are a scaffold awaiting the
+implementation `V16` records as absent. A scaffold that becomes code becomes a pointer in the same
+commit; a pointer never returns to being a scaffold.
+
 **Every interface on the render path is now written.** The external package released `0.3.0` carrying
 all three capabilities [`U1`](#u1--the-package-cannot-accept-a-caller-supplied-body) asked for,
 verified against the published source; the pin is now `0.4.1`, which adds the validated build-time
@@ -58,19 +67,11 @@ new capability; both make a clause already written here true of the tree.
 
 ### Shared
 
-```ts
-declare const brandTag: unique symbol;
-
-export type Branded<T, B extends string> = T & { readonly [brandTag]: B };
-
-export type Result<T, E> =
-  | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly errors: readonly [E, ...E[]] };
-```
+**Declared in [`src/content/types.ts`](../src/content/types.ts)** — `Branded` and `Result`.
 
 `Result` carries a non-empty error list, and no error is a string. **One** repository-owned surface
-uses a bare exception instead: `sourceUrl`'s module-load guard. It is written out at its public
-declaration and collected under *Error semantics*. Every other function in this contract returns its
+uses a bare exception instead: `sourceUrl`'s module-load guard. It is described under § *Content*
+below and collected under *Error semantics*. Every other function in this contract returns its
 failure or is total. There were two until 2026-08-10, the second being `foldRoutes`'s structural
 guards; the fold is gone and so is that surface.
 
@@ -82,17 +83,13 @@ aliases that carry no behaviour, at the cost of a carve-out in `C1`.
 
 ### Content
 
-```ts
-export type ProjectId = Branded<string, "ProjectId">;
+**Every type in this section is declared in
+[`src/content/types.ts`](../src/content/types.ts)**, and the file is named once rather than at each
+shape below.
 
-export type Year = Branded<number, "Year">;
-
-export type AbsoluteUrl = Branded<string, "AbsoluteUrl">;
-
-export type RootRelativePath = Branded<string, "RootRelativePath">;
-
-export type CommitId = Branded<string, "CommitId">;
-```
+The branded scalars are `ProjectId`, `Year`, `AbsoluteUrl`, `RootRelativePath` and `CommitId`. A
+brand is all the declaration carries; the constraint each brand stands for is the table below, and is
+earned by a validator rather than by the type.
 
 | Type | Constraint |
 |---|---|
@@ -102,69 +99,19 @@ export type CommitId = Branded<string, "CommitId">;
 | `RootRelativePath` | Begins with `/`, does not begin with `//`, and for the parent origin `o`, `new URL(path, o).origin === o`. |
 | `CommitId` | Matches `/^[0-9a-f]{40}$/`. |
 
-```ts
-export type Stage =
-  | "Curiosity"
-  | "Prototype"
-  | "Architecture"
-  | "Infrastructure"
-  | "Reusable"
-  | "Escaped";
-
-export type Genre =
-  | "Documentary"
-  | "Status Page"
-  | "Story"
-  | "Evidence"
-  | "Journal"
-  | "Field Reports"
-  | "Comedy";
-
-export type Home =
-  | { readonly kind: "own"; readonly url: AbsoluteUrl }
-  | { readonly kind: "within"; readonly parent: ProjectId; readonly path: RootRelativePath }
-  | { readonly kind: "none" };
-
-export type Project = {
-  readonly id: ProjectId;
-  readonly name: string;
-  readonly year: Year;
-  readonly stage: Stage;
-  readonly question?: string;
-  readonly line: string;
-  readonly home: Home;
-  readonly genre?: Genre;
-  readonly escapedFrom?: ProjectId;
-};
-
-export type Inventory = readonly [Project, ...Project[]];
-```
+`Stage`, `Genre` and `Home` are the closed unions; `Project` and `Inventory` are the record and
+its non-empty collection.
 
 `name`, `line`, and `question` where present are non-empty after trimming. `home` is required; the
 absence of a home is `{ kind: "none" }`, not a missing property. `question`, `genre` and
 `escapedFrom` are absent, never `undefined`-valued and never empty.
 
-```ts
-export type BuildContext = {
-  readonly commit: CommitId;
-  readonly utcYear: Year;
-};
-```
+`BuildContext` carries the commit and the build's UTC year, and is what makes `Year`'s ceiling a
+property of the run rather than of the calendar.
 
-```ts
-export type Testimonial = {
-  readonly quote: string;
-  readonly author: string;
-  readonly role?: string;
-  readonly organization?: string;
-  readonly url?: string;
-};
-
-export type Testimonials = readonly [Testimonial, ...Testimonial[]];
-```
-
-`quote` and `author` are non-empty after trimming. `role`, `organization` and `url` are absent, never
-`undefined`-valued and never empty, on the same convention as `Project.question`. No `avatar` field —
+**`Testimonial` and `Testimonials`.** `quote` and `author` are non-empty after trimming. `role`,
+`organization` and `url` are absent, never `undefined`-valued and never empty, on the same convention
+as `Project.question`. No `avatar` field —
 `10-design.md` § *Testimonial* states why, and that reasoning is untouched by `url` below.
 `Testimonials` carries its committed order as data; nothing derives, sorts or ranks it.
 
@@ -193,109 +140,8 @@ guarantee nothing downstream demands and make `Testimonial` the one record shape
 which is harder to reason about than either end. `TestimonialUrlInvalid` is what earns the property
 instead, at the same point every other testimonial guarantee is earned.
 
-```ts
-export type CvLink = {
-  readonly label: string;
-  readonly href: AbsoluteUrl;
-};
-
-export type CvRole = {
-  readonly company: string;
-  readonly title: string;
-  readonly period: string;
-  readonly location: string;
-  readonly website?: AbsoluteUrl;
-  readonly summary: string;
-  readonly achievements: readonly [string, ...string[]];
-  readonly tech: readonly [string, ...string[]];
-};
-
-export type CvEducation = {
-  readonly school: string;
-  readonly degree: string;
-  readonly details: string;
-};
-
-export type CvProject = {
-  readonly title: string;
-  readonly link: AbsoluteUrl;
-  readonly description: string;
-  readonly tech: readonly [string, ...string[]];
-  readonly year: Year;
-};
-
-export type CvOpenSource = {
-  readonly title: string;
-  readonly link?: AbsoluteUrl;
-  readonly description: string;
-  readonly impact: string;
-  readonly tech: readonly [string, ...string[]];
-};
-
-export type CvEra = {
-  readonly period: string;
-  readonly focus: string;
-  readonly projects: readonly [string, ...string[]];
-};
-
-export type CvDocument = {
-  readonly header: {
-    readonly name: string;
-    readonly title: string;
-    readonly email: string;
-    readonly phone: string;
-    readonly links: readonly [CvLink, ...CvLink[]];
-  };
-  readonly about: { readonly title: string; readonly body: string };
-  readonly badges: readonly [string, ...string[]];
-  readonly chips: readonly [string, ...string[]];
-  readonly timelineTitle: string;
-  readonly roles: readonly [CvRole, ...CvRole[]];
-  readonly educationTitle: string;
-  readonly education: readonly [CvEducation, ...CvEducation[]];
-  readonly projectsTitle: string;
-  readonly projects: readonly [CvProject, ...CvProject[]];
-  readonly openSourceTitle: string;
-  readonly openSource: readonly [CvOpenSource, ...CvOpenSource[]];
-  readonly timelineProjectsTitle: string;
-  readonly timelineProjects: readonly [CvEra, ...CvEra[]];
-  readonly quote: string;
-};
-
-export type CvData = Branded<CvDocument, "CvData">;
-
-export type RawCvRole = Omit<CvRole, "achievements" | "tech"> & {
-  readonly achievements: readonly string[];
-  readonly tech: readonly string[];
-};
-
-export type RawCvProject = Omit<CvProject, "tech"> & { readonly tech: readonly string[] };
-
-export type RawCvOpenSource = Omit<CvOpenSource, "tech"> & { readonly tech: readonly string[] };
-
-export type RawCvEra = Omit<CvEra, "projects"> & { readonly projects: readonly string[] };
-
-export type RawCvDocument = Omit<
-  CvDocument,
-  | "header"
-  | "badges"
-  | "chips"
-  | "roles"
-  | "education"
-  | "projects"
-  | "openSource"
-  | "timelineProjects"
-> & {
-  readonly header: Omit<CvDocument["header"], "links"> & { readonly links: readonly CvLink[] };
-  readonly badges: readonly string[];
-  readonly chips: readonly string[];
-  readonly roles: readonly RawCvRole[];
-  readonly education: readonly CvEducation[];
-  readonly projects: readonly RawCvProject[];
-  readonly openSource: readonly RawCvOpenSource[];
-  readonly timelineProjects: readonly RawCvEra[];
-};
-```
+**The CV record shapes** are `CvLink`, `CvRole`, `CvEducation`, `CvProject`, `CvOpenSource`, `CvEra`, `CvDocument`, `CvData`, and
+the `Raw` twin of each shape whose list-ness changes.
 
 **`CvData` is branded for the reason `Inventory` is: only `validateCv` can produce one.** A
 `RawCvDocument` is the structural decoder's output and carries no domain guarantee; the brand is what
@@ -306,10 +152,10 @@ section" failure `10-design.md` already refuses for the inventory.
 
 **The two shapes differ in exactly one respect, and the `Raw` declarations are written as the
 difference rather than as a second copy.** Each names only the fields whose list-ness changes and
-inherits every other field from the shape above it, so a field added to `CvRole` appears on both
-without being written twice — which is what stops the pair from drifting the way two hand-maintained
-copies of a thirty-field record would. `CvLink`, `CvEducation` and `CvEra`'s scalar fields carry no
-list and therefore need no `Raw` twin at all.
+inherits every other field from the validated shape it is derived from, so a field added to `CvRole`
+appears on both without being written twice — which is what stops the pair from drifting the way two
+hand-maintained copies of a thirty-field record would. `CvLink`, `CvEducation` and `CvEra`'s scalar
+fields carry no list and therefore need no `Raw` twin at all.
 
 **The split exists because a brand cannot manufacture a guarantee the branded type does not carry.**
 `CvData` is `Branded<CvDocument, "CvData">`, so whatever `CvDocument` promises about emptiness is
@@ -369,46 +215,8 @@ every build and can be wrong every time.
 takes a `BuildContext` and `cvDocumentValidator` is a factory, exactly as `projectsDocumentValidator`
 is.
 
-```ts
-export type TechNode = {
-  readonly name: string;
-  readonly children?: readonly [TechNode, ...TechNode[]];
-};
-
-export type PortfolioCategory = {
-  readonly category: string;
-  readonly icon: string;
-  readonly description: string;
-};
-
-export type PortfolioStat = {
-  readonly value: string;
-  readonly label: string;
-};
-
-export type PortfolioDocument = {
-  readonly header: { readonly title: string; readonly subtitle: string };
-  readonly technologies: readonly [TechNode, ...TechNode[]];
-  readonly projects: readonly [PortfolioCategory, ...PortfolioCategory[]];
-  readonly stats: readonly [PortfolioStat, ...PortfolioStat[]];
-};
-
-export type PortfolioData = Branded<PortfolioDocument, "PortfolioData">;
-
-export type RawTechNode = {
-  readonly name: string;
-  readonly children?: readonly RawTechNode[];
-};
-
-export type RawPortfolioDocument = Omit<
-  PortfolioDocument,
-  "technologies" | "projects" | "stats"
-> & {
-  readonly technologies: readonly RawTechNode[];
-  readonly projects: readonly PortfolioCategory[];
-  readonly stats: readonly PortfolioStat[];
-};
-```
+**The portfolio record shapes** are `TechNode`, `PortfolioCategory`,
+`PortfolioStat`, `PortfolioDocument`, `PortfolioData`, `RawTechNode` and `RawPortfolioDocument`.
 
 **`RawTechNode` is written out rather than derived, and it is the one exception to the rule above.**
 A recursive type cannot be expressed as a difference from itself — `Omit<TechNode, "children">` would
@@ -444,41 +252,9 @@ outbound address on the two new routes therefore comes from the CV document or f
 
 ### Content — derived shapes
 
-```ts
-export type StageCount = {
-  readonly stage: Stage;
-  readonly count: number;
-};
-
-export type EcosystemGroup = {
-  readonly stage: Stage;
-  readonly projects: readonly Project[];
-};
-
-export type EcosystemTree = readonly EcosystemGroup[];
-
-export type ContaminationNode = {
-  readonly project: Project;
-  readonly escapes: readonly ContaminationNode[];
-};
-
-export type ContaminationForest = readonly ContaminationNode[];
-
-export type ResolvedHome = {
-  readonly projectId: ProjectId;
-  readonly url: AbsoluteUrl;
-};
-
-export type CheckedLink = {
-  readonly label: string;
-  readonly url: AbsoluteUrl;
-};
-
-export type LinkCheckExemption = {
-  readonly url: AbsoluteUrl;
-  readonly reason: string;
-};
-```
+**The derived shapes** — declared in the same file as the records they are derived from — are
+`StageCount`, `EcosystemGroup`, `EcosystemTree`, `ContaminationNode`, `ContaminationForest`,
+`ResolvedHome`, `CheckedLink` and `LinkCheckExemption`.
 
 `EcosystemTree` carries exactly one group per `Stage`, in `stageOrder` order, including groups with
 no projects. `ResolvedHome` is produced only for `own` and `within` homes; `none` yields no entry.
@@ -518,38 +294,8 @@ cost is the mechanism working.
 
 ### Presentation
 
-```ts
-export type HexColor = Branded<string, "HexColor">;
-
-export type DataUri = Branded<string, "DataUri">;
-
-export type ClassName = Branded<string, "ClassName">;
-
-export type ColorToken = "bg" | "fg" | "fg-muted" | "rule" | "link";
-
-export type Palette = { readonly [T in ColorToken]: HexColor };
-
-export type PrimitiveName =
-  | "page"
-  | "stack"
-  | "entry"
-  | "meta"
-  | "rule"
-  | "link"
-  | "link-current"
-  | "row"
-  | "bar"
-  | "grid"
-  | "view"
-  | "card";
-
-export type Primitive = {
-  readonly className: ClassName;
-  readonly rules: string;
-};
-
-export type PrimitiveSet = { readonly [N in PrimitiveName]: Primitive };
-```
+**Declared in [`src/presentation/types.ts`](../src/presentation/types.ts)** — `HexColor`,
+`DataUri`, `ClassName`, `ColorToken`, `Palette`, `PrimitiveName`, `Primitive` and `PrimitiveSet`.
 
 | Type | Constraint |
 |---|---|
@@ -681,16 +427,9 @@ so Composition owning it would put Presentation above Composition and cycle the 
 
 ### Presentation and Composition
 
-```ts
-export type StylesheetText = Branded<string, "StylesheetText">;
-
-export type BodyHtml = Branded<string, "BodyHtml">;
-
-export type ComposedRoute = {
-  readonly bodyHtml: BodyHtml;
-  readonly stylesheet: StylesheetText;
-};
-```
+**`StylesheetText` and `BodyHtml` are declared in
+[`src/presentation/types.ts`](../src/presentation/types.ts); `ComposedRoute` is declared in
+[`src/composition/types.ts`](../src/composition/types.ts).**
 
 Both are branded because both are handed to the external package as strings, and an unbranded `string`
 parameter there accepts any string at all — including a document fragment that was never composed.
@@ -710,9 +449,9 @@ added is a route checked.
 
 ### Route
 
-```ts
-export type RoutePath = "/" | "/cv/" | "/portfolio/" | "/404/";
-```
+**`RoutePath` is declared in [`site/landing.config.ts`](../site/landing.config.ts)**, which is
+Adapter. It is repeated in § *Adapter* below because that is where the path constants it narrows are
+declared; the declaring file is the canonical copy of both.
 
 The design's `Route` — path, prerendered body, required stylesheet, static head metadata — **is** the
 external package's `LandingPageBodyRoute`, unchanged from `0.3.0` through the pinned `0.4.1`. This
@@ -745,25 +484,8 @@ The package's other route form, `LandingPageEntryRoute`, is **never declared her
 
 ### Artifact
 
-```ts
-export type EmittedDocument = {
-  readonly relativePath: string;
-  readonly html: string;
-};
-
-export type ArtifactInput = {
-  readonly outputDir: string;
-  readonly serverConfigDir: string;
-  readonly commit: string;
-};
-
-export type ArtifactReport = {
-  readonly commit: CommitId;
-  readonly markedEntries: readonly string[];
-  readonly rootMissEntry: string;
-  readonly serverConfigPath: string;
-};
-```
+**Declared in [`src/artifact/types.ts`](../src/artifact/types.ts)** — `EmittedDocument`,
+`ArtifactInput` and `ArtifactReport`.
 
 `ArtifactInput.commit` is the raw value read from the build environment and is **not** a `CommitId`
 — validating it is Artifact's first act. `relativePath` and the `*Entry` values are positions inside
@@ -777,42 +499,14 @@ separation.
 
 ### Verification
 
+**Declared in [`src/verification/types.ts`](../src/verification/types.ts)** — `RetryPolicy`,
+`Attestation`, `LinkCheckResult`, `ReadBackResult`, `ServedResponse` and `RequestRecord`.
+
+**Two are not in the tree and stay written out here**, because `assertImportGraph` — their only
+consumer — has no implementation either (`V16`). They are a scaffold, not a pointer, and become one
+when that function is written:
+
 ```ts
-export type RetryPolicy = {
-  readonly attempts: number;
-  readonly initialDelayMs: number;
-  readonly maxDelayMs: number;
-  readonly backoff: "fixed" | "exponential";
-  readonly attemptTimeoutMs: number;
-};
-
-export type Attestation = {
-  readonly commit: CommitId;
-  readonly approver: string;
-};
-
-export type LinkCheckResult = {
-  readonly target: CheckedLink;
-  readonly status: number | null;
-  readonly attempts: number;
-};
-
-export type ReadBackResult = {
-  readonly servedCommit: CommitId;
-  readonly polls: number;
-};
-
-export type ServedResponse = {
-  readonly status: number;
-  readonly body: string;
-};
-
-export type RequestRecord = {
-  readonly url: string;
-  readonly resourceType: string;
-  readonly initiatedByTester: boolean;
-};
-
 export type ModuleName =
   | "Content"
   | "Presentation"
@@ -875,66 +569,18 @@ Internal helpers are out of scope. Only surfaces crossing a module boundary appe
 
 ### Content
 
-```ts
-export const stageOrder: readonly Stage[];
-
-export const primarySlogan: "Well… Why not?";
-
-export const apexFooterQuote: "Trust us… It'll be fine. Or not.";
-
-export const sourceUrl: AbsoluteUrl;
-
-export function projectsDocumentValidator(context: BuildContext): Validator<Inventory>;
-
-export const testimonialsDocumentValidator: Validator<Testimonials>;
-
-export function cvDocumentValidator(context: BuildContext): Validator<CvData>;
-
-export const portfolioDocumentValidator: Validator<PortfolioData>;
-
-export function validateInventory(
-  projects: readonly Project[],
-  context: BuildContext,
-): Result<Inventory, ContentError>;
-
-export function validateTestimonials(
-  testimonials: readonly Testimonial[],
-): Result<Testimonials, ContentError>;
-
-export function validateCv(
-  cv: RawCvDocument,
-  context: BuildContext,
-): Result<CvData, ContentError>;
-
-export function validatePortfolio(
-  portfolio: RawPortfolioDocument,
-): Result<PortfolioData, ContentError>;
-
-export function testimonialTotal(testimonials: Testimonials): number;
-
-export function parseCommitId(value: string): CommitId | null;
-
-export function projectTotal(inventory: Inventory): number;
-
-export function countByStage(inventory: Inventory): readonly StageCount[];
-
-export function ecosystemTree(inventory: Inventory): EcosystemTree;
-
-export function contaminationForest(inventory: Inventory): ContaminationForest;
-
-export function sinceYear(inventory: Inventory): Year;
-
-export function resolvedHomes(inventory: Inventory): readonly ResolvedHome[];
-
-export function cvOutboundLinks(cv: CvData): readonly CheckedLink[];
-
-export const linkCheckExemptions: readonly LinkCheckExemption[];
-
-export function checkedLinks(
-  inventory: Inventory,
-  cv: CvData,
-): readonly [CheckedLink, ...CheckedLink[]];
-```
+**Content's public surface is [`src/content/index.ts`](../src/content/index.ts).** The declarations
+are spread across the module by concern: `stageOrder` in
+[`stage-order.ts`](../src/content/stage-order.ts); `primarySlogan` and `apexFooterQuote` in
+[`copy.ts`](../src/content/copy.ts); `sourceUrl` in [`links.ts`](../src/content/links.ts); the four
+document validators in [`documents.ts`](../src/content/documents.ts); the four semantic validators in
+[`validate.ts`](../src/content/validate.ts); `parseCommitId` in
+[`commit.ts`](../src/content/commit.ts); `projectTotal`, `countByStage`, `ecosystemTree`,
+`contaminationForest`, `sinceYear` and `testimonialTotal` in
+[`derivations.ts`](../src/content/derivations.ts); `resolvedHomes` in
+[`resolved-homes.ts`](../src/content/resolved-homes.ts); and `cvOutboundLinks`,
+`linkCheckExemptions` and `checkedLinks` in
+[`checked-links.ts`](../src/content/checked-links.ts).
 
 **There is no unvalidated export in this contract.** There were two until 2026-08-11 — `projects` and
 `testimonials`, hand-authored arrays in TypeScript — and both are gone. The hand-authored content now
@@ -1122,17 +768,12 @@ nothing reads one.
 
 ### Presentation
 
-```ts
-export const palette: Palette;
-
-export const primitives: PrimitiveSet;
-
-export const themeColor: HexColor;
-
-export const iconDataUri: DataUri;
-
-export function stylesheetFor(body: BodyHtml): StylesheetText;
-```
+**Presentation's public surface is
+[`src/presentation/index.ts`](../src/presentation/index.ts)** — `palette` and `themeColor` in
+[`palette.ts`](../src/presentation/palette.ts), `primitives` in
+[`primitives.ts`](../src/presentation/primitives.ts), `iconDataUri` in
+[`icon.ts`](../src/presentation/icon.ts), and `stylesheetFor` in
+[`stylesheet.ts`](../src/presentation/stylesheet.ts).
 
 **`stylesheetFor` reads the referenced set out of the body rather than being told it.** It collects
 which `primitives` class names occur in `body` **as a class token**, and starts with the token block
@@ -1208,27 +849,9 @@ as a data URI; being a `DataUri` is what discharges `A2`.
 
 ### Composition
 
-```ts
-export function composeApex(
-  inventory: Inventory,
-  testimonials: Testimonials,
-  origin: string,
-): ComposedRoute;
-
-export function composeCv(
-  inventory: Inventory,
-  cv: CvData,
-  origin: string,
-): ComposedRoute;
-
-export function composePortfolio(
-  inventory: Inventory,
-  portfolio: PortfolioData,
-  origin: string,
-): ComposedRoute;
-
-export function composeMiss(): ComposedRoute;
-```
+**Composition's public surface is
+[`src/composition/index.ts`](../src/composition/index.ts)** — `composeApex`, `composeCv`,
+`composePortfolio` and `composeMiss`, each in the file its route names.
 
 These four functions and `ComposedRoute` above are the module's entire public surface. All four are
 total and cannot fail: a validated document cannot be malformed by construction, and none performs
@@ -1328,27 +951,8 @@ transcribed at slice time like every other route string.
 
 ### Adapter
 
-```ts
-export const origin: "https://subzerodev.com";
-
-export type RoutePath = "/" | "/cv/" | "/portfolio/" | "/404/";
-
-export const apexPath: "/";
-
-export const cvPath: "/cv/";
-
-export const portfolioPath: "/portfolio/";
-
-export const missPath: "/404/";
-
-declare const config: LandingPageDataConfig<{
-  projects: Inventory;
-  testimonials: Testimonials;
-  cv: CvData;
-  portfolio: PortfolioData;
-}>;
-export default config;
-```
+**Adapter is [`site/landing.config.ts`](../site/landing.config.ts)**, which declares `origin`,
+`RoutePath`, the four path constants and the default export the package CLI loads.
 
 `RoutePath` is declared **here**, not in Content or Composition, because the set of paths this site
 declares is Adapter's alone. Each path constant is written `satisfies RoutePath`, which is
@@ -1484,30 +1088,12 @@ built.
 
 ### Artifact
 
-```ts
-export const missEmittedEntry: "404/index.html";
-
-export const missRootEntry: "404.html";
-
-export const serverConfigFilename: "default.conf";
-
-export const buildMarkerPrefix: "<!-- build-commit: ";
-
-export const buildMarkerSuffix: " -->";
-
-export function buildMarker(commit: CommitId): string;
-
-export function serverConfig(): string;
-
-export function injectBuildMarker(
-  documentHtml: string,
-  commit: CommitId,
-): Result<string, ArtifactError>;
-
-export function finalizeArtifact(
-  input: ArtifactInput,
-): Promise<Result<ArtifactReport, ArtifactError>>;
-```
+**Artifact's public surface is [`src/artifact/index.ts`](../src/artifact/index.ts)** —
+`missEmittedEntry` and `missRootEntry` in [`constants.ts`](../src/artifact/constants.ts);
+`buildMarkerPrefix`, `buildMarkerSuffix`, `buildMarker` and `injectBuildMarker` in
+[`marker.ts`](../src/artifact/marker.ts); `serverConfigFilename` and `serverConfig` in
+[`server-config.ts`](../src/artifact/server-config.ts); and `finalizeArtifact` in
+[`finalize.ts`](../src/artifact/finalize.ts).
 
 **The marker format.** `buildMarker(commit)` is exactly
 `` `${buildMarkerPrefix}${commit}${buildMarkerSuffix}` `` — an HTML comment carrying the full
@@ -1563,80 +1149,27 @@ repository.
 
 ### Verification
 
+**Verification's public surface is
+[`src/verification/index.ts`](../src/verification/index.ts).** The retry policies are in
+[`retry-policy.ts`](../src/verification/retry-policy.ts), and each assertion is in the file its
+concern names — [`build-marker.ts`](../src/verification/build-marker.ts),
+[`check-links.ts`](../src/verification/check-links.ts),
+[`poll-for-commit.ts`](../src/verification/poll-for-commit.ts),
+[`request-capture.ts`](../src/verification/request-capture.ts),
+[`attestation.ts`](../src/verification/attestation.ts),
+[`content-present.ts`](../src/verification/content-present.ts),
+[`deployment-candidate.ts`](../src/verification/deployment-candidate.ts),
+[`self-contained.ts`](../src/verification/self-contained.ts),
+[`style-agreement.ts`](../src/verification/style-agreement.ts),
+[`document-marking.ts`](../src/verification/document-marking.ts),
+[`served-response.ts`](../src/verification/served-response.ts) and
+[`image-identity.ts`](../src/verification/image-identity.ts).
+
+**One signature is not in the tree and stays written out here**, for the reason `V16` records — it is
+declared by this contract and implemented by nothing, the graph being checked instead by a test-local
+AST helper:
+
 ```ts
-export const linkCheckRetry: RetryPolicy;
-
-export const deploymentPollRetry: RetryPolicy;
-
-export function readBuildMarker(documentHtml: string): Result<CommitId, VerificationError>;
-
-export function checkLinks(
-  targets: readonly CheckedLink[],
-  policy: RetryPolicy,
-): Promise<Result<readonly LinkCheckResult[], VerificationError>>;
-
-export function pollForCommit(
-  url: AbsoluteUrl,
-  expected: CommitId,
-  policy: RetryPolicy,
-): Promise<Result<ReadBackResult, VerificationError>>;
-
-export function assertNoAdditionalRequests(
-  records: readonly RequestRecord[],
-): Result<null, VerificationError>;
-
-export function assertAttestation(
-  attestation: Attestation | null,
-  commit: CommitId,
-): Result<null, VerificationError>;
-
-export function assertContentPresent(
-  documentHtml: string,
-  manifestoSentences: readonly [string, ...string[]],
-  inventory: Inventory,
-): Result<null, VerificationError>;
-
-export function assertDeploymentCandidateCurrent(
-  commit: CommitId,
-  branchHead: CommitId,
-): Result<null, VerificationError>;
-
-export function assertSelfContained(documentHtml: string): Result<null, VerificationError>;
-
-export function assertStyleAgreement(
-  bodyHtml: BodyHtml,
-  stylesheet: StylesheetText,
-): Result<null, VerificationError>;
-
-export function assertEveryDocumentMarked(
-  documents: readonly EmittedDocument[],
-  commit: CommitId,
-): Result<null, VerificationError>;
-
-export function assertRootMissDocument(
-  documents: readonly EmittedDocument[],
-): Result<null, VerificationError>;
-
-export function assertMissEntryRemoved(
-  documents: readonly EmittedDocument[],
-): Result<null, VerificationError>;
-
-export function assertUnknownPathResponse(
-  response: ServedResponse,
-  emittedMissDocument: string,
-): Result<null, VerificationError>;
-
-export function assertServedBytesMatchEmitted(
-  served: Uint8Array,
-  emitted: Uint8Array,
-): Result<null, VerificationError>;
-
-export function assertImageIdentity(
-  imageTag: string,
-  servedMarker: CommitId,
-  commit: CommitId,
-): Result<null, VerificationError>;
-
 export function assertImportGraph(
   edges: readonly ModuleImport[],
 ): Result<null, VerificationError>;
@@ -1760,44 +1293,9 @@ tree.
 
 ### Content
 
-```ts
-export type ContentErrorCode =
-  | "EmptyInventory"
-  | "MalformedProjectId"
-  | "DuplicateProjectId"
-  | "InvalidYear"
-  | "YearAfterBuild"
-  | "EmptyField"
-  | "HomeOwnUrlInvalid"
-  | "HomeWithinParentMissing"
-  | "HomeWithinParentNotOwn"
-  | "HomeWithinOriginEscape"
-  | "EscapedFromTargetMissing"
-  | "EscapedFromSelfReference"
-  | "EscapedFromCycle"
-  | "EmptyTestimonials"
-  | "TestimonialQuoteEmpty"
-  | "TestimonialAuthorEmpty"
-  | "TestimonialRoleEmpty"
-  | "TestimonialOrganizationEmpty"
-  | "TestimonialUrlInvalid"
-  | "CvFieldEmpty"
-  | "CvCollectionEmpty"
-  | "CvUrlInvalid"
-  | "CvYearInvalid"
-  | "CvYearAfterBuild"
-  | "PortfolioFieldEmpty"
-  | "PortfolioCollectionEmpty"
-  | "PortfolioTechDepthExceeded"
-  | "PortfolioDuplicateCategory";
-
-export type ContentError = {
-  readonly code: ContentErrorCode;
-  readonly projectId: ProjectId | null;
-  readonly field: string | null;
-  readonly detail: string;
-};
-```
+**`ContentErrorCode` and `ContentError` are declared in
+[`src/content/errors.ts`](../src/content/errors.ts).** The variant names are in the tree; when each
+fires and what the caller does about it is not, and is the whole of what follows.
 
 Every variant is deterministic and **not retryable**. In every case the caller — the build — exits
 non-zero and publishes nothing. There is no default value, no fallback stage, no dropped project and
@@ -1869,22 +1367,8 @@ was entitled to carry one, which is authored and unenforceable (§ *Types*).
 
 ### Artifact
 
-```ts
-export type ArtifactErrorCode =
-  | "CommitIdMalformed"
-  | "OutputTreeMissing"
-  | "MissDocumentMissing"
-  | "MarkerInsertionPointMissing"
-  | "MarkerAlreadyPresent"
-  | "WriteFailed"
-  | "RemoveFailed";
-
-export type ArtifactError = {
-  readonly code: ArtifactErrorCode;
-  readonly entry: string | null;
-  readonly detail: string;
-};
-```
+**`ArtifactErrorCode` and `ArtifactError` are declared in
+[`src/artifact/errors.ts`](../src/artifact/errors.ts).**
 
 `entry` is a position inside the emitted output tree, with one exception: for a failed
 server-configuration write it is `serverConfigFilename`, which is outside that tree by `R6`.
@@ -1908,42 +1392,8 @@ starts from a clean output directory rather than repairing it.
 
 ### Verification
 
-```ts
-export type VerificationErrorCode =
-  | "LinkUnreachable"
-  | "LinkNotOk"
-  | "MarkerAbsent"
-  | "MarkerDuplicate"
-  | "MarkerMismatch"
-  | "PollExhausted"
-  | "UnexpectedRequest"
-  | "ScriptElementPresent"
-  | "LinkedStylesheetPresent"
-  | "ExternalAssetReference"
-  | "ClassWithoutRule"
-  | "SelectorWithoutUser"
-  | "RootMissDocumentAbsent"
-  | "MissEntryStillPresent"
-  | "UnknownPathStatusWrong"
-  | "UnknownPathBodyWrong"
-  | "ServedBytesMismatch"
-  | "ImageTagCommitMismatch"
-  | "AttestationCommitMismatch"
-  | "AttestationAbsent"
-  | "ManifestoAbsent"
-  | "ProjectNameAbsent"
-  | "StaleDeploymentCandidate"
-  | "ForbiddenModuleImport"
-  | "UnauthorizedValidatorImport"
-  | "UnpermittedImportName";
-
-export type VerificationError = {
-  readonly code: VerificationErrorCode;
-  readonly detail: string;
-  readonly observed: string | null;
-  readonly expected: string | null;
-};
-```
+**`VerificationErrorCode` and `VerificationError` are declared in
+[`src/verification/errors.ts`](../src/verification/errors.ts).**
 
 **Three of these members have no producer, and the tree's own union does not carry them.**
 `ForbiddenModuleImport`, `UnauthorizedValidatorImport` and `UnpermittedImportName` are
@@ -2068,6 +1518,7 @@ where a separate module checks it, that is said in the row.
 | **X8** | The apex's testimonials section renders every `Testimonial` `composeApex` is given, in input order — it sorts nothing and drops nothing. A testimonial carrying neither `role` nor `organization` omits the metadata line entirely rather than rendering an empty one. A present `url` renders as one further attribution line carrying a single link whose text is `Source` and whose `href` is that value; an absent `url` renders **no** such line and no placeholder, so a card without a citation is indistinguishable from a card that was never eligible for one. The link text is fixed and is Composition's own word rather than the quoted person's, so § *Public signatures*' rule that no testimonial field appears in Composition's source survives the addition intact | Composition |
 | **X9** | The apex body carries its four sections — Effortless Action, The Echo System, Contamination and Testimonials — each reached by a fragment link in the apex navigation, and each carrying the `view` primitive's class. Which one is visible is decided by that primitive's `:target` rules and by nothing the composition states; a document requested with no fragment shows the first. Those rules remain the whole of section selection with `X10`'s script never executed — the script enhances the switch and does not replace it | Composition |
 | **X10** | The apex body carries **at most one** script element beyond `X6`'s JSON-LD block: an **inline enhancement script** with no `src` attribute, containing no `</script` sequence in any case. The CV, portfolio and miss bodies carry none — what the script enhances is the apex's tab switch, its stage filtering and its detail overlay, none of which the other three documents have, so a copy there would be an element with nothing to act on. It initiates **no** network request of any kind — no `fetch`, no `XMLHttpRequest`, no dynamic `import()`, and no element insertion that loads a resource — which is what keeps `V2` true of a document that now executes something. It is **strictly additive**: it may reveal, hide, filter, reorder or overlay content already present in `bodyHtml`, and is never the sole source of any content, figure or link on the page. That constraint is not review-enforced — `V3` asserts every manifesto sentence and project `name` in built HTML **with scripting never executed**, so a script that became load-bearing for content turns `V3` red. `P3` and `P4` bind it as they bind the primitive set: it introduces no motion under `prefers-reduced-motion: reduce`, and any overlay it opens preserves focus order and keyboard reachability | Composition |
+| **X11** | On each of the three routes carrying the masthead, **exactly one** outbound entry is marked current, and the match is on the route's **own path**, never on a prefix. The prefix clause is the load-bearing half: `/` is a prefix of both `/cv/` and `/portfolio/`, so a prefix match marks SubZeroDev.com current on all three documents and the affordance silently stops meaning anything. Only the three entries naming this site's own paths are eligible; the two that leave the site are never current. The miss route carries no masthead and marks nothing. The current entry carries `link-current`'s class alongside `link`'s (§ *Presentation*) **and `aria-current="page"`** — the class is the visual affordance and the attribute is the one a screen reader reads, so neither substitutes for the other. `10-design.md` § *Route* and § *Control flow* 3b determine this; it was checkable only against slice criterion S18.3 until it was written here | Composition |
 | **A1** | Every URL in route metadata is built from `origin`; no origin string is written twice. Each route's `canonicalUrl` and `openGraph.url` equal `origin` concatenated with that route's `path` | Adapter |
 | **A2** | Every entry in `metadata.icons` carries a `DataUri` as its `href`; no icon is a linked asset | Adapter |
 | **A3** | Adapter obtains everything renderable from Composition; it imports Content only for `projectsDocumentValidator`, `testimonialsDocumentValidator`, `cvDocumentValidator`, `portfolioDocumentValidator`, `parseCommitId` and the types `BuildContext`, `Inventory`, `Testimonials`, `CvData` and `PortfolioData`, and Presentation only for `themeColor` and `iconDataUri` — never a derivation function, a copy constant, a primitive or the stylesheet. Both import lists are enumerated, and nothing renderable is on either. Composition and the external package are closed as **modules**, not as name lists: `A3` bounds which modules Adapter may reach, and only Content's and Presentation's edges are further narrowed to exact names | Adapter |
@@ -2086,7 +1537,7 @@ where a separate module checks it, that is said in the row.
 | **V3** | Every manifesto sentence asserted, and every project `name`, appears in built HTML with scripting never executed | Verification |
 | **V4** | Every `CheckedLink` in `checkedLinks(inventory, cv)` responds 2xx or 3xx before release — the inventory's resolved homes, `sourceUrl`, and every outbound URL the CV document carries, **less exactly the members of `linkCheckExemptions`** and no others. It read *every `ResolvedHome`* until 2026-08-21, which left `sourceUrl` outside it by construction; the exemption set was added the same day, so this invariant is now checkable where it previously read as held while a test quietly removed a target. What an exemption costs is stated plainly rather than hidden: an exempt address is the one kind of outbound link on a published page that no gate observes, and `C19` is the whole of what bounds that set. The Pages preview does not wait on this networked gate | Verification |
 | **V5** | An `Attestation` is valid for exactly one `CommitId` and is never accepted for another. It gates the **release path only** — the registry push and the redeploy — and not the Pages deploy, which is why the preview's every-commit cadence is real; the cost is recorded in `10-design.md` § *Publication targets* | Verification |
-| **V6** | Publication happens only while this run's commit is the deployment-branch head | Verification |
+| **V6** | Publication happens only while this run's commit is the deployment-branch head, and a run that has lost that check moves **none of the three mutable locations** — the Pages deployment, the registry's `latest` tag, and the deployed stack, which a redeploy trigger moves by pulling whatever `latest` then names. The commit-tagged image is immutable by construction and could safely be pushed by a run that lost the check; it is deliberately **not** carved out, because a rule with one carve-out is a rule the next author finds a second one in. The head is checked **twice** — at the critical section's start and again immediately before the push — since the attestation between them is a human gate of unbounded duration and a check taken before it proves nothing after it (`V7`) | Verification |
 | **V7** | After content validation → render → package build → Artifact → offline verification, publication forks. The preview branch performs branch-head check → Pages deploy → Pages read-back (exact marker, bytes, unknown path) without waiting on the image gate, link gate or attestation. In parallel the release-preparation branch performs image build → in-CI image gate, **and the networked link check alongside it rather than behind it** — the two are independent and join at the attestation — and continues on its own through truth attestation → **branch-head re-check** → registry push → redeploy trigger → endpoint read-back (exact marker, unknown path) → live claim. **The two branches never join**, and neither waits on the other: `V11`'s two halves each compare a served response against the corresponding emitted document rather than against each other, so neither is evidence the other needs. The head is checked **twice** because the attestation before release is a human gate of unbounded duration, and a check taken before it proves nothing after it | Verification |
 | **V8** | No live URL is stated or implied until `pollForCommit` returns `ok` for the exact commit **and** the unknown-path check passes **against the target that claim is about** — Pages for the preview URL, the endpoint for the site. A read-back on one target licenses no claim about the other | Verification |
 | **V9** | No image is pushed to the registry unless the in-CI gate passed for that image | Verification |
