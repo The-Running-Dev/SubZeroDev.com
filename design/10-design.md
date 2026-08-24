@@ -280,11 +280,20 @@ A `Route` carries:
   embedded as data URIs in that existing field** rather than as linked assets. No package change is
   needed for this, and no additional request is triggered.
 
-**The masthead carries five outbound entries and is shared by three of the four routes.** SubZeroDev.com,
-Blog, Projects, Portfolio and CV — of which three resolve to this site's own paths and two leave it.
-The entry naming the route being rendered is marked current, and exactly one entry is, because the
-match is on the path itself rather than on a prefix. The miss route carries no masthead; it is the one
-document with no way back except its own single link.
+**The masthead carries up to five outbound entries and is shared by three of the four routes.**
+SubZeroDev.com, Blog, Projects, Portfolio and CV — of which three resolve to this site's own paths
+and two leave it. The entry naming the route being rendered is marked current, and exactly one entry
+is, because the match is on the path itself rather than on a prefix. The miss route carries no
+masthead; it is the one document with no way back except its own single link.
+
+**Four of the five are unconditional and Blog is not**, which is why the count is *up to*. Blog is
+the one masthead entry resolved out of the inventory rather than written here, so an inventory whose
+`publishing` record is renamed or loses its `own` home yields a masthead of four. Composition is
+total and cannot report that, so the guard is a test over the committed inventory rather than a
+build-time refusal — the one place this design accepts a check outside the build for something § *Malformed
+or empty content* would otherwise refuse. Making it a build failure would mean Content asserting a
+literal `ProjectId` exists, which is a coupling that section's rules do not otherwise ask for. See
+[`20-contract.md`](20-contract.md) § *Composition*.
 
 **Portfolio now points here, and `portfolio.subzerodev.com` is untouched.** That subdomain stays a
 separate live deployment with its own repository and its own genre, stays the inventory's `portfolio`

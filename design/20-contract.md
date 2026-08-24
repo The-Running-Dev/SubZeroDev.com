@@ -911,6 +911,19 @@ by this amendment and stays closed at twelve — a CV timeline is `entry` record
 a portfolio technology tree is a `grid` of `card`s, both of which the existing set expresses. A
 thirteenth member is a contract amendment, on the same footing every previous addition was.
 
+**The masthead's Blog entry is the one nav target derived from the inventory, and it is the one that
+can go missing.** The other four are written in Composition — three of this site's own paths and
+`sourceUrl` — while Blog is resolved by looking up the `publishing` record's home. An inventory that
+renames that record, or gives it a `within` or `none` home, yields a masthead of four rather than a
+broken link or an invented URL. **Composition is total and cannot report it**, which is deliberate
+and is the whole reason this is written here: the alternative is either a composer that fails, which
+`ComposedRoute`'s totality forbids, or a Content invariant asserting a literal `ProjectId` exists,
+which is a coupling nothing else in this contract asks for. What stands in for the build-time refusal
+is a test over the committed inventory. Stated plainly so it is a limit rather than an assumption:
+**this is the one rendered link whose absence no gate turns red.** `V4` does not cover it either —
+`checkedLinks` enumerates the home, so the gate proves the address answers, not that the masthead
+still points at it.
+
 **The `Source`-link asymmetry does not repeat here.** `X8` fixes the testimonial citation's link text
 because that word is Composition's rather than the quoted person's. A CV link carries its own `label`
 and a project its own `title`, so those are content and are interpolated, escaped, like any other

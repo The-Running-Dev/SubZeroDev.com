@@ -1142,6 +1142,18 @@ That half is unchanged by this run and is not `/design`'s.
 
 ---
 
+### 2026-08-24 — `20-contract.md`'s materialised scaffolds become pointers into the tree
+Context: A `/contract` re-run found the document carrying roughly 600 lines of TypeScript declarations — every type, signature and error union — while `src/` declared all of them and the contract held zero pointers into it. `AGENTS.md` § *Single ownership* and `.claude/commands/contract.md` § *Semantics, not shape* both require a scaffold to become a pointer in the slice that materialises it; that had never happened, across every slice.
+Chosen: Each materialised block replaced by a pointer to its declaring file plus the semantics prose it already carried. 45 pointers, each verified to resolve. Three declarations stay written out because nothing in this tree declares them: the package's `LandingPageBodyRoute` (canonical copy named in the text), and `ModuleName`/`ModuleImport`/`assertImportGraph`, which `V16` already records as unimplemented. The document shrank from 2510 to ~1400 lines and lost no argument.
+Rejected: Leaving the scaffolds and making only the targeted invariant additions — smallest diff, but it keeps two copies of every declaration, and the document's copy is the one that rots because it is never executed. Also rejected: converting one section as a sample first, which buys a style review at the cost of leaving the document in two shapes between passes.
+Reversibility: cheap
+
+### 2026-08-24 — The masthead carries *up to* five entries; `10-design.md`'s count is the stale half
+Context: `10-design.md` § *Route* stated a flat five outbound masthead entries. `src/composition/header.ts` filters a null target, so an inventory whose `publishing` record is renamed or loses its `own` home yields four — and Composition is total, so nothing reports it. That sits against § *Malformed or empty content*'s "never a silently empty section".
+Chosen: The tree is right and the count is descriptive drift. `10-design.md` now says *up to* five and states why Blog is the conditional one; `20-contract.md` § *Composition* gains the semantic — Blog is the one nav target derived from the inventory, its absence is a test's to catch rather than the build's, and it is the one rendered link no gate turns red. `X11` was added in the same pass for the adjacent rule the design determines and the contract never carried: exactly one entry is current, matched on the route's own path and never on a prefix.
+Rejected: Making it a build failure by having the inventory validator require the `publishing` record with an `own` home — it is the more rigorous option and it closes the silent-degradation hole, but it couples Content to a literal `ProjectId`, which nothing else in this contract asks for, and it is a contract amendment plus a slice rather than a reconciliation. Also rejected: recording the divergence in `## Open` and changing neither document, which leaves the design stating a count the tree does not guarantee.
+Reversibility: cheap
+
 ### 2026-08-20 — A testimonial may carry a citation URL; `design/` is the stale half
 
 Context: `/contract` compared `20-contract.md` against the tree and found a contradiction neither
