@@ -179,6 +179,12 @@ carve-out in `00-brief.md` § *Source material* item 4 is unchanged — the page
 it as fictional, and the field cannot become that label, because the quotes it would mark are exactly
 the ones that never carry it.
 
+**It is also outside `V4`, and for the same reason it is authored rather than enforced.** `checkedLinks`
+does not enumerate it and `checkLinks` never fetches it — the gate would otherwise turn an unsettled
+claim into a checked one, which is exactly what the carve-out above forbids. `C17` names the exclusion
+and § *Content* carries the argument; the cost, an unobserved outbound link on a published page, is
+stated there rather than hidden.
+
 **`url` is deliberately not `AbsoluteUrl`,** though it satisfies that type's constraint and is checked
 by the same predicate as `Home.own.url`. `Testimonial` carries no branded field at all: a brand exists
 here to gate a value into a derivation, and no derivation reads a testimonial — `testimonialTotal`
@@ -807,11 +813,6 @@ export type RequestRecord = {
   readonly initiatedByTester: boolean;
 };
 
-export type PermittedScripts = {
-  readonly ldJson: 0 | 1;
-  readonly enhancement: 0 | 1;
-};
-
 export type ModuleName =
   | "Content"
   | "Presentation"
@@ -835,18 +836,6 @@ while `Adapter` imported a derivation function.
 
 `attempts >= 1`; `initialDelayMs >= 0`; `maxDelayMs >= initialDelayMs`; `attemptTimeoutMs > 0`.
 `LinkCheckResult.status` is `null` where every attempt failed before a response.
-
-**`PermittedScripts` is a pair of ceilings, not a description of what a document carries.** Each field
-is the greatest number of script elements of that kind the document under assertion may contain, which
-is the half of `V13` an emitted document can be held to — that no document carries *more* than its
-count. The other half, that the apex and the CV each carry exactly one JSON-LD block, is `X6`'s and is
-a presence assertion belonging to Composition; a checker over built output cannot distinguish a
-document that legitimately omits an optional element from one that lost it to the bundler, which is the
-failure it exists to catch. The fields are literal `0 | 1` rather than `number` because neither `X6`
-nor `X10` admits a second element of either kind on any route, so a count above one is not a value this
-type should be able to express. The four routes' values follow from `V13` and are the caller's to
-supply — apex `{ ldJson: 1, enhancement: 1 }`, CV `{ ldJson: 1, enhancement: 0 }`, portfolio and miss
-both `{ ldJson: 0, enhancement: 0 }`.
 
 **`Attestation` carries no timestamp**, and its absence is a decision rather than an omission: the
 provider exposes no approval time to read, and the two fields here are the two that can be obtained
@@ -1026,11 +1015,23 @@ raises two errors naming two different records — which is correct, because bot
 must edit. Deduplicating would report one and leave the other to be found later.
 
 **A `CheckedLink` is not a promise the link is on the page.** `checkedLinks` enumerates what the
-content documents carry; whether a composer renders a given one is Composition's, and `V4` is
-deliberately the wider set. The reverse direction is the one that would be a defect — a rendered
-outbound URL that `checkedLinks` does not enumerate is outside every gate, and the four field paths
-above are named exhaustively so that a fifth added to `CvDocument` is a visible amendment rather than a
-silent gap.
+inventory and the CV document carry; whether a composer renders a given one is Composition's, and `V4`
+is deliberately the wider set there. The reverse direction is the one that would ordinarily be a
+defect — a rendered outbound URL that `checkedLinks` does not enumerate is outside every gate, and the
+four field paths above are named exhaustively so that a fifth added to `CvDocument` is a visible
+amendment rather than a silent gap.
+
+**`Testimonial.url` is the one rendered outbound URL that is deliberately outside this enumeration**,
+and it is an exclusion rather than a gap. A testimonial's standing is *unsettled by design* — the
+collection mixes real lines with invented ones and the page labels neither, which is the carve-out
+`00-brief.md` § *Source material* item 4 protects. A gate that fetched the citation would make this
+repository assert something about the quote it exists not to assert: a green `V4` would be evidence
+the source is real, and a red one would put a *fabricated* attribution's absent source on the same
+footing as a dead project site. `checkedLinks` therefore does not take `Testimonials` and never
+should. What it costs is stated plainly: a testimonial citation is an outbound link on a published
+page that no gate observes, on the same footing as a `linkCheckExemption` but for a different reason —
+the exemption admits an address cannot be *verified*, this admits an address must not be *asserted
+about*. Ruled 2026-08-23; see [`90-decisions.md`](90-decisions.md).
 
 `parseCommitId` is here because Content owns `CommitId` and Artifact depends on Content for that type.
 It returns `null` rather than an error variant: its one caller turns that into `CommitIdMalformed`, and
@@ -1600,10 +1601,7 @@ export function assertDeploymentCandidateCurrent(
   branchHead: CommitId,
 ): Result<null, VerificationError>;
 
-export function assertSelfContained(
-  documentHtml: string,
-  permitted: PermittedScripts,
-): Result<null, VerificationError>;
+export function assertSelfContained(documentHtml: string): Result<null, VerificationError>;
 
 export function assertStyleAgreement(
   bodyHtml: BodyHtml,
@@ -1689,25 +1687,22 @@ names, and a parameter that cannot be absent cannot express it. The `attestation
 read from the run's approval record to `publish-release`, and `null` where there was none. The Pages
 preview does not call this function and does not depend on that job.
 
-**`assertSelfContained` took `documentHtml` alone until 2026-08-21 and now takes the document's
-permitted counts.** `permitted` **must never acquire a default value.** A default is necessarily the
-most permissive route's pair, and applying it to the miss document restores exactly the state this
-parameter was added to end: one JSON-LD block plus one inline script admitted on every document, so
-`V13`'s per-route counts and `ScriptElementPresent`'s miss clause could not fire and a miss document
-that had acquired an inline script passed. What the parameter buys is that the rule is checked over
-the **built output**, where `10-design.md` § *The emitted document is not self-contained* says it must
-be — *"what a bundler adds to a document is its business, not this design's"* — rather than over
-`bodyHtml`, where `tests/composition/miss.test.ts` and `tests/composition/apex.test.ts` hold the
-composition-level half and cannot see what the bundler added.
+**`assertSelfContained` takes `documentHtml` alone, and `V13`'s per-route counts are produced by
+nothing.** A second parameter carrying the document's permitted counts was ruled on 2026-08-21 and
+**withdrawn on 2026-08-23** without ever being implemented; see [`90-decisions.md`](90-decisions.md)
+for what that ruling weighed and why it is reversed. **Stated plainly so it is a limit rather than an
+assumption:** this function admits one `application/ld+json` block plus one inline script on **every**
+document it is given, which is the apex's ceiling applied to all four routes. A CV, portfolio or miss
+document that acquired an inline enhancement script would pass it. `V13`'s per-document counts are
+therefore a rule this contract states and no callable surface checks — the same standing as
+`assertImportGraph` under `V16`, and recorded here for the same reason: a rule believed enforced is
+worse than one known not to be.
 
-**The route-to-counts mapping is the caller's and has no home in this module.** Keying it on
-`RoutePath` would make Verification import Adapter, an edge `V16` does not describe, and moving the
-table inside this function would put the per-route policy where the caller can no longer state it.
-So the pairs above are enumerated at the call site, against `EmittedDocument.relativePath`, which is a
-`string` rather than a `RoutePath` and admits no compiler check either. **Stated plainly so it is a
-limit rather than an assumption:** a fifth route added to `RoutePath` acquires no entry and nothing
-goes red — the type check `tests/types/route-path.type-check.ts` performs on the union is what would
-catch the addition, and the mapping is a separate edit a reader has to remember to make.
+What is checked, and by what: the composition-level half is held by
+`tests/composition/miss.test.ts` and `tests/composition/apex.test.ts` over `bodyHtml`, which cannot
+see what the bundler added; `V2`'s browser capture proves no document **fetches** anything whatever it
+carries; and this function's other two faults — a linked stylesheet and an external asset reference —
+are unaffected and are checked over the built output as written.
 
 **`assertContentPresent` covers the apex and is not extended to the two new routes.** `V3` exists to
 catch content that has come to depend on script execution, and neither the CV nor the portfolio
@@ -1959,7 +1954,7 @@ export type VerificationError = {
 | `MarkerMismatch` | The served marker is a valid `CommitId` other than the expected one | Yes, within `deploymentPollRetry` — a cache or an in-flight publish | Keep polling; on exhaustion report `PollExhausted`. From `assertImageIdentity`, not retryable — the image is already built |
 | `PollExhausted` | `deploymentPollRetry` was consumed without an exact marker match | No | Report the deploy failed. **Announce no live URL** |
 | `UnexpectedRequest` | The browser capture recorded a load-triggered request other than the navigation document | No | Fail the gate, deploy nothing |
-| `ScriptElementPresent` | An emitted document contains a script element beyond what its own `PermittedScripts` admits — a `src` attribute on either permitted kind, a block of either kind past that document's count for it, an element of neither kind, an opening tag with no matching close, or either permitted element's own content containing a `</script` sequence in any case (`V13`, `X6`, `X10`). Because the counts are the document's rather than a fixed pair, **any** script element on the portfolio or the miss document raises it, and a second JSON-LD block raises it on the apex and the CV | No | Fail the build |
+| `ScriptElementPresent` | An emitted document contains a script element beyond the fixed pair `assertSelfContained` admits — a `src` attribute on either permitted kind, a **second** block of either kind, an element of neither kind, an opening tag with no matching close, or either permitted element's own content containing a `</script` sequence in any case (`V13`, `X6`, `X10`). The pair is fixed rather than the document's own, so this code does **not** fire for a first inline script on the portfolio or the miss document, nor for a first enhancement script on the CV — `V13`'s per-document counts have no producing function, per that invariant's own closing clause | No | Fail the build |
 | `LinkedStylesheetPresent` | An emitted document links a stylesheet rather than inlining it | No | Fail the build |
 | `ExternalAssetReference` | An emitted document references an asset by URL other than a data URI. Two things are not asset references and do not raise it: an outbound link, and the document's own `<link rel="canonical">`. The second is an exemption `A1` forces rather than a relaxation — `metadata.canonicalUrl` is required of every route, and it names the address of the document already loaded, so no browser fetches it. Without the exemption `V13` and `A1` would contradict each other on every document this design emits | No | Fail the build |
 | `ClassWithoutRule` | A class in a route's body has no selector in that route's stylesheet | No | Fail the build. **Never a warning** |
@@ -2041,7 +2036,7 @@ where a separate module checks it, that is said in the row.
 | **C13** | `resolvedHomes` yields one entry per `own` and `within` home and none for `none` | Content |
 | **C14** | Nothing imports `projectsDocumentValidator`, `testimonialsDocumentValidator`, `cvDocumentValidator` or `portfolioDocumentValidator` except Adapter, which declares them against the four build-time sources, and the tests that exercise them directly. No derivation function, no Composition entry and no Artifact step reads any of them. **Reachability, not naming**: a namespace import, an `export *`, a namespace re-export and a dynamic `import()` each reach a validator without writing its name, and the check fails closed on a clause shape it does not recognise. The set is closed by enumeration, so a fifth document validator that is not added here is one this invariant does not cover | Content |
 | **C15** | `parseCommitId` is the only implementation of the `CommitId` pattern in the repository | Content |
-| **C17** | `checkedLinks` is the only enumeration of `V4`'s target set, **exemptions included** — it applies `linkCheckExemptions` itself, so its return value is the set the gate runs over with nothing added and nothing removed. Every outbound URL any route renders is either in `checkedLinks`, or named by `linkCheckExemptions`, or is not an HTTP address at all; no other function, test or workflow step assembles, filters or extends a list for `checkLinks`. The filter clause is what the informal test-local skip of 2026-08-21 breached and is stated explicitly for that reason | Content |
+| **C17** | `checkedLinks` is the only enumeration of `V4`'s target set, **exemptions included** — it applies `linkCheckExemptions` itself, so its return value is the set the gate runs over with nothing added and nothing removed. Every outbound URL any route renders **from the inventory or the CV document** is either in `checkedLinks`, or named by `linkCheckExemptions`, or is not an HTTP address at all; no other function, test or workflow step assembles, filters or extends a list for `checkLinks`. The filter clause is what the informal test-local skip of 2026-08-21 breached and is stated explicitly for that reason. **`Testimonial.url` is excluded by name and by ruling** — a testimonial's standing is unsettled by design, so a gate over its citation would assert what the collection exists not to assert; the reasoning is in § *Content* above and in [`90-decisions.md`](90-decisions.md), 2026-08-23. The clause said *every outbound URL any route renders* from 2026-08-21 until then, one day after `X8` gave testimonials a rendered citation, and was false the whole time | Content |
 | **C18** | A `TechNode` tree is at most three levels deep, and a present `children` is non-empty | Content |
 | **C19** | Every `linkCheckExemption` is **live, justified and not this repository's own address**: its `url` is carried by `resolvedHomes(inventory)` or `cvOutboundLinks(cv)` over the committed documents, its `reason` is non-empty after trimming, and it is never `sourceUrl`. The liveness clause is what stops the set accumulating carve-outs for addresses the content no longer has — a stale member would silently re-exempt the URL the day someone adds it back — and the `sourceUrl` clause is what keeps `checkedLinks` non-empty. `linkCheckExemptions` carries no duplicate `url`. Checked by a test, not by the typechecker | Content |
 | **P1** | Nothing in Presentation references a linked font, an external stylesheet, a gradient or an illustration asset. Neither `--font-sans` nor `--font-mono` names a webfont, and no rule is an `@font-face` | Presentation |
@@ -2086,7 +2081,7 @@ where a separate module checks it, that is said in the row.
 | **V10** | The image tag equals the full commit id, and equals the marker the running image serves | Verification |
 | **V11** | For each of `/`, `/cv/` and `/portfolio/`, what the running image serves and what Pages serves are **each** byte-identical to that route's own emitted document. Both targets are compared, which is what makes the brief's "asserted rather than assumed" true of the pair rather than of one side of it. The endpoint is deliberately not compared — `V15` covers it with the marker and unknown-path pair instead, because a byte match across a proxy this repository does not own would fail on transport differences that are not divergence. It named `/` only while that was the only content route; since 2026-08-21 it names `/`, `/cv/` and `/portfolio/`, because checking one document and arguing the others from shared construction is the reasoning this same invariant already rejected once when it covered one target and argued the other | Verification |
 | **V12** | An unknown path returns status 404 carrying the emitted miss document, on **both** targets | Verification |
-| **V13** | No emitted document contains a linked stylesheet, an external asset reference, or a script element carrying a `src` attribute. The apex document contains **at most two** script elements — its inert `application/ld+json` block (`X6`) and `X10`'s single inline enhancement script; the **CV** document contains **exactly one**, its `Person` block; the **portfolio** and **miss** documents contain none. No document may contain more than its own count. Both permitted elements are inline and fetch nothing. Any `src` attribute on any script element fails, as does any script element that is neither of the two permitted. The rule was a blanket ban until 2026-08-07, narrowed then to admit a non-executing block because it forbade one on the ground that it forbade execution; it was widened again on 2026-08-10 to admit one executing but request-free enhancement script, on the reasoning that what is worth checking is what a document **fetches** and whether its content survives with scripting off — which `V2` and `V3` check directly, against a real browser and against built HTML — rather than whether anything executes at all. **Its per-route half is checked by `assertSelfContained`, given that document's `PermittedScripts`** — before 2026-08-21 that function admitted one block of each kind on any document, so the counts and the miss clause were stated here and produced by nothing | Verification |
+| **V13** | No emitted document contains a linked stylesheet, an external asset reference, or a script element carrying a `src` attribute. The apex document contains **at most two** script elements — its inert `application/ld+json` block (`X6`) and `X10`'s single inline enhancement script; the **CV** document contains **exactly one**, its `Person` block; the **portfolio** and **miss** documents contain none. No document may contain more than its own count. Both permitted elements are inline and fetch nothing. Any `src` attribute on any script element fails, as does any script element that is neither of the two permitted. The rule was a blanket ban until 2026-08-07, narrowed then to admit a non-executing block because it forbade one on the ground that it forbade execution; it was widened again on 2026-08-10 to admit one executing but request-free enhancement script, on the reasoning that what is worth checking is what a document **fetches** and whether its content survives with scripting off — which `V2` and `V3` check directly, against a real browser and against built HTML — rather than whether anything executes at all. **Its per-document half is produced by nothing, and that is stated rather than implied.** `assertSelfContained` admits one block of each kind on any document — the apex's ceiling applied to all four routes — so the counts above and the portfolio/miss clause hold as a rule and not as a check. A parameter carrying each document's own counts was ruled on 2026-08-21 and withdrawn on 2026-08-23 without being implemented; see [`90-decisions.md`](90-decisions.md). This has the same standing as `assertImportGraph` under `V16` | Verification |
 | **V14** | No image tag is stated or implied until the push for that tag has succeeded and the tag resolves in the registry | Verification |
 | **V15** | After the registry push, the redeploy is triggered and the endpoint serves the pushed commit's marker, with a unique unknown path answering 404 carrying the emitted miss document, before anything claims the site is deployed. **A successful push is not a deployment.** Both checks reuse `pollForCommit` and `assertUnknownPathResponse` against the endpoint; the trigger itself is workflow configuration and has no surface here, on the same footing as the registry push | Verification |
 | **V16** | The module import graph is exactly the one *Public signatures*, `C1`, `C14`, `X2` and `A3` describe — checked over `src` plus Adapter's own file, with the edges observed by the caller. **`assertImportGraph` is declared above and has no implementation**; the graph is currently checked by `tests/content/import-graph.test.ts` against a test-local AST helper, which is the arrangement `assertImportGraph` was written to replace and has not yet. It is the checkable home for the three import rules carrying no other id: Presentation imports only `Branded`, Artifact imports only `CommitId`, `parseCommitId` and `Result`, and no repository module imports Verification | Verification |
@@ -2121,6 +2116,11 @@ the list carries its own length, and a numeral beside it is the copy that rots.
   hand once and never again. `C19` bounds the set to live, justified, non-`sourceUrl` entries; it
   cannot bound the truth of the `reason` behind any of them, because the fault an exemption exists to
   tolerate is indistinguishable over HTTP from the fault `V4` exists to catch.
+- **A testimonial's citation still answers.** `Testimonial.url` is rendered as a `Source` link (`X8`)
+  and is outside `checkedLinks` by ruling rather than by oversight. Checking it would make a green gate
+  evidence that the quote is real, which is the one thing the collection is built not to settle. This
+  is the only rendered outbound URL in that position, and it is the reason `C17`'s coverage clause is
+  scoped to the inventory and the CV document rather than to every route.
 - **The deployed compose stack *keeps* serving the published image.** This entry read "the deployed
   compose stack serves the published image" until 2026-08-07, on the reasoning that the design
   guarantees a published image is correct and stops there. It no longer stops there: the brief's

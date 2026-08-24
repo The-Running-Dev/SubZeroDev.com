@@ -53,6 +53,22 @@ and preferences belong in `AGENTS.md`.
   has an implementation yet"); **honesty in the log is not a carrier.** An amendment landing outside
   an open slice needs a tracked item in the same commit, or it is invisible from the moment it is
   written.
+- **A ride-along named in prose is not a carrier either.** The entry above is about an amendment with
+  *no* carrier; this is the same failure with one assigned. `assertSelfContained`'s new parameter was
+  ruled to ride with `S16` — in a `## Next` paragraph that also noted `S16.5` "is written against the
+  unamended form". `S16` merged with that criterion unchanged, so no test could go red, and `S17`
+  through `S20` merged on top. **Cost: the contract declared a two-parameter signature and `V13`
+  asserted the per-route check had landed, for five slices, while the tree applied the apex's ceiling
+  to all four routes — found only by diffing declared exports against the tree.** A carrier is a
+  changed criterion or a `Done when` checkbox. A sentence naming a slice is a hope.
+- **A universally-quantified clause beside a hand-enumerated set is false the moment the set gains an
+  input it does not know about.** `C17` read *"every outbound URL any route renders"* while
+  `checkedLinks` enumerated three sources; `X8` had added a fourth the day before, and nothing
+  compared them. **Cost: an invariant false from the day it was written, one live outbound link
+  outside every gate on both published targets, five more queued behind it, and a reconciliation to
+  discover it.** The CV route got the subset assertion that catches this (`S16.8`); the apex, being
+  older, never did. When a rule says *every*, something must enumerate the *every* — or the rule must
+  name what it excludes.
 - **A constraint gets quietly reworded on its way into a slice criterion, and the test is
   written from the criterion.** The contract required every primitive selector to *begin
   with* its own class; `S4.4` restated that as *contains*, the test asserted `toContain`,
