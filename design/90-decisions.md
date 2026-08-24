@@ -50,6 +50,29 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 
 ---
 
+### 2026-08-24 — `/kit-sync` reconciliation: kit cores updated, `AGENTS.md` gains two upstream additions
+Context: `/kit-sync` fast-forwarded `~/.agent-kit` to `9911712` (no commits ahead of `origin/main`; last
+recorded sync was `80a19bd`, 2026-08-20) and ran the reconciliation `/install` uses. `tools/Sync-Kit.ps1`
+reported a clean diff — no `Divergent-Skipped`, `Collision-Skipped`, `Unmigrated-Blocked`, or
+`RemovedUpstream` rows — so `.claude/commands/done.md`, `install-all.md`, `kit-help.md`, `kit-sync.md`
+updated outright, `.claude/commands/install-code-review-agent.md` and `tools/Invoke-CodexCommand.ps1`
+were added, and four `tools/*.Tests.ps1` files updated, all with no target-side edits to lose.
+`AGENTS.md` itself had drifted from the kit's copy by two purely additive changes made upstream since
+the last sync: a `/install-code-review-agent` row in *Command routing*, and a widened PR carve-out
+naming `/install`/`/kit-sync` (via `INSTALL.md` phase 4 step 8) alongside `/slice`, `/fix`, `/pr`, plus
+a note that `/install-all` opens no pull request.
+Chosen: fold both `AGENTS.md` additions in verbatim — neither touches a rule this repository had
+customized, and both simply document behaviour (`/install-code-review-agent`'s existence, `/install`'s
+already-carved-out PR authority) that already applies.
+Rejected: leaving `AGENTS.md` un-synced and letting the next `/kit-sync` re-ask the same question —
+rejected because the two additions have no local counter-rule to weigh against, so deferring costs a
+repeat question for no benefit. `agent.md` was left untouched: the kit's own seed is unchanged upstream
+since the last sync, so the existing divergence is pre-existing target customization, not a new fork.
+`codex/PROFILES.md` stayed skipped — this repository shows no evidence of Codex use (`.codex/` absent).
+Reversibility: cheap — a follow-up commit can revert either `AGENTS.md` hunk independently.
+
+---
+
 ### 2026-08-23 — `assertSelfContained`'s per-document counts are withdrawn from the contract, unimplemented
 
 Context: `/reconcile` found `20-contract.md` declaring `assertSelfContained(documentHtml, permitted:
