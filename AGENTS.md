@@ -79,6 +79,7 @@ The table above names each vendor's primary identity for a tier. A vendor's own 
 | Codex | `Luna` | High volume |
 | Codex | `Codex Spark` | Implementation |
 | Codex | `GPT-5` | Implementation |
+| Claude | `Fable 5` (`claude-fable-5`) | Deep reasoning |
 
 **`xhigh` still has no confirmed Codex alias.** A session reporting a name that matches neither the table above nor this list is a real mismatch — the gate stops on it, same as any other mismatch. Add a row here, never a new column above, when another vendor name turns up; that is what keeps the primary table one identity per vendor per tier instead of an accumulating list of historical names.
 
