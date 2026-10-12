@@ -1,9 +1,10 @@
 // The in-CI image gate (design/30-slices.md § S9.3–S9.6). Runs only under
-// `vitest.image-gate.config.ts`'s own job, against a container the
-// `image-gate` CI job has already built from `site/dist` and
-// `site/server/default.conf` and started at `SERVED_BASE_URL` — same
-// convention as `vitest.build.config.ts` and `vitest.link-check.config.ts`:
-// a plain `vitest run` never reaches a container or the network.
+// `vitest.image-gate.config.ts`'s own job, against a container the shared
+// container workflow has already built from `site/dist` and
+// `site/server/default.conf` and started at `SMOKE_URL` (`SERVED_BASE_URL`
+// when run by hand) — same convention as `vitest.build.config.ts` and
+// `vitest.link-check.config.ts`: a plain `vitest run` never reaches a
+// container or the network.
 //
 // S9.6 — no cookie, no application-chosen cache-control directive, no
 // tracking or rewrite header — is asserted here directly over the response's
@@ -31,7 +32,7 @@ const distDir = resolve(here, "../../site/dist");
 
 const commit = process.env.GITHUB_SHA as CommitId;
 const imageTag = process.env.GITHUB_SHA as string;
-const baseUrl = process.env.SERVED_BASE_URL ?? "http://localhost:8080";
+const baseUrl = process.env.SMOKE_URL ?? process.env.SERVED_BASE_URL ?? "http://localhost:8080";
 
 // S17.12 — V11 covers three content routes: the apex, the CV and the
 // portfolio, each compared against its own emitted document.
