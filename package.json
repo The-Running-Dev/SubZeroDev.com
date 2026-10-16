@@ -14,7 +14,6 @@
     "preview": "node tools/preview.mjs",
     "image-gate": "vitest run --config vitest.image-gate.config.ts",
     "attestation-gate": "vitest run --config vitest.attestation.config.ts",
-    "deployment-candidate-gate": "vitest run --config vitest.publish.config.ts tests/publish/deployment-candidate.test.ts",
     "publish-preview-gate": "vitest run --config vitest.publish.config.ts tests/publish/preview-read-back.test.ts",
     "publish-release-gate": "vitest run --config vitest.publish.config.ts tests/publish/release-read-back.test.ts"
   },
