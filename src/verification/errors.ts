@@ -23,8 +23,6 @@ export type VerificationErrorCode =
   | "UnknownPathBodyWrong"
   | "ServedBytesMismatch"
   | "ImageTagCommitMismatch"
-  | "AttestationCommitMismatch"
-  | "AttestationAbsent"
   | "ManifestoAbsent"
   | "ProjectNameAbsent"
   | "StaleDeploymentCandidate";

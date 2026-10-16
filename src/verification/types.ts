@@ -27,11 +27,6 @@ export type ServedResponse = {
   readonly body: string;
 };
 
-export type Attestation = {
-  readonly commit: CommitId;
-  readonly approver: string;
-};
-
 export type ReadBackResult = {
   readonly servedCommit: CommitId;
   readonly polls: number;
