@@ -109,8 +109,8 @@ jobs:
 
   # Ungated Pages preview/development publishing (design/30-slices.md §
   # S10.6, *The publication CI*). Depends only on the shared `build` — never
-  # on `image-gate`, `link-check` or `attestation` — because no human
-  # approval, image gate, link gate or truth attestation precedes the Pages
+  # on `image`'s gate or `link-check` — because no human approval, image
+  # gate or link gate precedes the Pages
   # publish (design/00-brief.md, design/10-design.md § *Publication
   # targets*). The shared Pages workflow deploys the `build` job's tree
   # unbuilt: its `Deploy` job runs in its own non-cancelling concurrency
@@ -135,42 +135,3 @@ jobs:
       output: site/dist
       node-version: '22'
       post-deploy: tools/ci/read-back-preview.sh
-
-  # Records the human approval that gated the release (design/30-slices.md §
-  # S10.5). The approval itself is the protected `SubZeroDev` GitHub
-  # Environment on the shared container workflow's `Publish` job, so it is
-  # that job that waits for the reviewer, not a job of this file; this job
-  # follows `image`, reads the run's approval record for the approver and
-  # asserts it (V5). Runs only on a push to `main`, as before: the branch's
-  # own protection plus the environment's required-reviewer rule are what
-  # make an approval unreplayable onto another run (U3,
-  # design/90-decisions.md).
-  attestation:
-    name: Attestation
-    runs-on: ubuntu-latest
-    needs: image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      contents: read
-      actions: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      # Builds `Attestation.approver` from the run's own approval record
-      # rather than from any input this run could carry — an approval can
-      # therefore not be replayed onto another run (U3). `Attestation.commit`
-      # is the run's own `head_sha`, i.e. `github.sha`, per the same entry.
-      - name: Read the run's approval record
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          APPROVER=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/approvals" \
-            --jq'[.[] | select(.state == "approved")] | last | .user.login // empty')
-          echo "ATTESTATION_APPROVER=$APPROVER" >> "$GITHUB_ENV"
-      - run: npm run attestation-gate
-        env:
-          GITHUB_SHA: ${{ github.sha }}

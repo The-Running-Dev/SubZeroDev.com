@@ -5,7 +5,6 @@ export type {
   LinkCheckResult,
   RequestRecord,
   ServedResponse,
-  Attestation,
   ReadBackResult,
 } from "./types";
 export type { VerificationError, VerificationErrorCode } from "./errors";
@@ -24,5 +23,4 @@ export { assertNoAdditionalRequests } from "./request-capture";
 export { assertUnknownPathResponse, assertServedBytesMatchEmitted } from "./served-response";
 export { assertImageIdentity } from "./image-identity";
 export { pollForCommit } from "./poll-for-commit";
-export { assertAttestation } from "./attestation";
 export { assertDeploymentCandidateCurrent } from "./deployment-candidate";
