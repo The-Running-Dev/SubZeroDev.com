@@ -57,8 +57,8 @@ jobs:
   # it (design/30-slices.md § S9), then pushes the image that was gated and
   # redeploys it (§ S10). All of that is the shared container workflow: its
   # `Build` job downloads the tree, builds the root Dockerfile and runs the
-  # image gate; `Publish` waits for the `SubZeroDev` environment's approval,
-  # checks this commit is still the tip of `main`, loads the saved image
+  # image gate; `Publish`, with no approval to wait for, checks this commit is
+  # still the tip of `main`, loads the saved image
   # (asserting it is the one that was gated) and pushes it; `Deploy` calls the
   # Portainer webhook and reads the endpoint back. It follows `link-check`
   # as well as `build`, so a broken link still stops the release before
@@ -80,7 +80,6 @@ jobs:
       smoke-port: '80'
       smoke-npm-scripts: image-gate
       node-version: '22'
-      environment: SubZeroDev
       deploy: true
       post-deploy: tools/ci/read-back-release.sh
     secrets:
@@ -109,9 +108,8 @@ jobs:
 
   # Ungated Pages preview/development publishing (design/30-slices.md §
   # S10.6, *The publication CI*). Depends only on the shared `build` — never
-  # on `image`'s gate or `link-check` — because no human approval, image
-  # gate or link gate precedes the Pages
-  # publish (design/00-brief.md, design/10-design.md § *Publication
+  # on `image`'s gate or `link-check` — because no image gate or link gate
+  # precedes the Pages publish (design/00-brief.md, design/10-design.md § *Publication
   # targets*). The shared Pages workflow deploys the `build` job's tree
   # unbuilt: its `Deploy` job runs in its own non-cancelling concurrency
   # group, checks this commit is still the tip of `main` before deploying
