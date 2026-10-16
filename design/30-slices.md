@@ -432,7 +432,8 @@ claim and a release claim are licensed independently by the read-back of the tar
 Touches: Verification — `deploymentPollRetry`, `pollForCommit`, `assertAttestation`,
 `assertDeploymentCandidateCurrent`, `ReadBackResult`, `Attestation`, and the `PollExhausted`,
 `AttestationAbsent`, `AttestationCommitMismatch` and `StaleDeploymentCandidate` codes. CI —
-`publish-preview`, `attestation` and `publish-release` jobs. Deployment artifact — the Compose file,
+`publish-preview` (the shared Pages workflow), `image` (the shared container workflow) and
+`attestation` jobs. Deployment artifact — the Compose file,
 redeploy trigger and endpoint read-back. Repository configuration — Pages and the environment's
 reviewer list.
 
@@ -444,12 +445,12 @@ Acceptance:
   - S10.3 `assertAttestation(null, commit)` returns `AttestationAbsent`; an `Attestation` whose `commit` differs from the releasing commit returns `AttestationCommitMismatch`; a matching one returns `{ ok: true }` (`V5`). Pages does not call this function.
   - S10.4 `assertDeploymentCandidateCurrent(commit, branchHead)` returns `{ ok: true }` when the two are equal and `StaleDeploymentCandidate` when they differ (`V6`).
   - S10.5 The `attestation` job targets a protected GitHub Environment with required reviewers, runs only on a push to `main` (the default branch), and builds its `Attestation` from the run's approval record for `approver` and the run's `head_sha` for `commit` — so an approval cannot be replayed onto another run.
-  - S10.6 `publish-preview` and `publish-release` are separate jobs sharing one concurrency group that does not cancel in progress. `publish-preview` depends only on the shared build, checks the branch head, deploys Pages and reads Pages back; it does not depend on `image-gate`, `link-check` or `attestation`. `publish-release` re-checks the branch head after the human gate and owns the registry push, redeploy trigger and endpoint read-back (`V7`).
+  - S10.6 `publish-preview` and the release are separate jobs, and neither waits on the other. `publish-preview` depends only on the shared build, checks the branch head, deploys Pages and reads Pages back, all in one concurrency group that does not cancel in progress; it does not depend on the image gate, `link-check` or `attestation`. The release (`image`) checks the branch head after the human gate, immediately before the push, and owns the registry push, redeploy trigger and endpoint read-back (`V6`, `V7`).
   - S10.7 The image gated in S9 is carried into `publish-release` and pushed without being rebuilt, with its digest asserted equal on both sides of the job boundary — the gated image is the pushed image (`V9`).
   - S10.8 After the Pages deploy, `pollForCommit` against the preview apex returns `{ ok: true }` for the exact commit, `assertServedBytesMatchEmitted` succeeds against the emitted apex, and `assertUnknownPathResponse` against a unique unknown path returns `{ ok: true }` (`V8`, `V11` and `V12`, Pages halves). None is a human or release gate in front of Pages publication.
   - S10.9 No preview URL is stated before S10.8 passes; no image tag is stated before the push succeeds and the tag resolves; and no live-site claim is made before the redeployed endpoint serves the exact marker and unknown-path composition (`V8`, `V14`, `V15`).
-  - S10.10 A preview or release job whose commit is no longer the deployment-branch head stops before mutating its target and reports a clean stop rather than a failure, demonstrated against `assertDeploymentCandidateCurrent` and by each job's conditional.
-  - S10.11 The full graph is demonstrated by one workflow run: the shared build completes; `publish-preview` runs without waiting for release gates while image-gate and link-check prepare the release; the two branches complete independently and neither waits on the other, so truth attestation follows the image gate and the link check alone; then the branch head is re-checked, the gated image is pushed, the Compose redeploy is triggered, and exact-marker plus unknown-path endpoint read-back licenses the live claim (`V7`, `V15`).
+  - S10.10 A preview or release job whose commit is no longer the deployment-branch head stops before mutating its target and reports a clean stop rather than a failure, demonstrated by the shared library's branch-tip gate in the Pages workflow's deploy job and the container workflow's `Publish` job, each of which skips its target's steps rather than failing; S10.4 specifies the comparison that gate makes.
+  - S10.11 The full graph is demonstrated by one workflow run: the shared build completes; `publish-preview` runs without waiting for release gates while image-gate and link-check prepare the release; the two branches complete independently and neither waits on the other, so truth attestation follows the image gate and the link check alone; then the branch head is checked, the gated image is pushed, the Compose redeploy is triggered, and exact-marker plus unknown-path endpoint read-back licenses the live claim (`V7`, `V15`).
 
 Out of scope: A scheduled post-deploy link re-check —
 *Open question* 6. The domain, its DNS records, TLS termination and any reverse proxy or host the
@@ -973,10 +974,17 @@ The job graph below is derived from [`10-design.md`](10-design.md)'s ordering in
 not itself a slice, and it allocates no number.
 
 ```
-typecheck-and-test ──┬──► build ──┬──► publish-preview
-                     │            └──► image-gate ──┬──► attestation ──► publish-release
-                     └──► link-check ───────────────┘
+typecheck-and-test ──┬──► build ──┬──────────────────► publish-preview
+                     │            └──┬──► image ──► attestation
+                     └──► link-check ┘
 ```
+
+`publish-preview` and `image` each call a reusable workflow of the shared GitHub Actions library:
+`publish-preview` its Pages workflow, which deploys `build`'s tree unbuilt; `image` its container
+workflow, whose `Build` job builds and gates the image, `Publish` job waits for the `SubZeroDev`
+environment's approval, checks the branch head and pushes, and `Deploy` job triggers the redeploy and
+reads the endpoint back. This graph named `image-gate` and `publish-release` as jobs of this
+repository until 2026-10-16, after `ci.yml` had already folded both into `image`.
 
 `publish-preview` is a leaf. It joins nothing downstream, and `attestation` does not wait on it — the
 two branches never converge, on the 2026-08-08 ruling recorded in
@@ -992,28 +1000,31 @@ artifact. This graph drew it under `build`, and omitted `typecheck-and-test` alt
 |---|---|---|---|
 | `typecheck-and-test` — the content gate, the derivations, and every offline unit assertion | `C1`–`C15`, `P1`, `P5`–`P7`, `X1`, `X3`–`X10` | push + all PRs | S1, and every slice since |
 | `build` — emit, `finalizeArtifact`, offline assertions, browser capture | `A5`, `R1`–`R3`, `R5`, `R6`, `V1`, `V2`, `V3`, `V13`, `V16`, `X4` | push + all PRs | S6, S7, S8, S12 |
-| `image-gate` — build, run and gate the image before any push | `V10`, `V11` (image half), `V12` (container half) | push + all PRs | S9 |
+| `image` — build, run and gate the image before any push; then approval, branch-head check, push of the gated image, redeploy trigger, endpoint read-back | `V10`, `V11` (image half), `V12` (container half); then `V6`, `V8` (site half), `V9`, `V14`, `V15` | push + all PRs (gate); main push (the rest) | S9, S10 |
 | `link-check` — **already implemented** | `V4` | push + same-repo PRs | S3 |
-| `publish-preview` — branch-head check, Pages deploy, Pages read-back; no release gate precedes publication | `V6`, `V8` (preview half), `V11` (Pages half), `V12` (Pages half) | main push | S10 |
-| `attestation` — human gate bound to the commit | `V5` | main push | S10 |
-| `publish-release` — branch-head **re-check**, registry push, redeploy trigger, endpoint read-back | `V6` again, `V8` (site half), `V9`, `V14`, `V15` | main push | S10 |
+| `publish-preview` — branch-head check, Pages deploy, Pages read-back, in one concurrency group; no release gate precedes publication | `V6`, `V8` (preview half), `V11` (Pages half), `V12` (Pages half) | main push | S10 |
+| `attestation` — asserts the approval that gated `image`'s push, from the run's approval record | `V5` | main push | S10 |
 
 Three constraints follow from the design rather than from preference. A slice that re-decides any of
 them fails silently:
 
-1. **Publication is two jobs with one concurrency group, and the branch-head check runs in each.**
-   This read "`publish` is one job" until 2026-08-07, on the design's holding that two publication
-   targets are not two critical sections. The truth attestation then moved to gate the release only,
-   and a CI environment approval gates a **job**, not a step — so a single job can no longer express an
-   ordering with a human gate in the middle of it. The two jobs share one group, which means an
-   Preview publication depends only on `build`; it does not wait on `image-gate`, `link-check` or
-   `attestation`. An interleaving across runs is therefore reachable: `A`'s preview, `B`'s preview,
-   then `A`'s release. **The
-   branch-head re-check is what makes that safe**, stopping `A`'s release cleanly because `A` is no
-   longer head. Without the re-check this split is unsound, so the two changes are one change.
-2. **That group does not cancel in progress.** Cancelling mid-publish produces the torn state the
-   critical section exists to prevent. The design's mechanism for stopping a superseded run is the
-   branch-head check — a clean stop — not cancellation.
+1. **Publication is two jobs, and each checks the branch head immediately before moving its
+   target.** This read "`publish` is one job" until 2026-08-07, on the design's holding that two
+   publication targets are not two critical sections. The truth attestation then moved to gate the
+   release only, and a CI environment approval gates a **job**, not a step — so a single job can no
+   longer express an ordering with a human gate in the middle of it. Preview publication depends only
+   on `build`; it does not wait on the image gate, `link-check` or `attestation`. An interleaving
+   across runs is therefore reachable: `A`'s preview, `B`'s preview, then `A`'s release. **The
+   release's branch-head check, after the approval and immediately before the push, is what makes
+   that safe**, stopping `A`'s release cleanly because `A` is no longer head. Without that check this
+   split is unsound, so the two changes are one change. The two jobs shared one concurrency group
+   until 2026-10-16; they now share none, and nothing orders a preview publish against a release
+   publish — see [`10-design.md`](10-design.md) § *Concurrency and ordering*.
+2. **The preview's group does not cancel in progress.** Cancelling mid-publish produces the torn
+   state the critical section exists to prevent. The design's mechanism for stopping a superseded
+   run is the branch-head check — a clean stop — not cancellation. The release holds no group, so it
+   cannot be cancelled mid-publish by one; what it gives up instead is ordering between its redeploy
+   and its read-back.
 3. **The gated image is carried, never rebuilt.** The gate precedes the push and the push follows the
    branch-head check, so the image crosses a job boundary. Rebuilding breaks *the gated image is the
    pushed image*; a staging tag would be a registry write before the branch-head check, which the
@@ -1025,7 +1036,7 @@ first acceptance criteria were answered the same day and are recorded in
 [`90-decisions.md`](90-decisions.md): the browser driver for `V2` is **Playwright driving Chromium
 headless over a local static HTTP server rather than `file://`** (`S8.1`), and the image build and push
 mechanism is **GHCR, tagged with the full commit id, with the registry write scoped to
-`publish-release` alone** (`S9.1`). Making the decision a slice's own first criterion rather than a
+the release's push alone** (`S9.1`; today `image`'s `Publish` job). Making the decision a slice's own first criterion rather than a
 warning in prose is what got both answered before either slice wrote code; that is the shape a future
 mechanism choice should take.
 ---

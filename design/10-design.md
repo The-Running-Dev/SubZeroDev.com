@@ -579,13 +579,15 @@ running, or after it has failed — a preview left unproven beside a proven rele
 that becoming a false claim: each read-back licenses a claim about its own target and about nothing
 else.
 
-**The head is checked twice, and the second check is the load-bearing one.** The attestation sits
-between the release checks and the registry push, and a human gate has no bound on how long it takes.
-A branch-head check taken before it proves nothing after it: an approval granted an hour later, on a
-branch that moved in the meantime, would otherwise license a push and a redeploy for a superseded
-commit. The re-check immediately before the push is what closes that window — the check is a
-comparison at an instant, never a lock, so the only remedy for a long gap is to check again at the end
-of it.
+**The release checks the head once, after the human gate and immediately before the push.** The
+approval sits between the release checks and the registry push, and a human gate has no bound on how
+long it takes. A branch-head check taken before it proves nothing after it: an approval granted an
+hour later, on a branch that moved in the meantime, would otherwise license a push and a redeploy for
+a superseded commit. The check immediately before the push is what closes that window — the check is
+a comparison at an instant, never a lock, so the only remedy for a long gap is to check at the end of
+it. Until 2026-10-16 the release also checked at the start of a critical section it shared with the
+preview; with no shared section left, that first check guarded nothing. See
+[`90-decisions.md`](90-decisions.md), 2026-10-16.
 
 ### 2. A release is cut, and the image is published
 
@@ -942,26 +944,35 @@ tree would become invisible. Nothing else in the repository writes to the output
 starts from a clean one.
 
 Link checks are read-only and their result is collected before release publication; the Pages preview
-does not wait on them. Publication is protected
-by one concurrency group covering the branch-head check, publish operation and exact-commit
-read-back as a single critical section. A run that is no longer the deployment-branch head stops
-before publishing, preventing an older queued run from overwriting a newer commit.
+does not wait on them. Each publication target is guarded by a branch-head check taken immediately
+before it is moved: a run that is no longer the deployment-branch head stops before publishing,
+preventing an older queued run from overwriting a newer commit. Both checks belong to the shared
+GitHub Actions library's reusable workflows that CI calls — its Pages workflow for the preview, its
+container workflow for the release.
 
-**Two publication targets do not mean two critical sections.** Both are governed by the same group,
-because the failure they must not permit is the same one: an older run overwriting a newer commit.
-There are three mutable locations and not two — Pages has one, the registry has one mutable tag
-(`latest`), and the deployed stack is the third, since a redeploy trigger fired by a stale run pulls
-whatever `latest` then names. A run that has lost the branch-head check must move none of them. The
-commit-tagged image is immutable by construction and could safely be pushed by any run, but it is not
-treated as an exception, because a rule with one carve-out is a rule the next author will find a
-second carve-out in.
+**Two publication targets, one rule, two orderings.** The failure neither may permit is the same: an
+older run overwriting a newer commit. There are three mutable locations and not two — Pages has one,
+the registry has one mutable tag (`latest`), and the deployed stack is the third, since a redeploy
+trigger fired by a stale run pulls whatever `latest` then names. A run that has lost the branch-head
+check must move none of them. The commit-tagged image is immutable by construction and could safely
+be pushed by any run, but it is not treated as an exception — the release's check stops every push,
+not only `latest`'s — because a rule with one carve-out is a rule the next author will find a second
+carve-out in. The rule is shared; the ordering is not. Neither target waits on the other, and nothing
+orders a preview publish against a release publish: each is ordered only against runs publishing the
+same target. Until 2026-10-16 this section put both under one concurrency group; see
+[`90-decisions.md`](90-decisions.md), 2026-10-16.
 
-**The redeploy trigger is inside the critical section, and the endpoint read-back extends it.** That
-is the section's most expensive property: it is now held across a network round trip into a delivery
-environment this repository does not run, bounded only by the poll's own retry budget. The alternative
-— releasing the group at the push and reading back outside it — permits precisely the interleaving the
-group exists to forbid, because two runs would then be able to trigger redeploys in one order and read
-back in the other.
+**The preview keeps one critical section.** The Pages workflow's deploy job holds a non-cancelling
+concurrency group across the branch-head check, the Pages deployment and the exact-commit read-back,
+so two runs cannot deploy in one order and read back in the other.
+
+**The release has no critical section, and its read-back pays for that.** Its check is the container
+workflow's, after the environment approval and immediately before the push; no group spans the
+approval, because one held across a human gate would stall every later release behind a reviewer.
+The push is therefore ordered, and the redeploy trigger and endpoint read-back are not: two releases
+pushed close together can trigger redeploys in one order and read back in the other. The cost is a
+false failure, never a false claim — the read-back polls for this run's exact marker, so a run whose
+commit the endpoint has already moved past times out red, and `V8` licenses no claim from it.
 
 The ordering invariant forks after the shared build: content validation → render → package build →
 Artifact → offline verification. From there, the **preview branch** performs branch-head check → Pages
@@ -969,12 +980,12 @@ deploy → Pages read-back (exact marker, bytes, unknown path), without waiting 
 parallel, the **release-preparation branch** runs two independent gates rather than a chain — image
 build → in-CI image gate, and the networked link check **alongside it, not behind it** — and joins
 them at the attestation, continuing on its own from there: truth attestation → branch-head
-re-check → registry push → redeploy trigger → endpoint read-back (exact marker, unknown path) → live
+check → registry push → redeploy trigger → endpoint read-back (exact marker, unknown path) → live
 claim. **Only one ordering on this branch is load-bearing, and it is the next paragraph's**: the
 image gate precedes the attestation. Nothing requires the link check to sit on either side of the
 image gate, so nothing serialises them; this read as a chain until 2026-08-24, which described a
-workflow that has always run them as a fan-in. The preview branch ends at its own read-back. One concurrency group orders the two publishing
-steps against each other; it does not order either against the other's gates. The workflow enforces
+workflow that has always run them as a fan-in. The preview branch ends at its own read-back. Nothing orders the two publishing
+steps against each other, nor either against the other's gates. The workflow enforces
 that graph; the prose report merely reflects it.
 
 The image gate sits **before** the attestation rather than after, because it is hermetic and

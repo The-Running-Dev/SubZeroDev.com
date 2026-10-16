@@ -48,7 +48,49 @@ subdomain-count item became [#37](https://github.com/The-Running-Dev/SubZeroDev.
 [#16](https://github.com/The-Running-Dev/SubZeroDev.com/issues/16) and
 [#17](https://github.com/The-Running-Dev/SubZeroDev.com/issues/17) on 2026-08-06)
 
+- **The release half of the publication design describes the workflow before #136.** Staged
+  2026-10-16. Since `ci.yml` moved the image to the shared container workflow (#136), the approval is
+  the `SubZeroDev` environment on that workflow's `Publish` job, and the `attestation` job runs
+  *after* `image` — after the push and the redeploy — reading the approval record back. `V5`, `V7`,
+  `S10.5`, `S10.7` and `10-design.md`'s ordering paragraph still place the truth attestation before
+  the branch-head check and the push, and `S10.7`'s digest is now asserted by the container
+  workflow's image hand-off, not by a job of this repository. The 2026-10-16 entry below amended only
+  what the Pages migration touched (`V6`, `S10.6`, `S10.10`, the publication CI graph) and left this
+  for a `/contract` ruling: either the attestation's `V5` assertion moves back in front of the push,
+  or the contract accepts the environment approval as the gate and the attestation job as its record.
+
 ---
+
+### 2026-10-16 — Publication is ordered per target by the shared library's branch-tip gate, not by one concurrency group
+Context: `publish-preview` moved to the shared GitHub Actions library's Pages workflow, as the release
+had moved to its container workflow in #136. The design held both publication targets under one
+non-cancelling concurrency group, with the branch head checked at the group's start and again before
+the push (`V6`, `S10.6`, *Concurrency and ordering*). #136 had already broken that: the container
+workflow holds no group and orders pushes by a branch-tip gate in its `Publish` job, after the
+environment approval, so after it only `publish-preview` held the `publish` group — a critical section
+of one. The Pages workflow likewise runs its own branch-tip gate inside its own non-cancelling group
+(`pages-deploy`) covering the check, the deployment and the post-deploy read-back.
+Chosen: each target is ordered by its own branch-head check, taken after every gate in front of it and
+immediately before it is moved; the preview keeps one critical section (the Pages workflow's group
+across check, deploy and read-back); the release has none. `V6` says the head is checked once per
+target; `S10.6`, `S10.10`, the publication CI graph and its constraints 1–2 follow. The preview
+read-back moves into `tools/ci/read-back-preview.sh`, run as the Pages workflow's `post-deploy`, which
+alone announces the preview URL (`V8`). `assertDeploymentCandidateCurrent` stays as specification
+(`S10.4` and its unit tests); its `deployment-candidate-gate` script and the publish test that called
+it go, since nothing in CI runs them.
+Rejected: **a caller-level concurrency group around both reusable-workflow jobs** — holding one group
+across the release's environment approval would stall every later preview behind a reviewer, and
+around the preview alone it adds nothing the Pages workflow's own group does not. **Keeping the
+preview inline in `ci.yml`** — keeps this repository's check and summary step, at the price of a
+second, hand-maintained copy of what the shared workflow does, with inline shell in the workflow.
+**Restoring the release's first check at the start of a shared section** — with no shared section it
+guards nothing; the check before the push is the load-bearing one (`10-design.md` § 1).
+Cost, stated plainly: the release's redeploy trigger and endpoint read-back are outside any critical
+section, so two releases pushed close together can redeploy in one order and read back in the other.
+The read-back polls for its own exact marker, so the loser fails red rather than claiming the newer
+commit; the cost is a false failure and a re-run, never a false claim.
+Reversibility: cheap — a caller-level group can be added to either job without touching the shared
+workflows.
 
 ### 2026-10-06 — Remove the per-repository SessionEnd cost hook
 Context: `.claude/settings.json` ran `pwsh … tools/Measure-Session.ps1` on `SessionEnd`, but that script no longer exists — it left this repository when the kit moved to a single home install, and the kit later ported it to Node as `measure-session.ts` — so the hook failed at the end of every session. The kit's setup installs one global `SessionEnd` hook in `~/.claude/settings.json` that logs every project.
