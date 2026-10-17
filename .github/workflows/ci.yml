@@ -71,7 +71,7 @@ jobs:
       packages: write
       id-token: write
       attestations: write
-    uses: The-Running-Dev/GitHub-ActionTemplates/.github/workflows/container.yml@v0
+    uses: The-Running-Dev/GitHub-ActionTemplates/.github/workflows/container.yml@v1
     with:
       image-name: subzerodev-com
       tags: sha latest
@@ -125,7 +125,7 @@ jobs:
       contents: read
       pages: write
       id-token: write
-    uses: The-Running-Dev/GitHub-ActionTemplates/.github/workflows/pages.yml@v0
+    uses: The-Running-Dev/GitHub-ActionTemplates/.github/workflows/pages.yml@v1
     with:
       artifact: publishable-tree
       artifact-path: site
