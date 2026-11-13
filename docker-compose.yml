@@ -1,10 +1,9 @@
 # The deployment artifact (design/30-slices.md § S10; design/00-brief.md's
 # amended hosting non-goal). Pulls the image `image-gate` already gated and
-# `publish-release` already pushed — never built here. Tagged `latest` with
-# `pull_policy: always`; deployed identity is established by the endpoint
-# read-back after redeploy, never by reading this file
-# (design/90-decisions.md, 2026-08-07 — "The deployment artifact's network
-# attachment and image reference are settled").
+# the container workflow already pushed — never built here. The image comes
+# from SUBZERODEV_COM_IMAGE, which the Infra deploy pins by digest
+# (design/90-decisions.md, 2026-11-13); deployed identity is established by
+# the endpoint read-back after redeploy, never by reading this file.
 #
 # Declares the one already-existing network this container attaches to, by
 # name, and nothing else about it — not what else is on it, not what
@@ -13,8 +12,7 @@
 
 services:
   subzerodev-com:
-    image: ghcr.io/the-running-dev/subzerodev-com:latest
-    pull_policy: always
+    image: ${SUBZERODEV_COM_IMAGE:?Set SUBZERODEV_COM_IMAGE}
     container_name: subzerodev-com
     restart: unless-stopped
     networks:

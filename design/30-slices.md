@@ -324,7 +324,7 @@ expect, and the container's server configuration is written beside the tree rath
 the file the server reads is never a file the server serves.
 
 Touches: Artifact — `EmittedDocument`, `ArtifactInput`, `ArtifactReport`, `ArtifactErrorCode`,
-`ArtifactError`, `missEmittedEntry`, `missRootEntry`, `serverConfigFilename`, `buildMarkerPrefix`,
+`ArtifactError`, `missEmittedEntry`, `missRootEntry`, `healthEntry`, `serverConfigFilename`, `buildMarkerPrefix`
 `buildMarkerSuffix`, `buildMarker`, `serverConfig`, `injectBuildMarker`, `finalizeArtifact`.
 Verification — `readBuildMarker`, `assertEveryDocumentMarked`, `assertRootMissDocument`, and the
 `MarkerAbsent`, `MarkerDuplicate`, `MarkerMismatch` and `RootMissDocumentAbsent` codes. CI — the
@@ -347,6 +347,7 @@ Acceptance:
   - S7.12 Artifact imports exactly `CommitId`, `parseCommitId` and `Result` from Content and nothing else from this repository, asserted by the import-graph check and demonstrated red by a temporary import — verified and reverted before merge.
   - S7.13 The `build` job runs the package build, `finalizeArtifact` and the offline assertions sequentially in one job over one working directory; it is green on this slice's head commit and demonstrated red by a temporary change that skips the marker injection — verified and reverted before merge.
   - S7.14 Every document in the tree, taken before and after `finalizeArtifact`, differs by exactly the marker string and nothing else — asserted by removing `buildMarker(commit)` from each finished document and comparing the result byte for byte against its pre-Artifact form (`R3`).
+  - S7.15 `finalizeArtifact` writes `healthEntry` (`__health.json`) into `outputDir` with the body `{"revision":"<commit>"}`, reports it as `ArtifactReport.healthEntry`, and after the run the only files added to the tree beyond the input are `missRootEntry` and `healthEntry`; a malformed commit writes nothing (`R7`).
 
 Out of scope: Any check that a running server behaves as `serverConfig()` describes — this slice
 asserts the text, and S9 asserts the behaviour. The browser request capture. The image. Anything

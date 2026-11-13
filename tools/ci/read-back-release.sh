@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# The release read-back, run by the shared container workflow after the
-# Portainer redeploy (design/30-slices.md § S10.11; contract's V15).
+# The release read-back, run by the `deploy` job in ci.yml after the Infra
+# deploy (design/30-slices.md § S10.11; contract's V15).
 #
 # Polls the live site until it serves this run's commit, then checks that an
 # unknown path answers the emitted miss document with a 404

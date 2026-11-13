@@ -5,3 +5,7 @@ coverage/
 .claude/session-costs.tsv
 site/server/
 .vscode/
+
+deploy/.terraform/
+deploy/backend.hcl
+deploy/*.tfvars.json

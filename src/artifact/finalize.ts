@@ -23,7 +23,7 @@ import { parseCommitId } from "../content";
 import type { Result } from "../content";
 import type { ArtifactError } from "./errors";
 import type { ArtifactInput, ArtifactReport } from "./types";
-import { missEmittedEntry, missRootEntry } from "./constants";
+import { healthEntry, missEmittedEntry, missRootEntry } from "./constants";
 import { injectBuildMarker } from "./marker";
 import { serverConfig, serverConfigFilename } from "./server-config";
 
@@ -162,6 +162,17 @@ export async function finalizeArtifact(
 
   const survivingMarkedEntries = markedEntries.filter((entry) => entry !== missEmittedEntry);
 
+  try {
+    await writeFile(
+      toPath(input.outputDir, healthEntry),
+      `${JSON.stringify({ revision: commit })}
+`,
+      "utf8",
+    );
+  } catch (cause) {
+    return fail("WriteFailed", healthEntry, `failed to write "${healthEntry}": ${String(cause)}`);
+  }
+
   let serverConfigPath: string;
   try {
     await mkdir(input.serverConfigDir, { recursive: true });
@@ -177,6 +188,6 @@ export async function finalizeArtifact(
 
   return {
     ok: true,
-    value: { commit, markedEntries: survivingMarkedEntries, rootMissEntry: missRootEntry, serverConfigPath },
+    value: { commit, markedEntries: survivingMarkedEntries, rootMissEntry: missRootEntry, healthEntry, serverConfigPath },
   };
 }
