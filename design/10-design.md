@@ -613,12 +613,15 @@ composition. Those are the same two assertions the image gate already ran, now a
 instance rather than a CI approximation. **Only that read-back licenses a live claim about the site.**
 A pushed image is not a deployed one, on exactly the rule that governs the Pages URL.
 
-**The Compose file names `latest`, and the endpoint supplies the identity.** It pulls
-`ghcr.io/the-running-dev/subzerodev-com:latest` with `pull_policy: always`, so the committed file is
-static across releases and names no commit — a commit-pinned file would have to be rewritten and
-committed per release, which permanently lags the release it deploys by one commit. What is deployed is
-therefore established by reading the marker back, never by reading the tag. The commit tag stays the
-immutable identity in the registry and is what a rollback names.
+**The Compose file names a variable, and the endpoint supplies the identity.** It pulls the image named by
+`SUBZERODEV_COM_IMAGE`, which the Infra deploy sets to the pushed digest (`90-decisions.md`, 2026-11-13;
+until then the file named `ghcr.io/the-running-dev/subzerodev-com:latest` with `pull_policy: always`), so
+the committed file is static across releases and names no commit — a commit-pinned file would have to be
+rewritten and committed per release, which permanently lags the release it deploys by one commit. What is
+deployed is therefore established by reading the marker back, never by reading the image reference. The
+commit tag stays the immutable identity in the registry and is what a rollback names. The Infra deploy
+also polls `__health.json` (`R7`) for the commit before the read-back runs; that is its own gate, not a
+substitute for `V15`.
 
 **What the stack declares about the network is one name.** It attaches to an already-existing network
 and declares nothing else about it. What terminates TLS in front of it, and the configuration of the

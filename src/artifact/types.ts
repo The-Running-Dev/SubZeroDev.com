@@ -20,5 +20,6 @@ export type ArtifactReport = {
   readonly commit: CommitId;
   readonly markedEntries: readonly string[];
   readonly rootMissEntry: string;
+  readonly healthEntry: string;
   readonly serverConfigPath: string;
 };

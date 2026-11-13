@@ -59,8 +59,9 @@ jobs:
   # `Build` job downloads the tree, builds the root Dockerfile and runs the
   # image gate; `Publish`, with no approval to wait for, checks this commit is
   # still the tip of `main`, loads the saved image
-  # (asserting it is the one that was gated) and pushes it; `Deploy` calls the
-  # Portainer webhook and reads the endpoint back. It follows `link-check`
+  # (asserting it is the one that was gated) and pushes it. The `deploy` job below
+  # ships that digest through the Infra repository's workflow and reads the live
+  # site back. The `image` job follows `link-check`
   # as well as `build`, so a broken link still stops the release before
   # anything is pushed; a skipped `link-check` (fork PRs) does not.
   image:
@@ -80,10 +81,42 @@ jobs:
       smoke-port: '80'
       smoke-npm-scripts: image-gate
       node-version: '22'
-      deploy: true
-      post-deploy: tools/ci/read-back-release.sh
-    secrets:
-      DEPLOY_WEBHOOK_URL: ${{ secrets.PORTAINER_REDEPLOY_WEBHOOK_URL }}
+
+  # Ships the pushed digest through the Infra repository's deploy workflow (design/90-decisions.md,
+  # 2026-11-13). That workflow checks the digest is this commit's image and polls
+  # https://www.subzerodev.com/__health.json for the revision (`R7`); `INFRA_DISPATCH_TOKEN` is the
+  # only secret this repository holds for it. The release read-back then runs against the live apex
+  # (design/30-slices.md § S10.11; contract's V15), which is still what licenses a live claim.
+  # `DEPLOY_ENABLED` is set by OpenTofu once the stack, tunnel and Infra settings exist.
+  deploy:
+    name: Deploy
+    needs: image
+    if: github.event_name == 'push' && vars.DEPLOY_ENABLED == 'true' && needs.image.outputs.pushed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: The-Running-Dev/GitHub-ActionTemplates/actions/infra-deploy@c71f9720badd37b94b96da0c77633acc3a113647 # v2.2.0
+        with:
+          app: subzerodev-web
+          digest: ${{ needs.image.outputs.digest }}
+          token: ${{ secrets.INFRA_DISPATCH_TOKEN }}
+      # verification: true
+      - name: Read the release back
+        env:
+          IMAGE: ghcr.io/the-running-dev/subzerodev-com
+          DIGEST: ${{ needs.image.outputs.digest }}
+        run: tools/ci/read-back-release.sh
 
   link-check:
     name: Link check

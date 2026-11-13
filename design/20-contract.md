@@ -1102,7 +1102,7 @@ built.
 ### Artifact
 
 **Artifact's public surface is [`src/artifact/index.ts`](../src/artifact/index.ts)** —
-`missEmittedEntry` and `missRootEntry` in [`constants.ts`](../src/artifact/constants.ts);
+`missEmittedEntry`, `missRootEntry` and `healthEntry` in [`constants.ts`](../src/artifact/constants.ts);
 `buildMarkerPrefix`, `buildMarkerSuffix`, `buildMarker` and `injectBuildMarker` in
 [`marker.ts`](../src/artifact/marker.ts); `serverConfigFilename` and `serverConfig` in
 [`server-config.ts`](../src/artifact/server-config.ts); and `finalizeArtifact` in
@@ -1148,6 +1148,11 @@ does with a surviving empty directory is that target's own behaviour, and `R2` i
 depend on either. The route declaration is unchanged and
 `missPath` still reads `/404/`: what changes is only where the emitted document ends up, which is
 `Artifact`'s business and not the route's.
+
+**`finalizeArtifact` also writes `healthEntry`.** After `R2`'s removal and before the server
+configuration, it writes `{"revision":"<commit>"}` (one line) to `healthEntry` inside `outputDir` and reports
+the name in `ArtifactReport.healthEntry` (`R7`). It is the only non-document file in the tree. The nginx
+configuration is unchanged: `try_files $uri $uri/` already serves it as a static file.
 
 **`serverConfig` is Artifact's third duty and takes no argument.** It returns the container server's
 configuration text — the format belongs to `nginx`, per [`U7`](#u7--which-server-serves-the-container-tree),
@@ -1553,6 +1558,7 @@ where a separate module checks it, that is said in the row.
 | **R4** | The emitted server configuration resolves every unknown path to `missRootEntry` with status 404; sets no cookie, no cache-control directive chosen by application logic, and no tracking or rewrite header; and executes nothing per request. A response header that is an unconfigured byproduct of serving a static file over HTTP — a content-type, a content-length, a last-modified time, an entity tag, the server's own identifying header — is not a violation | Artifact |
 | **R5** | `missEmittedEntry` is the package's emitted entry for Adapter's `missPath` — checked against the emitted tree **before `R2`'s removal**, never assumed. A pairing asserted after the file is gone would assert nothing | Artifact |
 | **R6** | The emitted server configuration is written outside `outputDir` and never appears in the published tree, on either target | Artifact |
+| **R7** | The finished tree carries exactly one file that is not an HTML document: `healthEntry` (`__health.json`), whose body is the JSON object `{"revision":"<commit>"}` for the commit being built, so a deployment pipeline can ask the running site which commit it serves without parsing a document. It is not a route, is linked from nowhere, and `R1` and `R3` are unchanged: they are about documents, and this is not one. Added 2026-11-13 for the Infra-hosted deploy (`90-decisions.md`, same date) | Artifact |
 | **V1** | No document reaches publication unless it carries the exact commit's marker | Verification |
 | **V2** | Loading a route document triggers zero requests other than the navigation document itself. Checked against **all four** emitted documents: `/`, `/cv/` and `/portfolio/`, each a directly navigable route reached from the masthead, and the **miss document**, reached the only way it is reachable — through the unknown-path fallback `V12` covers, which resolves to root `404.html` at a 404 status. The miss half was written as *excluded* from 2026-08-21 until 2026-08-24 and was false the whole time; the capture had covered it since `S8`, so the clause licensed deleting a real check as out of scope. What the miss document costs to cover is nothing — it carries no script element at all (`X10`), so the assertion is cheap and the exclusion bought only the sentence | Verification |
 | **V3** | Every manifesto sentence asserted, and every project `name`, appears in built HTML with scripting never executed | Verification |

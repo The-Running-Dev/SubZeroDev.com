@@ -10,11 +10,11 @@ import {
 } from "node:fs";
 import * as fsp from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { finalizeArtifact, missEmittedEntry, missRootEntry, serverConfigFilename } from "../../src/artifact";
+import { finalizeArtifact, healthEntry, missEmittedEntry, missRootEntry, serverConfigFilename } from "../../src/artifact";
 import { readBuildMarker } from "../../src/verification";
 import type { CommitId } from "../../src/content";
 
@@ -261,5 +261,44 @@ describe("S7.8 — the server configuration is written outside outputDir", () =>
       return found;
     })(outputDir);
     expect(insideTree).not.toContain(serverConfigFilename);
+  });
+});
+
+describe("S7.15 — the health file names the revision and is the only file added to the tree", () => {
+  it("writes healthEntry as {\"revision\": commit} inside outputDir, reports it, and adds no other non-document file (R7)", async () => {
+    writeTree({ "index.html": APEX_HTML, "404/index.html": MISS_HTML });
+    const before = (function walk(dir: string): string[] {
+      const found: string[] = [];
+      for (const name of readdirSync(dir)) {
+        const full = join(dir, name);
+        if (statSync(full).isDirectory()) found.push(...walk(full));
+        else found.push(relative(outputDir, full).split(sep).join("/"));
+      }
+      return found;
+    })(outputDir);
+
+    const result = await finalizeArtifact({ outputDir, serverConfigDir, commit: COMMIT });
+    if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result.errors)}`);
+
+    expect(healthEntry).toBe("__health.json");
+    expect(result.value.healthEntry).toBe(healthEntry);
+    expect(JSON.parse(readFileSync(join(outputDir, healthEntry), "utf8"))).toEqual({ revision: COMMIT });
+
+    const after = (function walk(dir: string): string[] {
+      const found: string[] = [];
+      for (const name of readdirSync(dir)) {
+        const full = join(dir, name);
+        if (statSync(full).isDirectory()) found.push(...walk(full));
+        else found.push(relative(outputDir, full).split(sep).join("/"));
+      }
+      return found;
+    })(outputDir);
+    expect(after.filter((entry) => !before.includes(entry)).sort()).toEqual(["404.html", healthEntry].sort());
+  });
+
+  it("writes nothing when the commit is malformed", async () => {
+    writeTree({ "index.html": APEX_HTML, "404/index.html": MISS_HTML });
+    await finalizeArtifact({ outputDir, serverConfigDir, commit: "not-a-commit" });
+    expect(existsSync(join(outputDir, healthEntry))).toBe(false);
   });
 });
