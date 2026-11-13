@@ -1,6 +1,6 @@
 # deploy
 
-OpenTofu root that adopts the SubZeroDev.com stack (Portainer stack 12) through `modules/app` of SubZeroDev.Infra: a Cloudflare tunnel with the `www` hostname, the Portainer Git stack (`docker-compose.yml` + `compose.tunnel.yaml`) and the GitHub `production` environment. The apex `subzerodev.com` stays on the VPS A record until NPM is retired.
+OpenTofu root that adopts the SubZeroDev.com stack (Portainer stack 12) through `modules/app` of SubZeroDev.Infra: a Cloudflare tunnel with the apex and `www` hostnames, the Portainer Git stack (`docker-compose.yml` + `compose.tunnel.yaml`) and the GitHub `production` environment. The apex `subzerodev.com` was an unproxied A record to the VPS (served by NPM); it is a proxied CNAME to the tunnel now.
 
 State: R2 bucket `subzerodev-tofu-state`, key `apps/subzerodev-web.tfstate`, encrypted. Run everything through `deploy/tofu.ps1`; it reads credentials from your User environment variables and never prints them.
 

@@ -66,7 +66,13 @@ module "app" {
   repository    = "The-Running-Dev/SubZeroDev.com"
   compose_files = ["docker-compose.yml", "compose.tunnel.yaml"]
 
-  routes = { www = "http://subzerodev-com:80" } # www.subzerodev.com
+  # The apex and www both serve the site. The apex was reached through Nginx Proxy Manager on the host.
+  routes = {
+    "@" = "http://subzerodev-com:80" # subzerodev.com
+    www = "http://subzerodev-com:80" # www.subzerodev.com
+  }
+
+  public_route = "www" # the deploy health check keeps polling www
 
   image = {
     variable = "SUBZERODEV_COM_IMAGE"
@@ -97,6 +103,13 @@ import {
 import {
   to = module.app.cloudflare_dns_record.route["www"]
   id = "e958380ca90211dfa0fc68c5c2df277f/58375682d37507aacb684765d12a1e5d"
+}
+
+# The apex is an unproxied A record to the VPS. It becomes a proxied CNAME to the tunnel (Cloudflare flattens it,
+# so the Proton MX and TXT records on the apex are unaffected); the provider replaces the record.
+import {
+  to = module.app.cloudflare_dns_record.route["@"]
+  id = "e958380ca90211dfa0fc68c5c2df277f/c9aa289f81532eb726d446c9e12602dc"
 }
 
 output "public_url" {
